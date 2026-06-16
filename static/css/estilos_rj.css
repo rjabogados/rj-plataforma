@@ -1,0 +1,256 @@
+:root {
+    --rj-azul: #183D74;
+    --rj-azul-hover: #1e4d92;
+    --rj-rojo: #D60C3B;
+    --rj-amarillo: #FF9E20;
+    --sidebar-width: 280px;
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+    background-color: #f4f6f9; 
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    color: #334155;
+}
+
+/* --- BARRA LATERAL (SIDEBAR) --- */
+.sidebar {
+    background: linear-gradient(180deg, #102a52 0%, var(--rj-azul) 100%);
+    height: 100vh;
+    width: var(--sidebar-width);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    box-shadow: 4px 0 24px rgba(16, 42, 82, 0.15);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Scrollbar Custom para Motores Webkit */
+.sidebar::-webkit-scrollbar { width: 5px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.25); }
+
+/* --- CONTENEDOR DEL LOGO --- */
+.brand-logo-box {
+    width: 42px;
+    height: 42px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.brand-logo-box i { color: var(--rj-azul); }
+
+/* Ajuste perfecto para el logo PNG compacto */
+.brand-logo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+    border-radius: 10px;
+}
+
+.brand-title { letter-spacing: 0.5px; color: #ffffff; }
+.brand-subtitle { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Enlaces del Menú */
+.sidebar .nav-link {
+    color: #cbd5e1;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    margin-bottom: 0.2rem;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    border-left: 4px solid transparent;
+}
+.sidebar .nav-link i.menu-icon {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+    color: #64748b;
+    transition: var(--transition-smooth);
+}
+
+/* Estados de Hover y Abierto */
+.sidebar .nav-link:hover, 
+.sidebar .nav-link[aria-expanded="true"] {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-left-color: var(--rj-amarillo);
+}
+.sidebar .nav-link:hover i.menu-icon, 
+.sidebar .nav-link[aria-expanded="true"] i.menu-icon {
+    color: var(--rj-amarillo);
+    transform: scale(1.08);
+}
+
+/* Enlaces Especiales Destacados */
+.analytics-link { color: #fecdd3 !important; }
+.analytics-link i { color: #fda4af !important; }
+
+/* Submenús Desplegables */
+.arrow-icon { font-size: 0.75rem; transition: transform 0.2s ease; color: #64748b; }
+.nav-link[aria-expanded="true"] .arrow-icon { transform: rotate(180deg); color: #ffffff; }
+.submenu { background-color: rgba(0, 0, 0, 0.12); border-radius: 8px; margin-bottom: 0.4rem; }
+.submenu-link {
+    padding: 0.55rem 1.25rem 0.55rem 3.2rem !important;
+    font-size: 0.85rem;
+    border-left: 0 !important;
+    color: #94a3b8 !important;
+}
+.submenu-link:hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    color: #ffffff !important;
+    transform: translateX(3px);
+}
+
+.sidebar-separator { border-top: 1px solid rgba(255, 255, 255, 0.08); opacity: 1; }
+.menu-header-tag span { font-size: 0.65rem; color: #475569; letter-spacing: 1.2px; }
+
+/* Tarjeta de Perfil Flotante */
+.user-profile-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: var(--transition-smooth);
+}
+.user-profile-card:hover { background: rgba(255, 255, 255, 0.08); }
+.avatar-circle {
+    width: 38px;
+    height: 38px;
+    background-color: var(--rj-amarillo);
+    color: #0f172a;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.user-display-name { line-height: 1.2; color: #ffffff; }
+.user-display-role { font-size: 0.68rem; color: #94a3b8; }
+.unique-profile-dropdown { width: calc(var(--sidebar-width) - 32px); box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important; }
+
+/* --- NAVBAR SUPERIOR --- */
+.top-navbar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(24, 61, 116, 0.06);
+    z-index: 1030;
+    position: sticky;
+    top: 0;
+}
+.sidebar-toggle-trigger { color: var(--rj-azul); background: transparent; }
+.sidebar-toggle-trigger:hover { background-color: #f1f5f9; }
+.title-decor-icon { font-size: 1rem; color: #94a3b8; }
+.navbar-main-title { color: var(--rj-azul); font-size: 1.1rem; letter-spacing: 0.2px; }
+.live-date-badge { border-color: #e2e8f0 !important; font-size: 0.82rem; }
+.quick-logout-btn { background-color: var(--rj-rojo); color: #ffffff; border: none; transition: var(--transition-smooth); }
+.quick-logout-btn:hover { background-color: #be0a34; color: #ffffff; transform: scale(1.03); }
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.main-content {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(2px);
+    z-index: 1035;
+}
+
+/* --- TABLAS CORPORATIVAS RJ --- */
+.table-rj {
+    background-color: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.table-rj thead th {
+    background-color: var(--rj-azul);
+    color: #ffffff;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border: none;
+    padding: 1rem;
+}
+.table-rj tbody tr:hover {
+    background-color: rgba(24, 61, 116, 0.03);
+}
+.table-rj td {
+    vertical-align: middle;
+    color: #475569;
+    border-bottom: 1px solid #f1f5f9;
+}
+/* Insignias de Estado (Ej: Precalificado, Agendado) */
+.badge-rj-amarillo {
+    background-color: rgba(255, 158, 32, 0.15);
+    color: #cc7a14;
+    border: 1px solid rgba(255, 158, 32, 0.3);
+}
+
+/* --- RESPONSIVE / ADAPTACIÓN MÓVIL --- */
+@media (max-width: 991.98px) {
+    .sidebar { transform: translateX(-100%); }
+    .main-content { margin-left: 0; width: 100%; }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+    body.sidebar-open .sidebar-overlay { display: block; }
+}
+
+/* =========================================
+   OVERRIDE DE BOOTSTRAP (Fidelización Total)
+   ========================================= */
+
+/* 1. Textos y Fondos "Primary" (Ahora serán Azul RJ) */
+.text-primary { color: var(--rj-azul) !important; }
+.bg-primary { background-color: var(--rj-azul) !important; }
+.bg-primary-subtle { background-color: rgba(24, 61, 116, 0.1) !important; } /* Azul transparente para fondos suaves */
+
+/* 2. Textos y Fondos "Warning" (Ahora serán Amarillo RJ) */
+.text-warning { color: var(--rj-amarillo) !important; }
+.bg-warning { background-color: var(--rj-amarillo) !important; }
+.badge.bg-warning { color: #000 !important; } /* Para que el texto resalte sobre el amarillo */
+
+/* 3. Textos y Fondos "Danger" (Ahora serán Rojo RJ) */
+.text-danger { color: var(--rj-rojo) !important; }
+.bg-danger { background-color: var(--rj-rojo) !important; }
+
+/* 4. Botones Principales (Botón de acción = Rojo RJ) */
+.btn-primary {
+    background-color: var(--rj-rojo) !important;
+    border-color: var(--rj-rojo) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px rgba(214, 12, 59, 0.2); /* Sombra roja sutil */
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #a8092e !important; /* Rojo más oscuro al pasar el mouse */
+    border-color: #a8092e !important;
+    transform: translateY(-1px); /* Pequeño efecto de levantarse */
+}
+
+/* 5. Botones Secundarios o de Contorno (Azul RJ) */
+.btn-outline-primary {
+    color: var(--rj-azul) !important;
+    border-color: var(--rj-azul) !important;
+}
+.btn-outline-primary:hover {
+    background-color: var(--rj-azul) !important;
+    color: #ffffff !important;
+}

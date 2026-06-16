@@ -1,0 +1,68 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 800px;">
+    <h4 class="fw-bold text-dark mb-4"><i class="bi bi-pen-fill text-primary"></i> Registro de Firma Digital</h4>
+    
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4 text-center">
+            
+            {% if firma %}
+            <div class="alert alert-success border-0 shadow-sm text-start">
+                <i class="bi bi-shield-check-fill"></i> Ya tienes una firma registrada en el sistema. Puedes usarla para firmar contratos o boletas. Si deseas actualizarla, puedes dibujar una nueva abajo.
+            </div>
+            <div class="mb-4">
+                <p class="small fw-bold text-muted mb-1">Tu firma actual:</p>
+                <img src="{{ firma.imagen_firma.url }}" alt="Firma Guardada" class="border rounded bg-light" style="max-width: 300px; height: auto;">
+            </div>
+            <hr class="opacity-25">
+            {% else %}
+            <div class="alert alert-warning border-0 shadow-sm text-start">
+                <i class="bi bi-exclamation-triangle-fill"></i> Es tu primera vez aquí. Dibuja tu firma en el recuadro blanco de abajo (lo más parecida a tu DNI).
+            </div>
+            {% endif %}
+
+            <h6 class="fw-bold mt-3 mb-2">Dibuja tu firma aquí:</h6>
+            <div class="bg-light border border-2 border-primary rounded-4 d-inline-block shadow-sm" style="touch-action: none;">
+                <canvas id="firmaCanvas" width="400" height="200"></canvas>
+            </div>
+            
+            <div class="mt-3 d-flex justify-content-center gap-2">
+                <button type="button" class="btn btn-outline-danger fw-bold rounded-pill px-4" id="limpiarBtn"><i class="bi bi-eraser"></i> Limpiar</button>
+                <form method="POST" id="firmaForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="firma_data" id="firma_data">
+                    <button type="button" class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm" id="guardarBtn"><i class="bi bi-save"></i> Guardar Firma</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var canvas = document.getElementById('firmaCanvas');
+        var signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+            penColor: 'rgb(0, 0, 139)' // Tinta azul corporativa
+        });
+
+        document.getElementById('limpiarBtn').addEventListener('click', function () {
+            signaturePad.clear();
+        });
+
+        document.getElementById('guardarBtn').addEventListener('click', function () {
+            if (signaturePad.isEmpty()) {
+                alert("Por favor, dibuja tu firma antes de guardar.");
+            } else {
+                if(confirm("¿Estás seguro que esta firma es correcta y se parece a la de tu DNI?")) {
+                    var dataURL = signaturePad.toDataURL(); // Convierte el dibujo a imagen
+                    document.getElementById('firma_data').value = dataURL;
+                    document.getElementById('firmaForm').submit();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

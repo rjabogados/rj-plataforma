@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intranet - RJ Abogados</title>
+    
+    <link rel="shortcut icon" href="{% static 'img/logo_compacto.png' %}" type="image/png">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="{% static 'css/estilos_rj.css' %}?v=1.0">
+</head>
+<body>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    {% include 'intranet/includes/sidebar.html' %}
+
+    <div class="main-content">
+        {% include 'intranet/includes/navbar.html' %}
+
+        <main class="px-3 px-md-4 pb-5 flex-grow-1 mt-3">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <footer class="mt-auto py-3 bg-transparent text-center border-top border-light">
+            <span class="small fw-medium text-muted" style="font-size: 0.75rem;">© {% now "Y" %} RJ Abogados. Todos los derechos reservados.</span>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const btnToggle = document.getElementById("btnToggleSidebar");
+            const overlay = document.getElementById("sidebarOverlay");
+            const body = document.body;
+
+            function toggleSidebar() { body.classList.toggle("sidebar-open"); }
+
+            if(btnToggle) btnToggle.addEventListener("click", toggleSidebar);
+            if(overlay) overlay.addEventListener("click", toggleSidebar);
+
+            window.addEventListener("resize", function() {
+                if (window.innerWidth >= 992) body.classList.remove("sidebar-open");
+            });
+        });
+    </script>
+</body>
+</html>

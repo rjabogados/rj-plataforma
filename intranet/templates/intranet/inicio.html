@@ -1,0 +1,177 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4" style="background: linear-gradient(135deg, var(--rj-azul) 0%, #1e4b8f 100%); color: white;">
+        <div class="card-body p-4 p-md-5 d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="fw-bold mb-1">¡Hola, {{ request.user.first_name|default:request.user.username }}!</h2>
+                <p class="mb-0 opacity-75 fs-5">Bienvenido a la Intranet de RJ Abogados.</p>
+            </div>
+            <div class="d-none d-md-block opacity-50">
+                <i class="bi bi-building display-1"></i>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_superuser or user.perfil.rol in 'ADMIN,RRHH,GERENCIA' %}
+    <div class="mb-5 pb-3 border-bottom">
+        <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-shield-lock-fill fs-4 me-2" style="color: var(--rj-rojo);"></i>
+            <h5 class="fw-bold mb-0 text-dark">Panel de Control Administrativo</h5>
+        </div>
+        
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 bg-white card-hover-effect">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-info bg-opacity-10 text-info rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="bi bi-people-fill fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark">Gestión de Personal</h6>
+                        <p class="small text-muted mb-3">
+                            <span class="badge bg-info text-dark me-1 fs-6">{{ total_colaboradores|default:"0" }}</span> Activos en plataforma.
+                        </p>
+                        <a href="{% url 'colaboradores' %}" class="btn btn-outline-info btn-sm fw-bold w-100 rounded-pill">Ir al Directorio</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 bg-white card-hover-effect">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="bi bi-fingerprint fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark">Control de Asistencias</h6>
+                        <p class="small text-muted mb-3">Sincroniza el huellero o revisa las faltas del equipo.</p>
+                        <a href="{% url 'asistencia' %}" class="btn btn-outline-warning btn-sm fw-bold w-100 rounded-pill">Revisar Marcas</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 bg-white card-hover-effect">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="bi bi-folder-fill fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark">Documentos Globales</h6>
+                        <p class="small text-muted mb-3">Sube memorándums o políticas de la empresa.</p>
+                        <a href="{% url 'documentos_admin' %}" class="btn btn-outline-success btn-sm fw-bold w-100 rounded-pill">Abrir Bóveda</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Mis Accesos Rápidos</h5>
+            <div class="row g-3">
+                
+                <div class="col-md-6">
+                    <a href="{% url 'documentos_personal' %}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm rounded-4 bg-white h-100 border-start border-success border-4 card-hover-effect">
+                            <div class="card-body p-4 d-flex align-items-center">
+                                <i class="bi bi-pen-fill fs-2 text-success me-3 opacity-75"></i>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1">Mi Bóveda Privada</h6>
+                                    {% if mis_documentos and mis_documentos > 0 %}
+                                        <span class="small text-danger fw-bold"><i class="bi bi-exclamation-circle-fill"></i> {{ mis_documentos }} documento(s) por firmar</span>
+                                    {% else %}
+                                        <span class="small text-muted"><i class="bi bi-check-circle-fill text-success"></i> Todo al día</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6">
+                    <a href="{% url 'tickets' %}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm rounded-4 bg-white h-100 border-start border-danger border-4 card-hover-effect">
+                            <div class="card-body p-4 d-flex align-items-center">
+                                <i class="bi bi-ticket-detailed fs-2 text-danger me-3 opacity-75"></i>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1">Mesa de Ayuda (Tickets)</h6>
+                                    {% if tickets_pendientes and tickets_pendientes > 0 %}
+                                        <span class="small text-warning fw-bold"><i class="bi bi-clock-history"></i> {{ tickets_pendientes }} ticket(s) en espera</span>
+                                    {% else %}
+                                        <span class="small text-muted">Solicita soporte o justifica faltas</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6">
+                    <a href="{% url 'vacaciones' %}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm rounded-4 bg-white h-100 border-start border-info border-4 card-hover-effect">
+                            <div class="card-body p-4 d-flex align-items-center">
+                                <i class="bi bi-airplane-engines fs-2 text-info me-3 opacity-75"></i>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1">Mis Vacaciones</h6>
+                                    <span class="small text-muted">Solicita días libres o descansos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6">
+                    <a href="{% url 'beneficios' %}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm rounded-4 bg-white h-100 border-start border-primary border-4 card-hover-effect">
+                            <div class="card-body p-4 d-flex align-items-center">
+                                <i class="bi bi-gift-fill fs-2 text-primary me-3 opacity-75"></i>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1">Beneficios RJ</h6>
+                                    <span class="small text-muted">Descubre tus descuentos corporativos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-megaphone-fill text-primary me-2"></i>Pizarra Informativa</h5>
+            
+            {% for aviso in comunicados %}
+            <div class="card border-0 shadow-sm rounded-4 bg-white mb-3 overflow-hidden">
+                <div style="height: 8px; background-color: var(--rj-amarillo);"></div>
+                <div class="card-body p-4">
+                    <div class="badge bg-danger mb-2 px-2 py-1">NUEVO</div>
+                    <h6 class="fw-bold text-dark mb-2">{{ aviso.titulo }}</h6>
+                    <p class="small text-muted mb-3">{{ aviso.mensaje|linebreaksbr }}</p>
+                    <hr class="opacity-25">
+                    <div class="d-flex align-items-center text-muted small fw-bold">
+                        <i class="bi bi-calendar-event me-2"></i> {{ aviso.fecha_publicacion|date:"d M Y" }}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100 text-center p-5">
+                <i class="bi bi-inboxes text-muted opacity-50 display-1 mb-3"></i>
+                <h6 class="fw-bold text-muted">Sin comunicados</h6>
+                <p class="small text-muted">No hay anuncios recientes por el momento.</p>
+            </div>
+            {% endfor %}
+            
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-hover-effect {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover-effect:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+    }
+</style>
+{% endblock %}

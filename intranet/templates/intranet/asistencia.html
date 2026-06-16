@@ -1,0 +1,141 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="bi bi-fingerprint text-primary"></i> Control de Asistencias (Huellero)</h3>
+            <p class="text-muted mb-0">Supervisión de marcas de ingreso, salidas y recesos por periodo.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100 border-start border-primary border-4">
+                <div class="card-body p-4">
+                    <form method="GET" action="{% url 'asistencia' %}" class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted"><i class="bi bi-calendar-event text-primary"></i> Desde (Fecha Inicio)</label>
+                            <input type="date" class="form-control border-secondary" name="fecha_inicio" value="{{ fecha_inicio }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted"><i class="bi bi-calendar-check text-primary"></i> Hasta (Fecha Fin)</label>
+                            <input type="date" class="form-control border-secondary" name="fecha_fin" value="{{ fecha_fin }}" required>
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-dark fw-bold w-100 shadow-sm" title="Ver en pantalla">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                            <button type="submit" name="exportar" value="1" class="btn btn-success fw-bold w-100 shadow-sm" title="Bajar Excel">
+                                <i class="bi bi-file-earmark-excel-fill"></i> Descargar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100">
+                <div class="card-body p-4 d-flex flex-column justify-content-center gap-2">
+                    
+                    <a href="{% url 'sincronizar_sheets' %}" class="btn btn-primary fw-bold w-100 shadow-sm py-2">
+                        <i class="bi bi-cloud-arrow-down-fill d-block fs-5 mb-1"></i> Sincronizar Nube
+                    </a>
+
+                    <button type="button" class="btn btn-outline-secondary fw-bold w-100 shadow-sm py-1 small" data-bs-toggle="modal" data-bs-target="#modalSubirHuellero">
+                        <i class="bi bi-file-earmark-arrow-up-fill"></i> Subir Excel
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 bg-white">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-secondary small">
+                        <tr>
+                            <th class="ps-4">Colaborador y Puesto</th>
+                            <th>Día Registrado</th>
+                            <th class="text-center text-success" title="F1: Ingreso"><i class="bi bi-box-arrow-in-right"></i> Ingreso (F1)</th>
+                            <th class="text-center text-warning" title="F7 y F8: Break"><i class="bi bi-cup-hot"></i> Break (F7-F8)</th>
+                            <th class="text-center text-primary" title="F2 y F3: Almuerzo"><i class="bi bi-egg-fried"></i> Almuerzo (F2-F3)</th>
+                            <th class="text-center text-danger" title="F4: Salida"><i class="bi bi-box-arrow-left"></i> Salida (F4)</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in asistencias %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">{{ a.colaborador.user.last_name }}, {{ a.colaborador.user.first_name }}</div>
+                                <div class="small text-muted">{{ a.colaborador.negocio.nombre|default:"Sin Cartera" }} - {{ a.colaborador.rol }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border"><i class="bi bi-calendar"></i> {{ a.fecha|date:"d M Y" }}</span>
+                            </td>
+                            <td class="text-center fw-bold text-success">{{ a.f1_ingreso|time:"H:i"|default:"--" }}</td>
+                            <td class="text-center text-muted">
+                                <small class="fw-bold">{{ a.f7_salida_break|time:"H:i"|default:"--" }}</small> / <small class="fw-bold">{{ a.f8_retorno_break|time:"H:i"|default:"--" }}</small>
+                            </td>
+                            <td class="text-center text-muted">
+                                <small class="fw-bold">{{ a.f2_salida_almuerzo|time:"H:i"|default:"--" }}</small> / <small class="fw-bold">{{ a.f3_retorno_almuerzo|time:"H:i"|default:"--" }}</small>
+                            </td>
+                            <td class="text-center fw-bold text-danger">{{ a.f4_salida|time:"H:i"|default:"--" }}</td>
+                            <td class="text-end pe-4">
+                                {% if user.is_superuser or user.perfil.rol in 'ADMIN,RRHH' %}
+                                <a href="{% url 'eliminar_asistencia' a.id %}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('¿Estás seguro de eliminar este registro biométrico?')" title="Eliminar registro">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
+                                {% else %}
+                                <span class="text-muted small"><i class="bi bi-lock-fill"></i></span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-inboxes opacity-50 display-1 mb-3 d-block"></i>
+                                    <h5 class="fw-bold">No hay registros de asistencia en este periodo</h5>
+                                    <p>Selecciona un rango de fechas diferente o presiona "Sincronizar Nube" para extraer datos.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="modalSubirHuellero" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-secondary text-white border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cpu-fill"></i> Traductor de Biométrico (Manual)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'procesar_huellero' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4 text-center">
+                    <i class="bi bi-file-earmark-spreadsheet text-secondary display-1 mb-3"></i>
+                    <h6 class="fw-bold text-dark">Sube el reporte de eventos (.xlsx)</h6>
+                    <p class="text-muted small">Usa esta opción solo si la sincronización a la nube falla. El sistema leerá el DNI, fecha y hora del archivo Excel local.</p>
+                    
+                    <input class="form-control form-control-lg border-secondary bg-light" type="file" name="archivo_huellero" accept=".xlsx" required>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-light fw-bold px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-secondary fw-bold px-4"><i class="bi bi-gear-fill"></i> Iniciar Traducción</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

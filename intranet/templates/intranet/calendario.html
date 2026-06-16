@@ -1,0 +1,180 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/es.global.min.js"></script>
+
+<div class="container-fluid">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold text-dark mb-0"><i class="bi bi-calendar3 text-primary"></i> Calendario de Actividades</h4>
+            <p class="text-muted small mb-0">Visualización de feriados, reuniones de campaña y capacitaciones corporativas.</p>
+        </div>
+        {% if es_admin %}
+        <button class="btn btn-primary fw-bold rounded-pill shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#modalEvento">
+            <i class="bi bi-plus-circle"></i> Crear Evento
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 p-3 p-md-4 bg-white">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+{% if es_admin %}
+<div class="modal fade" id="modalEvento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus"></i> Registrar Evento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'calendario' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4 bg-light">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Título de la Actividad</label>
+                        <input type="text" class="form-control border-secondary" name="titulo" required placeholder="Ej: Capacitación Meta Ads o Feriado Nacional">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Detalles / Descripción</label>
+                        <textarea class="form-control border-secondary" name="descripcion" rows="3" placeholder="Ingresa los pormenores de la reunión..."></textarea>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Inicio</label>
+                            <input type="datetime-local" class="form-control border-secondary" name="fecha_inicio" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Fin</label>
+                            <input type="datetime-local" class="form-control border-secondary" name="fecha_fin" required>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-muted">Color de Etiqueta Informativa</label>
+                        <select class="form-select border-secondary" name="color">
+                            <option value="#183D74" selected>Azul (Institucional)</option>
+                            <option value="#D60C3B">Rojo (Urgente / Feriado)</option>
+                            <option value="#FF9E20">Amarillo (Recordatorio)</option>
+                            <option value="#198754">Verde (Capacitaciones)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-white">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold rounded-pill px-5 shadow-sm">Guardar Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="modalDetalleEvento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0">
+                <h5 class="modal-title fw-bold" id="detalleTitulo">Detalles de la Actividad</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <p class="fw-medium text-dark" id="detalleDescripcion"></p>
+                <hr class="opacity-25">
+                <div class="row small text-muted">
+                    <div class="col-6"><strong><i class="bi bi-clock"></i> Inicio:</strong> <span id="detalleInicio"></span></div>
+                    <div class="col-6"><strong><i class="bi bi-clock-fill"></i> Fin:</strong> <span id="detalleFin"></span></div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-white justify-content-between">
+                <div>
+                    {% if es_admin %}
+                    <form method="POST" id="formEliminarEvento" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger fw-bold rounded-pill px-3" onclick="return confirm('¿Estás seguro que deseas eliminar permanentemente este evento?');">
+                            <i class="bi bi-trash"></i> Eliminar Evento
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var eventosData = {{ eventos_json|safe }};
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'es',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            themeSystem: 'bootstrap5',
+            events: eventosData,
+            eventClick: function(info) {
+                // Capturar propiedades del evento clicado
+                var titulo = info.event.title;
+                var desc = info.event.extendedProps.description || "Sin descripción adicional.";
+                var inicio = info.event.start.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' });
+                var fin = info.event.end ? info.event.end.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : inicio;
+                var idEvento = info.event.id;
+
+                // Rellenar dinámicamente el modal de visualización
+                document.getElementById('detalleTitulo').innerText = titulo;
+                document.getElementById('detalleDescripcion').innerText = desc;
+                document.getElementById('detalleInicio').innerText = inicio;
+                document.getElementById('detalleFin').innerText = fin;
+
+                // Si existe el formulario de borrado (es admin), reescribimos su acción hacia la URL correspondiente
+                var formEliminar = document.getElementById('formEliminarEvento');
+                if (formEliminar) {
+                    formEliminar.action = "/calendario/eliminar/" + idEvento + "/";
+                }
+
+                // Disparar la apertura visual del Modal mediante Bootstrap
+                var modalDetalle = new bootstrap.Modal(document.getElementById('modalDetalleEvento'));
+                modalDetalle.show();
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+
+<style>
+    .fc {
+        --fc-border-color: #e2e8f0;
+        --fc-button-bg-color: #183D74;
+        --fc-button-border-color: #183D74;
+        --fc-button-active-bg-color: #FF9E20;
+        --fc-button-active-border-color: #FF9E20;
+        --fc-button-hover-bg-color: #13325e;
+        --fc-button-hover-border-color: #13325e;
+        font-size: 0.9rem;
+    }
+    .fc .fc-toolbar-title {
+        font-weight: 700;
+        color: #334155;
+        font-size: 1.2rem;
+    }
+    .fc-event {
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-weight: 500;
+        border: none !important;
+    }
+    @media (max-width: 767.98px) {
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <h4 class="fw-bold text-dark mb-4"><i class="bi bi-ui-radios-grid text-danger"></i> Encuestas Corporativas</h4>
+    <div class="row g-4">
+        {% for e in encuestas %}
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 rounded-4 p-4 h-100 border-top border-4 border-danger">
+                <h5 class="fw-bold text-dark">{{ e.titulo }}</h5>
+                <p class="small text-muted mb-3">{{ e.descripcion }}</p>
+                {% if e.es_anonima %}
+                <div class="alert alert-light border small py-2 text-secondary"><i class="bi bi-incognito"></i> Tus respuestas serán 100% anónimas.</div>
+                {% endif %}
+                
+                <form method="POST" class="mt-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="enviar_encuesta" value="1">
+                    <input type="hidden" name="encuesta_id" value="{{ e.id }}">
+                    
+                    {% for p in e.preguntas.all %}
+                    <div class="mb-3 p-3 bg-light rounded-3">
+                        <label class="fw-bold small d-block mb-2">{{ forloop.counter }}. {{ p.texto }}</label>
+                        {% if p.tipo == 'ABIERTA' %}
+                            <textarea class="form-control form-control-sm border-secondary" name="pregunta_{{ p.id }}" rows="2" required placeholder="Escribe tu respuesta aquí..."></textarea>
+                        {% else %}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pregunta_{{ p.id }}" value="SI" required>
+                                <label class="form-check-label small">Sí</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pregunta_{{ p.id }}" value="NO" required>
+                                <label class="form-check-label small">No</label>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-muted small">Esta encuesta aún no tiene preguntas formuladas.</p>
+                    {% endfor %}
+                    
+                    {% if e.preguntas.count > 0 %}
+                    <button type="submit" class="btn btn-danger w-100 fw-bold rounded-pill shadow-sm">Enviar Mis Respuestas</button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><p class="text-muted">No hay encuestas activas en este momento.</p></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

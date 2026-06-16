@@ -1,0 +1,43 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 800px;">
+    
+    <a href="{% url 'mensajeria' %}" class="text-decoration-none text-muted small mb-3 d-inline-block"><i class="bi bi-arrow-left"></i> Volver a la bandeja</a>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-white border-bottom pt-4 px-4 pb-3">
+            <h4 class="fw-bold text-dark mb-3">{{ mensaje.asunto }}</h4>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                        <span class="fw-bold text-primary">{{ mensaje.remitente.user.first_name|first }}{{ mensaje.remitente.user.last_name|first }}</span>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark m-0">{{ mensaje.remitente.user.get_full_name }}</div>
+                        <div class="small text-muted">Para: {% if es_receptor %}Mí{% else %}{{ mensaje.destinatario.user.get_full_name }}{% endif %}</div>
+                    </div>
+                </div>
+                <div class="text-end text-muted small">
+                    <i class="bi bi-clock"></i> {{ mensaje.fecha_envio|date:"d \d\e F, Y - H:i" }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-4 bg-light">
+            <div class="text-dark" style="font-size: 0.95rem; line-height: 1.6;">
+                {{ mensaje.cuerpo|linebreaks }}
+            </div>
+        </div>
+
+        {% if mensaje.adjunto %}
+        <div class="card-footer bg-white border-top p-4">
+            <h6 class="small fw-bold text-muted mb-3"><i class="bi bi-paperclip"></i> Archivos Adjuntos</h6>
+            <a href="{{ mensaje.adjunto.url }}" target="_blank" class="btn btn-outline-secondary rounded-3 px-4 shadow-sm">
+                <i class="bi bi-file-earmark-arrow-down-fill text-primary"></i> Descargar Documento
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

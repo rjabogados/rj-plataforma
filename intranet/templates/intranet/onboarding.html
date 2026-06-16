@@ -1,0 +1,158 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="bi bi-person-lines-fill text-primary"></i> Radar de Onboarding</h3>
+            <p class="text-muted mb-0">Monitor de inducción, accesos y capacitación para nuevos asesores.</p>
+        </div>
+        <button class="btn btn-success fw-bold shadow-sm px-4 rounded-pill">
+            <i class="bi bi-person-plus-fill"></i> Iniciar Nuevo Onboarding
+        </button>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100 border-start border-primary border-4">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="p-3 bg-primary bg-opacity-10 rounded-circle me-3"><i class="bi bi-people-fill text-primary fs-3"></i></div>
+                    <div>
+                        <h3 class="fw-black text-dark mb-0 fw-bold">12</h3>
+                        <span class="text-muted small fw-bold">En Proceso de Inducción</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100 border-start border-warning border-4">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="p-3 bg-warning bg-opacity-10 rounded-circle me-3"><i class="bi bi-hourglass-split text-warning fs-3"></i></div>
+                    <div>
+                        <h3 class="fw-black text-dark mb-0 fw-bold">03</h3>
+                        <span class="text-muted small fw-bold">Cuellos de Botella (Retrasados)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-success text-white h-100 shadow-sm">
+                <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="fw-black mb-0 fw-bold">85%</h3>
+                        <span class="text-white-50 small fw-bold">Tasa de Graduación (Mes)</span>
+                    </div>
+                    <i class="bi bi-award-fill opacity-50 display-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-0 px-4 d-flex justify-content-between">
+                    <h5 class="fw-bold text-dark"><i class="bi bi-funnel-fill text-primary me-2"></i> Flujo de Nuevos Ingresos</h5>
+                    <span class="badge bg-light text-dark border">Semana Actual</span>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <div class="d-flex align-items-center p-3 border rounded-4 mb-3 bg-light transition-hover">
+                        <div class="bg-white border rounded-circle d-flex justify-content-center align-items-center fw-bold text-primary shadow-sm me-3" style="width: 50px; height: 50px;">
+                            MV
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold text-dark">Mateo Vargas <span class="badge bg-white text-secondary border ms-2">Cartera: Castigo</span></span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">Fase 2: Sistemas</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-primary rounded-pill" role="progressbar" style="width: 50%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center p-3 border rounded-4 mb-3 bg-white border-warning transition-hover">
+                        <div class="bg-light border rounded-circle d-flex justify-content-center align-items-center fw-bold text-secondary me-3" style="width: 50px; height: 50px;">
+                            SL
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold text-dark">Sofía Linares <span class="badge bg-white text-secondary border ms-2">Cartera: Extrajudicial</span></span>
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Fase 1: Administración</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-warning rounded-pill" role="progressbar" style="width: 20%;"></div>
+                            </div>
+                            <small class="text-danger mt-1 d-block"><i class="bi bi-exclamation-triangle-fill"></i> Falta firma de contrato y alta de usuario.</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center p-3 border rounded-4 bg-light transition-hover">
+                        <div class="bg-success text-white rounded-circle d-flex justify-content-center align-items-center fw-bold shadow-sm me-3" style="width: 50px; height: 50px;">
+                            <i class="bi bi-check-lg fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold text-dark">Diego Torres <span class="badge bg-white text-secondary border ms-2">Cartera: Judicial</span></span>
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success">Fase 3: Graduado</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100 border-top border-primary border-4">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center fw-bold mx-auto mb-2 shadow-sm" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            MV
+                        </div>
+                        <h5 class="fw-bold text-dark mb-0">Mateo Vargas</h5>
+                        <p class="text-muted small">Asesor de Cobranzas - Ingreso: 08 Jun 2026</p>
+                    </div>
+
+                    <h6 class="fw-bold text-secondary text-uppercase small mb-3">Lista de Tareas de Inducción</h6>
+                    
+                    <div class="list-group list-group-flush border-top border-bottom">
+                        <label class="list-group-item d-flex align-items-center py-3 px-0 border-0 text-muted bg-transparent">
+                            <input class="form-check-input flex-shrink-0 me-3 fs-5" type="checkbox" checked disabled>
+                            <span class="text-decoration-line-through">Firma de contrato laboral (Part-time)</span>
+                        </label>
+                        
+                        <label class="list-group-item d-flex align-items-center py-3 px-0 border-0 text-muted bg-transparent">
+                            <input class="form-check-input flex-shrink-0 me-3 fs-5" type="checkbox" checked disabled>
+                            <span class="text-decoration-line-through">Creación de usuario en Intranet</span>
+                        </label>
+
+                        <label class="list-group-item d-flex align-items-center py-3 px-0 border-0 bg-transparent">
+                            <input class="form-check-input border-secondary flex-shrink-0 me-3 fs-5" type="checkbox">
+                            <span class="fw-bold text-dark">Configuración de correo y dialer (Llamadas)</span>
+                        </label>
+
+                        <label class="list-group-item d-flex align-items-center py-3 px-0 border-0 bg-transparent">
+                            <input class="form-check-input border-danger flex-shrink-0 me-3 fs-5" type="checkbox">
+                            <span class="fw-bold text-danger">Taller: Tipificaciones (Judicial, Extrajudicial, Castigo)</span>
+                        </label>
+
+                        <label class="list-group-item d-flex align-items-center py-3 px-0 border-0 bg-transparent">
+                            <input class="form-check-input border-secondary flex-shrink-0 me-3 fs-5" type="checkbox">
+                            <span class="fw-bold text-dark">Presentación oficial con el equipo de coordinación</span>
+                        </label>
+                    </div>
+
+                    <div class="mt-4 pt-3 text-center">
+                        <button class="btn btn-outline-primary fw-bold w-100 rounded-pill"><i class="bi bi-envelope-paper"></i> Enviar Recordatorio al Supervisor</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

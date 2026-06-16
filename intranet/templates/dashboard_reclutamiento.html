@@ -1,0 +1,177 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid p-4">
+    
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold m-0" style="color: var(--rj-azul);"><i class="bi bi-graph-up-arrow me-2"></i>Dashboard de Reclutamiento</h2>
+            <p class="text-muted small mb-0">Análisis de embudo y rendimiento de campañas en tiempo real.</p>
+        </div>
+        
+        <div class="bg-white p-2 rounded-3 shadow-sm border d-flex align-items-center gap-2">
+            <span class="small fw-bold text-muted ms-2">Período:</span>
+            <input type="date" id="filtro-inicio" class="form-control form-control-sm border-primary" style="max-width: 130px;">
+            <span class="small text-muted">hasta</span>
+            <input type="date" id="filtro-fin" class="form-control form-control-sm border-primary" style="max-width: 130px;">
+            <button class="btn btn-sm btn-primary px-3 shadow-sm" onclick="cargarMetricas()">
+                <i class="bi bi-search"></i> Filtrar
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #183D74 0%, #1e4b8f 100%); color: white;">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 fw-bold mb-1">TOTAL CANDIDATOS</h6>
+                        <h1 class="fw-bold mb-0 display-5" id="kpi-total">0</h1>
+                    </div>
+                    <div class="fs-1 text-white-50"><i class="bi bi-people-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-success fw-bold mb-1">ENTREVISTAS AGENDADAS</h6>
+                        <h1 class="fw-bold mb-0 display-5 text-dark" id="kpi-agendados">0</h1>
+                    </div>
+                    <div class="fs-1 text-success opacity-50"><i class="bi bi-calendar-check-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-danger fw-bold mb-1">DESCARTADOS</h6>
+                        <h1 class="fw-bold mb-0 display-5 text-dark" id="kpi-descartados">0</h1>
+                    </div>
+                    <div class="fs-1 text-danger opacity-50"><i class="bi bi-archive-fill"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h6 class="fw-bold" style="color: var(--rj-azul);">Rendimiento por Sede</h6>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="graficoSedes" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-5 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h6 class="fw-bold" style="color: var(--rj-azul);">Estado del Embudo</h6>
+                </div>
+                <div class="card-body p-4 d-flex justify-content-center">
+                    <canvas id="graficoEstados" height="200" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Variables globales para destruir los gráficos antes de actualizarlos
+    let chartSedes = null;
+    let chartEstados = null;
+
+    // Colores corporativos base
+    const colores = ['#183D74', '#F4A21D', '#198754', '#0dcaf0', '#6c757d', '#dc3545'];
+
+    function cargarMetricas() {
+        const fechaInicio = document.getElementById('filtro-inicio').val;
+        const fechaFin = document.getElementById('filtro-fin').val;
+        
+        let url = '/api/metricas-dashboard/?';
+        if (fechaInicio) url += `inicio=${fechaInicio}&`;
+        if (fechaFin) url += `fin=${fechaFin}`;
+
+        fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                // 1. Actualizar KPIs numéricos
+                document.getElementById('kpi-total').innerText = data.kpis.total;
+                document.getElementById('kpi-agendados').innerText = data.kpis.agendados;
+                document.getElementById('kpi-descartados').innerText = data.kpis.descartados;
+
+                // 2. Dibujar Gráfico de Sedes (Barras)
+                const sedesLabels = data.grafico_sedes.map(item => item.sede || 'No Asignado');
+                const sedesTotales = data.grafico_sedes.map(item => item.total);
+                dibujarGraficoSedes(sedesLabels, sedesTotales);
+
+                // 3. Dibujar Gráfico de Estados (Dona)
+                const estadosLabels = data.grafico_estados.map(item => item.estado_candidato);
+                const estadosTotales = data.grafico_estados.map(item => item.total);
+                dibujarGraficoEstados(estadosLabels, estadosTotales);
+            }
+        });
+    }
+
+    function dibujarGraficoSedes(labels, data) {
+        const ctx = document.getElementById('graficoSedes').getContext('2d');
+        if (chartSedes) chartSedes.destroy(); // Limpiar gráfico viejo
+
+        chartSedes = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Candidatos',
+                    data: data,
+                    backgroundColor: '#F4A21D', // Tu amarillo/naranja RJ
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    function dibujarGraficoEstados(labels, data) {
+        const ctx = document.getElementById('graficoEstados').getContext('2d');
+        if (chartEstados) chartEstados.destroy(); // Limpiar gráfico viejo
+
+        chartEstados = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colores,
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%', // Grosor de la dona
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    }
+
+    // Cargar métricas globales al abrir la página por primera vez
+    document.addEventListener("DOMContentLoaded", cargarMetricas);
+</script>
+{% endblock %}

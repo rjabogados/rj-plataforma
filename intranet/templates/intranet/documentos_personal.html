@@ -1,0 +1,86 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <h4 class="fw-bold text-dark mb-0"><i class="bi bi-folder-check text-primary"></i> Mi Bóveda Virtual</h4>
+        <p class="text-muted small">Repositorio oficial de tus contratos, boletas y documentos legales de RJ Abogados.</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success rounded-4 border-0 shadow-sm mb-4">
+                <i class="bi bi-check-circle-fill me-2"></i> {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        {% for doc in documentos %}
+        <div class="col-md-6 col-xl-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100 {% if doc.estado == 'PENDIENTE' %}border-start border-4 border-warning{% else %}border-start border-4 border-success{% endif %}">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-light rounded-3 p-2">
+                            <i class="bi bi-file-earmark-pdf-fill text-danger fs-3"></i>
+                        </div>
+                        {% if doc.estado == 'PENDIENTE' %}
+                            <span class="badge bg-warning text-dark rounded-pill px-3">Por Firmar</span>
+                        {% else %}
+                            <span class="badge bg-success rounded-pill px-3">Completado</span>
+                        {% endif %}
+                    </div>
+
+                    <h6 class="fw-bold text-dark mb-1">{{ doc.titulo }}</h6>
+                    <p class="text-muted small mb-4">Emitido el: {{ doc.fecha_emision|date:"d \d\e F, Y" }}</p>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ doc.archivo_pdf.url }}" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill fw-bold">
+                            <i class="bi bi-eye"></i> Revisar Documento
+                        </a>
+                        
+                        {% if doc.estado == 'PENDIENTE' %}
+                        <button class="btn btn-primary btn-sm rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#modalFirma{{ doc.id }}">
+                            <i class="bi bi-pen-fill"></i> Firmar Digitalmente
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalFirma{{ doc.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow-lg">
+                    <div class="modal-header border-0 pb-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4 text-center">
+                        <div class="display-4 text-primary mb-3"><i class="bi bi-shield-lock"></i></div>
+                        <h5 class="fw-bold">Confirmación de Firma</h5>
+                        <p class="text-muted small">Al presionar el botón, estarás estampando tu firma digital en el documento <strong>{{ doc.titulo }}</strong>. Se registrará tu dirección IP y marca de tiempo como rastro legal.</p>
+                        
+                        <div class="bg-light p-3 rounded-3 mb-4 text-start">
+                            <div class="small"><strong>Firmante:</strong> {{ user.first_name }} {{ user.last_name }}</div>
+                            <div class="small"><strong>DNI:</strong> {{ user.username }}</div>
+                        </div>
+
+                        <form method="POST" action="{% url 'firmar_documento' doc.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2 shadow">
+                                Acepto y Firmo el Documento
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="display-1 text-light"><i class="bi bi-archive"></i></div>
+            <p class="text-muted">Aún no tienes documentos disponibles para revisión.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

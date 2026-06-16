@@ -1,0 +1,209 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="bi bi-people-fill text-info"></i> Directorio de Personal</h3>
+            <p class="text-muted mb-0">Gestión de usuarios, accesos y asignación de carteras.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-success fw-bold shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalSubirExcel">
+                <i class="bi bi-file-earmark-excel"></i> Importar Excel
+            </button>
+            <button type="button" class="btn btn-info text-white fw-bold shadow-sm px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalNuevoColaborador">
+                <i class="bi bi-person-plus-fill"></i> Nuevo Colaborador
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 bg-white mb-4 border-start border-info border-4">
+        <div class="card-body p-3">
+            <form method="GET" action="{% url 'colaboradores' %}" class="d-flex gap-2 align-items-center">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-secondary"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-secondary bg-light" placeholder="Buscar por DNI, Nombres o Apellidos..." value="{{ query }}">
+                </div>
+                <button type="submit" class="btn btn-dark fw-bold px-4 shadow-sm">Buscar</button>
+                {% if query %}
+                <a href="{% url 'colaboradores' %}" class="btn btn-outline-danger fw-bold shadow-sm">Limpiar</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 bg-white">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-secondary small">
+                        <tr>
+                            <th class="ps-4">Usuario / Intranet</th>
+                            <th>Nombres y Apellidos</th>
+                            <th>DNI</th>
+                            <th>Cartera / Negocio</th>
+                            <th>Rol y Horario</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in colaboradores %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-primary">{{ c.user.username }}</div>
+                                <div class="small text-muted">{{ c.user.email|default:"Sin correo" }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ c.user.last_name }}, {{ c.user.first_name }}</div>
+                                <div class="small text-muted">Ingreso: {{ c.fecha_ingreso|date:"d M Y" }}</div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ c.dni }}</span></td>
+                            <td>
+                                <span class="fw-bold text-dark">{{ c.negocio.nombre|default:"-- Sin Cartera --" }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-2">{{ c.get_rol_display }}</span>
+                                <div class="small text-muted mt-1"><i class="bi bi-clock"></i> {{ c.get_tipo_horario_display }}</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{% url 'editar_colaborador' c.id %}" class="btn btn-sm btn-light border shadow-sm" title="Editar">
+                                    <i class="bi bi-pencil-square text-primary"></i>
+                                </a>
+                                <a href="{% url 'eliminar_colaborador' c.id %}" class="btn btn-sm btn-light border shadow-sm ms-1" onclick="return confirm('¿Seguro que deseas eliminar a este colaborador de la plataforma?')" title="Eliminar">
+                                    <i class="bi bi-trash text-danger"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-people opacity-50 display-1 mb-3 d-block"></i>
+                                    <h5 class="fw-bold">No se encontraron colaboradores</h5>
+                                    <p>Intenta con otra búsqueda o registra un nuevo miembro del equipo.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNuevoColaborador" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-info text-white border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill"></i> Registrar Nuevo Colaborador</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'colaboradores' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4 bg-light">
+                    
+                    <h6 class="fw-bold text-info mb-3 border-bottom pb-2">1. Credenciales de Acceso</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Usuario de Intranet (Opcional)</label>
+                            <input type="text" class="form-control border-secondary" name="username" placeholder="nombre.apellido">
+                            <div class="form-text" style="font-size: 0.75rem;">Si lo dejas vacío, el sistema creará uno.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Contraseña (Opcional)</label>
+                            <input type="text" class="form-control border-secondary" name="password" placeholder="Escribe la clave">
+                            <div class="form-text" style="font-size: 0.75rem;">Si lo dejas vacío, será su DNI.</div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-info mb-3 border-bottom pb-2">2. Datos Personales</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Nombres</label>
+                            <input type="text" class="form-control border-secondary" name="nombres" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Apellidos</label>
+                            <input type="text" class="form-control border-secondary" name="apellidos" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">DNI</label>
+                            <input type="text" class="form-control border-secondary" name="dni" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Correo Electrónico</label>
+                            <input type="email" class="form-control border-secondary" name="correo">
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-info mb-3 border-bottom pb-2">3. Puesto y Horario</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Cartera / Negocio</label>
+                            <select class="form-select border-secondary" name="negocio">
+                                <option value="">-- Sin asignar --</option>
+                                {% for n in negocios %}
+                                <option value="{{ n.id }}">{{ n.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Rol en la empresa</label>
+                            <select class="form-select border-secondary" name="rol" required>
+                                {% for key, value in roles %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark">Tipo Horario</label>
+                            <select class="form-select border-secondary" name="tipo_horario" required>
+                                {% for key, value in tipos_horario %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark">Hora Ingreso (Ref.)</label>
+                            <input type="time" class="form-control border-secondary" name="hora_ingreso">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark">Fecha de Ingreso</label>
+                            <input type="date" class="form-control border-secondary" name="fecha_ingreso" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-white rounded-bottom-4">
+                    <button type="button" class="btn btn-light fw-bold px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white fw-bold px-4 shadow-sm"><i class="bi bi-save-fill"></i> Guardar Colaborador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalSubirExcel" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-success text-white border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel"></i> Carga Masiva (Excel)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'mapear_excel' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4 text-center">
+                    <i class="bi bi-cloud-arrow-up text-success display-1 mb-3"></i>
+                    <h6 class="fw-bold text-dark">Sube tu archivo .xlsx</h6>
+                    <p class="text-muted small">El sistema leerá las cabeceras de tu archivo en el siguiente paso para que las relaciones con los campos de la base de datos.</p>
+                    <input class="form-control form-control-lg border-success bg-light" type="file" name="archivo_excel" accept=".xlsx" required>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-light fw-bold px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4 shadow-sm">Siguiente Paso <i class="bi bi-arrow-right"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

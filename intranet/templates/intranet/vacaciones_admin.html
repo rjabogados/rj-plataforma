@@ -1,0 +1,69 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark"><i class="bi bi-airplane-engines text-primary"></i> Control de Vacaciones (RRHH)</h3>
+            <p class="text-muted">Gestiona las solicitudes de descanso físico y beneficios de ley del personal operativo.</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-4">Colaborador</th>
+                            <th>Fechas Solicitadas</th>
+                            <th>Días Totales</th>
+                            <th>Estado Actual</th>
+                            <th class="text-center">Resolución de RRHH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in solicitudes %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">
+                                {{ s.colaborador.user.first_name }} {{ s.colaborador.user.last_name }}
+                                <span class="d-block text-muted fw-normal small">{{ s.colaborador.get_rol_display }}</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ s.fecha_inicio|date:"d/m/Y" }}</span> al <span class="fw-bold">{{ s.fecha_fin|date:"d/m/Y" }}</span>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ s.dias_solicitados }} días</span></td>
+                            <td>
+                                {% if s.estado == 'PENDIENTE' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> En Revisión</span>
+                                {% elif s.estado == 'APROBADO' %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Aprobado</span>
+                                {% else %}
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> Rechazado</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center" style="min-width: 280px;">
+                                {% if s.estado == 'PENDIENTE' %}
+                                    <form method="POST" class="d-flex gap-2 justify-content-center">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="solicitud_id" value="{{ s.id }}">
+                                        <input type="text" class="form-control form-control-sm" name="comentarios" placeholder="Motivo (Opcional)" style="max-width: 130px;">
+                                        <button type="submit" name="gestionar_vac" class="btn btn-sm btn-success fw-bold" onclick="this.form.elements['estado'].value='APROBADO'">Aprobar</button>
+                                        <button type="submit" name="gestionar_vac" class="btn btn-sm btn-danger fw-bold" onclick="this.form.elements['estado'].value='RECHAZADO'">Rechazar</button>
+                                        <input type="hidden" name="estado" value="">
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small d-block">Resuelto por: {{ s.revisado_por.first_name }}</span>
+                                    <span class="text-secondary small fst-italic">"{{ s.comentarios_rrhh|default:'Sin comentarios' }}"</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center py-5 text-muted">No hay solicitudes de vacaciones pendientes por revisar.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

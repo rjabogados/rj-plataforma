@@ -1,0 +1,191 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div id="pantallaCarga" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 255, 255, 0.95); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+    <div class="spinner-border text-success mb-3" style="width: 4rem; height: 4rem; border-width: 0.4rem;" role="status"></div>
+    <h2 class="fw-bold text-dark">Procesando Base de Datos...</h2>
+    <p class="text-muted fs-5">Configurando usuarios, permisos y carteras operativas.<br>Por favor, <strong class="text-danger">no cierres ni actualices</strong> esta ventana.</p>
+</div>
+
+<div class="container-fluid" style="max-width: 1000px;">
+    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white border-start border-warning border-4">
+        <div class="card-body p-4">
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-shuffle text-warning"></i> Asistente de Mapeo de Columnas</h4>
+            <p class="text-muted mb-0">Empareja el orden de tu archivo de Excel con los campos del sistema para asegurar una carga limpia de la base de personal.</p>
+        </div>
+    </div>
+
+    <form method="POST" action="{% url 'procesar_excel_mapeado' %}" id="formMapeo" onsubmit="iniciarCarga()">
+        {% csrf_token %}
+        
+        <div class="row g-4">
+            <div class="col-100">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-vcard text-primary"></i> Identificadores de Acceso</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Número de DNI / Documento</label>
+                            <select class="form-select border-secondary" name="prop_dni" required>
+                                <option value="">-- Selecciona columna (Obligatorio) --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Correo Institucional <span class="text-warning fw-normal">(Opcional)</span></label>
+                            <select class="form-select border-secondary" name="prop_correo">
+                                <option value="">-- No incluir (Quedará en blanco) --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-100">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-4 border-start border-primary border-3">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-person-fill text-primary"></i> Datos de Identidad</h5>
+                        <div class="form-check form-switch bg-light px-3 py-2 rounded-3 border d-inline-flex align-items-center m-0">
+                            <input class="form-check-input fs-5 m-0 me-2" type="checkbox" id="separarNombres" name="separar_nombres" value="1" onchange="toggleNombres()">
+                            <label class="form-check-label small fw-bold text-dark" for="separarNombres">Nombres/Apellidos separados</label>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6" id="contenedor_nombres">
+                            <label class="form-label small fw-bold text-muted" id="label_nombres">Apellidos y Nombres (Columna Única)</label>
+                            <select class="form-select border-secondary" name="prop_nombres" id="select_nombres" required>
+                                <option value="">-- Selecciona columna --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="contenedor_apellidos" style="display: none;">
+                            <label class="form-label small fw-bold text-muted">Apellidos del Trabajador</label>
+                            <select class="form-select border-primary" name="prop_apellidos" id="select_apellidos">
+                                <option value="">-- Selecciona columna --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-100">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-briefcase-fill text-primary"></i> Configuración Laboral</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Puesto Real / Rol Asignado</label>
+                            <select class="form-select border-secondary" name="prop_rol" required>
+                                <option value="">-- Selecciona columna --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Tipo de Horario <span class="text-warning fw-normal">(Opcional)</span></label>
+                            <select class="form-select border-secondary" name="prop_tipo_horario">
+                                <option value="">-- Asignar por defecto (T1) --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-100">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-4 border-start border-success border-3">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-diagram-3-fill text-success"></i> Estructura de Operaciones</h5>
+                        <div class="form-check form-switch bg-light px-3 py-2 rounded-3 border d-inline-flex align-items-center m-0">
+                            <input class="form-check-input fs-5 m-0 me-2" type="checkbox" id="tieneSubcartera" name="tiene_subcartera" value="1" onchange="toggleSubcartera()">
+                            <label class="form-check-label small fw-bold text-dark" for="tieneSubcartera">Esta Cartera maneja Sub-Campañas</label>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6" id="contenedor_cartera">
+                            <label class="form-label small fw-bold text-muted">Cartera / Campaña Principal</label>
+                            <select class="form-select border-secondary" name="prop_cartera" required>
+                                <option value="">-- Selecciona columna --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="contenedor_subcartera" style="display: none;">
+                            <label class="form-label small fw-bold text-muted">Sub-Cartera / Segmento</label>
+                            <select class="form-select border-success" name="prop_subcartera" id="select_subcartera">
+                                <option value="">-- Selecciona columna --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-top text-end mb-5">
+            <a href="{% url 'colaboradores' %}" class="btn btn-light fw-bold px-4 me-2" id="btnCancelar">Cancelar</a>
+            <button type="submit" class="btn btn-success fw-bold px-5 shadow-sm" id="btnProcesar"><i class="bi bi-cloud-arrow-up-fill"></i> Procesar Base de Personal</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function iniciarCarga() {
+        // Mostrar la pantalla blanca con el indicador dando vueltas
+        document.getElementById('pantallaCarga').style.display = 'flex';
+        // Bloquear el botón para evitar doble envío
+        document.getElementById('btnProcesar').disabled = true;
+        document.getElementById('btnProcesar').innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Subiendo...';
+        document.getElementById('btnCancelar').style.pointerEvents = 'none';
+        document.getElementById('btnCancelar').classList.add('text-muted');
+    }
+
+    function toggleNombres() {
+        const isChecked = document.getElementById('separarNombres').checked;
+        if (isChecked) {
+            document.getElementById('contenedor_apellidos').style.display = 'block';
+            document.getElementById('contenedor_nombres').className = 'col-md-6';
+            document.getElementById('select_apellidos').setAttribute('required', 'required');
+            document.getElementById('label_nombres').innerText = 'Nombres del Trabajador';
+        } else {
+            document.getElementById('contenedor_apellidos').style.display = 'none';
+            document.getElementById('contenedor_nombres').className = 'col-md-12';
+            document.getElementById('select_apellidos').removeAttribute('required');
+            document.getElementById('label_nombres').innerText = 'Apellidos y Nombres (Columna Única)';
+        }
+    }
+
+    function toggleSubcartera() {
+        const isChecked = document.getElementById('tieneSubcartera').checked;
+        if (isChecked) {
+            document.getElementById('contenedor_subcartera').style.display = 'block';
+            document.getElementById('contenedor_cartera').className = 'col-md-6';
+            document.getElementById('select_subcartera').setAttribute('required', 'required');
+        } else {
+            document.getElementById('contenedor_subcartera').style.display = 'none';
+            document.getElementById('contenedor_cartera').className = 'col-md-12';
+            document.getElementById('select_subcartera').removeAttribute('required');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        toggleNombres();
+        toggleSubcartera();
+    });
+</script>
+{% endblock %}

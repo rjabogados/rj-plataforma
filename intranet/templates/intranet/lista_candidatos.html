@@ -1,0 +1,452 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+
+<style>
+    /* Estilos para las pestañas del modal */
+    .nav-tabs .nav-link.active { border-top: 3px solid var(--rj-azul); color: var(--rj-azul); font-weight: bold; }
+    .nav-tabs .nav-link { color: #6c757d; }
+    .historial-item { border-left: 2px solid var(--rj-amarillo); padding-left: 10px; margin-bottom: 10px; }
+</style>
+
+<div class="container-fluid p-4">
+    
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold m-0" style="color: var(--rj-azul);">Base de Talentos RJ</h2>
+            <p class="text-muted small mb-0">Matriz con IA de limpieza, historial y auditoría de contactos.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive p-3">
+                <table id="tablaCandidatosPro" class="table table-hover align-middle table-rj w-100">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID Matriz</th>
+                            <th>Nombre Completo</th>
+                            <th>Documento</th>
+                            <th>Teléfono</th>
+                            <th>Sede</th>
+                            <th>Canal</th>
+                            <th>Estado Actual</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in candidatos %}
+                        <tr id="row-{{ c.id }}" class="{% if c.estado_candidato == 'No interesados' %}opacity-50{% endif %}">
+                            
+                            <td class="fw-bold text-secondary">
+                                M-{{ c.id|stringformat:"05d" }}
+                            </td>
+                            
+                            <td class="fw-bold text-dark text-capitalize">{{ c.nombre }}</td>
+                            
+                            <td class="font-monospace text-secondary">
+                                {% if c.documento %}{{ c.documento }}{% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            
+                            <td>
+                                <a href="#" class="btn-wsap text-success text-decoration-none fw-bold d-flex align-items-center gap-1"
+                                   data-telefono="{{ c.telefono }}" data-nombre="{{ c.nombre }}">
+                                    <i class="bi bi-whatsapp fs-5"></i> {{ c.telefono }}
+                                </a>
+                            </td>
+                            
+                            <td>
+                                <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt-fill text-danger"></i> {{ c.sede|default:"No Asignado" }}</span>
+                            </td>
+                            
+                            <td>
+                                <span class="small text-muted">{{ c.canal|default:"No Asignado" }}</span>
+                            </td>
+                            
+                            <td>
+                                {% if c.estado_candidato == 'Nuevo' or not c.estado_candidato %}
+                                    <span class="badge rounded-pill px-3 py-2" style="background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1;">
+                                        <i class="bi bi-person-plus-fill me-1"></i> Nuevo
+                                    </span>
+                                    
+                                {% elif c.estado_candidato == 'Contactado' %}
+                                    <span class="badge rounded-pill px-3 py-2" style="background-color: #e0f2fe; color: var(--rj-azul); border: 1px solid #bae6fd;">
+                                        <i class="bi bi-telephone-outbound-fill me-1"></i> Contactado
+                                    </span>
+                                    
+                                {% elif c.estado_candidato == 'Precalificado' %}
+                                    <span class="badge rounded-pill px-3 py-2" style="background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a;">
+                                        <i class="bi bi-star-fill me-1"></i> Precalificado
+                                    </span>
+                                    
+                                {% elif c.estado_candidato == 'Entrevista agendada' %}
+                                    <span class="badge rounded-pill px-3 py-2" style="background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;">
+                                        <i class="bi bi-calendar2-check-fill me-1"></i> Agendado
+                                    </span>
+                                    
+                                {% elif c.estado_candidato == 'No apto' %}
+                                    <span class="badge rounded-pill px-3 py-2" style="background-color: #fee2e2; color: var(--rj-rojo); border: 1px solid #fecaca;">
+                                        <i class="bi bi-x-circle-fill me-1"></i> No apto
+                                    </span>
+                                    
+                                {% elif c.estado_candidato == 'No interesados' %}
+                                    <span class="badge rounded-pill px-3 py-2 bg-secondary text-white shadow-sm">
+                                        <i class="bi bi-archive-fill me-1"></i> No interesados
+                                    </span>
+                                    
+                                {% else %}
+                                    <span class="badge rounded-pill px-3 py-2 bg-light text-dark border">
+                                        {{ c.estado_candidato }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end">
+                                <div class="btn-group shadow-sm">
+                                    <button class="btn btn-sm btn-light border text-primary" 
+                                            onclick="abrirModalEdicion('{{ c.id }}')" title="Ver Perfil y Auditar">
+                                        <i class="bi bi-folder2-open"></i> Abrir
+                                    </button>
+                                    <button class="btn btn-sm btn-light border text-danger" 
+                                            onclick="descartarCandidato('{{ c.id }}')" title="Mover a No Interesados">
+                                        <i class="bi bi-archive"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEdicion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white" style="background-color: var(--rj-azul);">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-badge me-2"></i> Expediente del Candidato</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body bg-light p-0">
+                <ul class="nav nav-tabs px-3 pt-3 bg-white" id="perfilTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-datos">Datos y Limpieza</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-historial">Línea de Tiempo</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-observaciones">Gestión de Asesores</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content p-4">
+                    
+                    <div class="tab-pane fade show active" id="tab-datos">
+                        <form id="formEdicionCandidato">
+                            <input type="hidden" id="edit-id">
+                            
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">Nombre (Solo letras)</label>
+                                    <input type="text" class="form-control" id="edit-nombre" 
+                                           oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">ID Matriz</label>
+                                    <input type="text" class="form-control bg-light" id="edit-id-matriz" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">Documento (DNI/CE - Solo Números)</label>
+                                    <input type="text" class="form-control font-monospace" id="edit-documento">
+                                    <div id="alerta-mini-ia" class="small text-danger mt-1 fw-bold d-none"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">Teléfono Móvil</label>
+                                    <input type="text" class="form-control font-monospace" id="edit-telefono" 
+                                           oninput="this.value = this.value.replace(/[^0-9+]/g, '')" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">Estado</label>
+                                    <select class="form-select border-primary" id="edit-estado">
+                                        <option value="Nuevo">Nuevo</option>
+                                        <option value="Contactado">Contactado</option>
+                                        <option value="Precalificado">Precalificado</option>
+                                        <option value="Entrevista agendada">Entrevista agendada</option>
+                                        <option value="No apto">No apto</option>
+                                        <option value="No interesados">No interesados</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">Sede</label>
+                                    <select class="form-select" id="edit-sede">
+                                        <option value="No Asignado">No Asignado</option>
+                                        <option value="Lince">Lince</option>
+                                        <option value="San Isidro">San Isidro</option>
+                                        <option value="Trujillo">Trujillo</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">Canal</label>
+                                    <input type="text" class="form-control" id="edit-canal" placeholder="Ej. Meta Ads">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-historial">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h6 class="fw-bold">Historial de Cambios</h6>
+                            <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-plus-circle"></i> Agregar Fecha</button>
+                        </div>
+                        <div class="historial-item">
+                            <div class="small fw-bold text-dark">Ingreso a matriz (Meta Ads)</div>
+                            <div class="small text-muted"><input type="date" class="form-control form-control-sm w-auto d-inline-block border-0 bg-transparent p-0" value="2026-05-10"></div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-observaciones">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Registrar Interacción</label>
+                            <div class="input-group input-group-sm mb-2">
+                                <select class="form-select" style="max-width: 150px;" id="nuevo-asesor">
+                                    <option value="">Asesor...</option>
+                                    <option value="Pierina">Pierina</option>
+                                    <option value="Beatriz">Beatriz</option>
+                                    <option value="Jacqueline">Jacqueline</option>
+                                    <option value="Monica">Monica</option>
+                                </select>
+                                <select class="form-select" style="max-width: 130px;">
+                                    <option value="Llamada">Llamada</option>
+                                    <option value="WhatsApp">WhatsApp</option>
+                                </select>
+                                <input type="text" class="form-control" placeholder="Detalle de la comunicación...">
+                                <button class="btn btn-success"><i class="bi bi-send-fill"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Observaciones Generales</label>
+                            <textarea class="form-control" id="edit-observaciones" rows="3" placeholder="Ej. El candidato solicita turno mañana..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-white">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary px-4 shadow-sm" onclick="guardarEdicion()">
+                    <i class="bi bi-floppy-fill me-1"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    // =========================================================
+    // 1. CONFIGURACIÓN DE SEGURIDAD DJANGO (Token CSRF)
+    // =========================================================
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // =========================================================
+    // 2. INICIALIZACIÓN DE DATATABLES Y WHATSAPP
+    // =========================================================
+    $(document).ready(function() {
+        $('#tablaCandidatosPro').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
+            order: [[0, 'desc']]
+        });
+
+        // Evento para abrir WhatsApp Web dinámico
+        $('.btn-wsap').on('click', function(e) {
+            e.preventDefault();
+            const telefono = $(this).data('telefono').toString().replace(/\s+/g, '');
+            const nombre = $(this).data('nombre');
+            let mensaje = `Hola ${nombre}, te saludamos de RJ Abogados...`;
+            window.open(`https://wa.me/51${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank');
+        });
+    });
+
+    function abrirModalEdicion(id) {
+    console.log("Buscando en base de datos al candidato ID:", id);
+    
+    fetch(`/api/obtener-candidato/${id}/`)
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            try {
+                // Inyectamos los datos
+                $('#edit-id').val(data.id);
+                $('#edit-id-matriz').val("M-" + String(data.id).padStart(5, '0'));
+                $('#edit-nombre').val(data.nombre);
+                $('#edit-documento').val(data.documento);
+                $('#edit-telefono').val(data.telefono);
+                $('#edit-estado').val(data.estado);
+                $('#edit-sede').val(data.sede);
+                $('#edit-canal').val(data.canal);
+                
+                // Limpiamos alertas
+                $('#alerta-mini-ia').addClass('d-none');
+                $('#edit-documento').removeClass('is-invalid is-valid');
+                
+                // LA SOLUCIÓN MAGICA: Crear y mostrar el modal en este instante exacto
+                const modalElement = document.getElementById('modalEdicion');
+                const ventanaModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                ventanaModal.show();
+                
+            } catch(errorPintando) {
+                alert("Error dibujando la ventana flotante: " + errorPintando.message);
+                console.error(errorPintando);
+            }
+        } else {
+            alert("Django dice: " + data.error);
+        }
+    })
+    .catch(errorRed => {
+        alert("Hubo un error de conexión al servidor.");
+        console.error(errorRed);
+    });
+}
+
+    // =========================================================
+    // 3. LA "MINI-IA" DE LIMPIEZA Y VALIDACIÓN
+    // =========================================================
+    $('#edit-documento').on('input', function() {
+        let input = $(this);
+        let valorLimpio = input.val().replace(/[^0-9]/g, '');
+        input.val(valorLimpio);
+
+        let alertaDiv = $('#alerta-mini-ia');
+        
+        if (valorLimpio.length === 0) {
+            input.removeClass('is-invalid is-valid');
+            alertaDiv.addClass('d-none');
+            return;
+        }
+
+        if (valorLimpio.length === 9 && valorLimpio.startsWith('9')) {
+            input.addClass('is-invalid').removeClass('is-valid');
+            alertaDiv.text("⚠️ Parece un número de celular peruano, no un documento.");
+            alertaDiv.removeClass('d-none');
+        } else if (valorLimpio.length > 0 && valorLimpio.length < 8) {
+            input.addClass('is-invalid').removeClass('is-valid');
+            alertaDiv.text("⚠️ Faltan dígitos (DNI = 8, CE = 9).");
+            alertaDiv.removeClass('d-none');
+        } else if (valorLimpio.length === 8 || valorLimpio.length === 9) {
+            input.removeClass('is-invalid').addClass('is-valid');
+            alertaDiv.addClass('d-none');
+        } else if (valorLimpio.length > 9) {
+            input.addClass('is-invalid').removeClass('is-valid');
+            alertaDiv.text("⚠️ Demasiados dígitos para un documento.");
+            alertaDiv.removeClass('d-none');
+        }
+    });
+
+    // =========================================================
+    // 4. FUNCIONES REALES (FETCH A DJANGO)
+    // =========================================================
+    function guardarEdicion() {
+    if ($('#edit-documento').hasClass('is-invalid')) {
+        alert("Corrige el documento antes de guardar. La IA detectó un error.");
+        return;
+    }
+
+    const candidatoId = $('#edit-id').val();
+    const data = {
+        id: candidatoId,
+        nombre: $('#edit-nombre').val(),
+        documento: $('#edit-documento').val(),
+        telefono: $('#edit-telefono').val(),
+        estado: $('#edit-estado').val(),
+        sede: $('#edit-sede').val(),
+        canal: $('#edit-canal').val()
+    };
+
+    const btnGuardar = event.target;
+    const textoOriginal = btnGuardar.innerHTML;
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+    btnGuardar.disabled = true;
+
+    fetch('/api/actualizar-candidato/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            // Cerramos el modal de forma segura
+            const modalElement = document.getElementById('modalEdicion');
+            const ventanaModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            ventanaModal.hide();
+            
+            // Recargamos para ver los cambios
+            location.reload(); 
+        } else {
+            alert("Error al guardar: " + data.error);
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+    });
+}
+
+    function descartarCandidato(id) {
+        if(confirm("¿Enviar a 'No interesados'? El candidato no se borrará, pasará a reciclaje.")) {
+            fetch('/api/descartar-candidato/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ id: id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('row-' + id).classList.add('opacity-50');
+                    document.querySelector('#row-' + id + ' td:nth-child(7)').innerHTML = '<span class="badge rounded-pill px-3 py-2 bg-secondary text-white shadow-sm"><i class="bi bi-archive-fill me-1"></i> No interesados</span>';
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

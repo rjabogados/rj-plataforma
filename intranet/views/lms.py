@@ -1,0 +1,513 @@
+import openpyxl
+import uuid
+import json
+from datetime import datetime, date
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
+from django.http import HttpResponse
+
+# Importamos los modelos
+from intranet.models import (
+    Colaborador, Negocio, Encuesta, Pregunta, RespuestaEncuesta,
+    MensajeInterno, EventoCalendario, Comunicado, CandidatoOnboarding,
+    CursoInduccion, MaterialFormativo, MatriculaCurso, EvaluacionCurso,
+    PreguntaEvaluacion, RespuestaColaborador
+)
+
+# Herramientas globales de tu archivo utils.py
+from .utils import solo_directivos, solo_calidad, generar_username_unico
+
+# ==========================================
+# DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
+# ==========================================
+@login_required(login_url='login')
+@solo_directivos
+def colaboradores(request):
+    if request.method == 'POST':
+        nombres = request.POST.get('nombres')
+        apellidos = request.POST.get('apellidos')
+        dni_val = request.POST.get('dni').strip()
+        correo_val = request.POST.get('correo').strip().lower() or None
+        rol_val = request.POST.get('rol')
+        negocio_id = request.POST.get('negocio')
+        tipo_horario = request.POST.get('tipo_horario')
+        
+        username_custom = request.POST.get('username', '').strip()
+        password_custom = request.POST.get('password', '').strip()
+
+        username_final = username_custom if username_custom else generar_username_unico(nombres, apellidos, dni_val)
+        password_final = password_custom if password_custom else dni_val
+
+        negocio_instancia = Negocio.objects.get(id=negocio_id) if negocio_id else None
+        f_ingreso = request.POST.get('fecha_ingreso')
+        fecha_formal = datetime.strptime(f_ingreso, '%Y-%m-%d').date() if f_ingreso else date.today()
+
+        if not User.objects.filter(username=username_final).exists():
+            nuevo_user = User.objects.create_user(
+                username=username_final, email=correo_val if correo_val else "",
+                password=password_final, first_name=nombres, last_name=apellidos
+            )
+            Colaborador.objects.create(
+                user=nuevo_user, dni=dni_val, rol=rol_val, negocio=negocio_instancia, 
+                tipo_horario=tipo_horario, hora_ingreso=request.POST.get('hora_ingreso') or None, 
+                hora_salida=request.POST.get('hora_salida') or None, fecha_ingreso=fecha_formal
+            )
+            return redirect('colaboradores')
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        lista_colaboradores = Colaborador.objects.filter(
+            Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) | Q(dni__icontains=query)
+        ).select_related('user', 'negocio')
+    else:
+        lista_colaboradores = Colaborador.objects.all().select_related('user', 'negocio')
+
+    return render(request, 'intranet/colaboradores.html', {
+        'colaboradores': lista_colaboradores, 'negocios': Negocio.objects.all(), 
+        'roles': Colaborador.ROLES, 'tipos_horario': Colaborador.TIPO_HORARIO, 'query': query
+    })
+
+@login_required(login_url='login')
+@solo_directivos
+def editar_colaborador(request, pk):
+    colab = get_object_or_404(Colaborador, pk=pk)
+    
+    if request.method == 'POST':
+        colab.user.first_name = request.POST.get('nombres')
+        colab.user.last_name = request.POST.get('apellidos')
+        colab.user.email = request.POST.get('correo').strip().lower() or ""
+        
+        nuevo_username = request.POST.get('username', '').strip()
+        nueva_password = request.POST.get('password', '').strip()
+
+        if nuevo_username and not User.objects.filter(username=nuevo_username).exclude(pk=colab.user.pk).exists():
+            colab.user.username = nuevo_username
+            
+        if nueva_password:
+            colab.user.set_password(nueva_password)
+
+        colab.user.save()
+        colab.dni = request.POST.get('dni').strip()
+        colab.rol = request.POST.get('rol')
+        colab.tipo_horario = request.POST.get('tipo_horario')
+        colab.hora_ingreso = request.POST.get('hora_ingreso') or None
+        colab.hora_salida = request.POST.get('hora_salida') or None
+        if request.POST.get('fecha_ingreso'):
+            colab.fecha_ingreso = datetime.strptime(request.POST.get('fecha_ingreso'), '%Y-%m-%d').date()
+        
+        negocio_id = request.POST.get('negocio')
+        colab.negocio = Negocio.objects.get(id=negocio_id) if negocio_id else None
+        colab.save()
+
+        onboarding_activo = request.POST.get('switch_onboarding') == 'on'
+        
+        if onboarding_activo:
+            CandidatoOnboarding.objects.get_or_create(
+                colaborador=colab, dni=colab.dni,
+                defaults={
+                    'nombres': colab.user.first_name,
+                    'apellidos': colab.user.last_name,
+                    'estado': 'EN_PROCESO'
+                }
+            )
+        else:
+            CandidatoOnboarding.objects.filter(colaborador=colab).delete()
+
+        return redirect('colaboradores')
+        
+    tiene_onboarding = CandidatoOnboarding.objects.filter(colaborador=colab).exists()
+    return render(request, 'intranet/editar_colaborador.html', {
+        'colab': colab, 'negocios': Negocio.objects.all(), 'tiene_onboarding': tiene_onboarding
+    })
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_colaborador(request, pk):
+    colab = get_object_or_404(Colaborador, pk=pk)
+    user_vinculado = colab.user
+    colab.delete()
+    if user_vinculado: user_vinculado.delete()
+    return redirect('colaboradores')
+
+@login_required(login_url='login')
+@solo_directivos
+def mapear_excel(request):
+    if request.method == 'POST' and request.FILES.get('archivo_excel'):
+        excel_file = request.FILES['archivo_excel']
+        nombre_tmp = default_storage.save(f'tmp/{request.user.id}_import.xlsx', ContentFile(excel_file.read()))
+        wb = openpyxl.load_workbook(default_storage.open(nombre_tmp))
+        cabeceras_excel = [str(celda.value).strip() for celda in wb.active[1] if celda.value is not None]
+        request.session['ruta_excel_tmp'] = nombre_tmp
+        return render(request, 'intranet/mapear_excel.html', {'cabeceras': cabeceras_excel})
+    return redirect('colaboradores')
+
+@login_required(login_url='login')
+@solo_directivos
+def procesar_excel_mapeado(request):
+    if request.method == 'POST':
+        ruta_archivo = request.session.get('ruta_excel_tmp')
+        if not ruta_archivo or not default_storage.exists(ruta_archivo): 
+            return redirect('colaboradores')
+        
+        separar_nombres = request.POST.get('separar_nombres') == '1'
+        tiene_subcartera = request.POST.get('tiene_subcartera') == '1'
+        indices = {
+            'nombres': int(request.POST.get('prop_nombres')), 'dni': int(request.POST.get('prop_dni')),
+            'correo': int(request.POST.get('prop_correo') or -1), 'rol': int(request.POST.get('prop_rol')),
+            'tipo_horario': int(request.POST.get('prop_tipo_horario') or -1), 'cartera': int(request.POST.get('prop_cartera')),
+        }
+        if separar_nombres: indices['apellidos'] = int(request.POST.get('prop_apellidos'))
+        if tiene_subcartera: indices['subcartera'] = int(request.POST.get('prop_subcartera'))
+            
+        archivo_excel = default_storage.open(ruta_archivo)
+        wb = openpyxl.load_workbook(archivo_excel)
+        
+        with transaction.atomic():
+            for fila in wb.active.iter_rows(min_row=2, values_only=True):
+                try:
+                    dni_val = str(fila[indices['dni']]).strip() if fila[indices['dni']] is not None else None
+                    if not dni_val or Colaborador.objects.filter(dni=dni_val).exists(): continue
+                    
+                    correo_val = str(fila[indices['correo']]).strip().lower() if indices['correo'] >= 0 and fila[indices['correo']] is not None else ""
+                    if separar_nombres:
+                        nombres_bruto, apellidos_bruto = str(fila[indices['nombres']]).strip(), str(fila[indices['apellidos']]).strip()
+                    else:
+                        nombre_completo = str(fila[indices['nombres']]).strip() if fila[indices['nombres']] is not None else ""
+                        partes = nombre_completo.split(",", 1) if "," in nombre_completo else nombre_completo.split()
+                        if "," in nombre_completo: apellidos_bruto, nombres_bruto = partes[0].strip(), partes[1].strip()
+                        elif len(partes) >= 3: apellidos_bruto, nombres_bruto = f"{partes[0]} {partes[1]}", " ".join(partes[2:])
+                        elif len(partes) == 2: apellidos_bruto, nombres_bruto = partes[0], partes[1]
+                        else: apellidos_bruto, nombres_bruto = nombre_completo, "Asesor"
+
+                    username_final = generar_username_unico(nombres_bruto, apellidos_bruto, dni_val)
+                    rol_str = str(fila[indices['rol']]).upper().strip()
+                    rol_val = 'CALIDAD' if 'CALIDAD' in rol_str else 'BACKOFFICE' if 'BACK' in rol_str else 'SISTEMAS' if 'SISTEMA' in rol_str or 'TI' in rol_str else 'SUPERVISOR' if 'SUPERVISOR' in rol_str else 'RRHH' if 'RRHH' in rol_str else 'ADMINISTRATIVO' if 'ADMIN' in rol_str else 'GERENCIA' if 'GEREN' in rol_str else 'ASESOR'
+                    horario_val = str(fila[indices['tipo_horario']]).strip().upper() if indices['tipo_horario'] >= 0 and fila[indices['tipo_horario']] is not None else 'T1'
+                    
+                    negocio_instancia = None
+                    if fila[indices['cartera']] is not None:
+                        nombre_cartera = str(fila[indices['cartera']]).strip()
+                        if tiene_subcartera and fila[indices['subcartera']] is not None: nombre_cartera = f"{nombre_cartera} - {str(fila[indices['subcartera']]).strip()}"
+                        negocio_instancia, _ = Negocio.objects.get_or_create(nombre=nombre_cartera)
+                    
+                    nuevo_user = User.objects.create_user(username=username_final, email=correo_val, password=dni_val, first_name=nombres_bruto, last_name=apellidos_bruto)
+                    Colaborador.objects.create(user=nuevo_user, dni=dni_val, rol=rol_val, tipo_horario=horario_val, negocio=negocio_instancia, fecha_ingreso=date.today())
+                except Exception: pass
+        
+        wb.close()
+        archivo_excel.close()
+        default_storage.delete(ruta_archivo)
+        del request.session['ruta_excel_tmp']
+        
+    return redirect('colaboradores')
+
+# ==========================================
+# ONBOARDING CORPORATIVO
+# ==========================================
+@login_required(login_url='login')
+def induccion(request): return redirect('mi_induccion')
+
+@login_required(login_url='login')
+@solo_calidad
+def induccion_admin(request): return redirect('onboarding_admin')
+
+@login_required(login_url='login')
+@solo_directivos
+def gestionar_onboarding(request): return redirect('onboarding_admin')
+
+@login_required(login_url='login')
+@solo_directivos
+def onboarding_admin(request):
+    if request.method == 'POST':
+        if 'crear_modulo' in request.POST:
+            titulo = request.POST.get('titulo')
+            descripcion = request.POST.get('descripcion')
+            tipo = request.POST.get('tipo', 'GENERAL')
+            CursoInduccion.objects.create(titulo=titulo, descripcion=descripcion, tipo=tipo)
+            messages.success(request, f"Curso '{titulo}' creado en la academia LMS.")
+        else:
+            nombres_val = request.POST.get('nombres')
+            apellidos_val = request.POST.get('apellidos')
+            dni_val = request.POST.get('dni')
+            telefono_val = request.POST.get('telefono', '')
+            puesto_val = request.POST.get('puesto_esperado', 'ASESOR')
+            negocio_id = request.POST.get('campaña_destino')
+            
+            if CandidatoOnboarding.objects.filter(dni=dni_val).exists():
+                messages.error(request, f"El DNI {dni_val} ya se encuentra registrado.")
+            else:
+                CandidatoOnboarding.objects.create(nombres=nombres_val, apellidos=apellidos_val, dni=dni_val, telefono=telefono_val, puesto_esperado=puesto_val, campaña_destino_id=negocio_id if negocio_id else None)
+                messages.success(request, "Postulante registrado correctamente.")
+        return redirect('onboarding_admin')
+
+    onboardings_activos = CandidatoOnboarding.objects.all().select_related('colaborador__user', 'campaña_destino')
+    lista_candidatos_progreso = []
+    for item in onboardings_activos:
+        if item.colaborador:
+            matriculas = MatriculaCurso.objects.filter(colaborador=item.colaborador)
+            total_cursos = matriculas.count()
+            completados = matriculas.filter(estado='COMPLETADO').count()
+            porcentaje = int((completados / total_cursos) * 100) if total_cursos > 0 else 0
+            ratio = f"{completados}/{total_cursos}"
+        else:
+            porcentaje = item.porcentaje_expediente()
+            ratio = "Expediente"
+        lista_candidatos_progreso.append({'onboarding': item, 'porcentaje': porcentaje, 'ratio': ratio})
+
+    cursos_biblioteca = CursoInduccion.objects.filter(activo=True).order_by('-fecha_creacion')
+    negocios = Negocio.objects.all()
+
+    return render(request, 'intranet/onboarding_lista.html', {
+        'candidatos_progreso': lista_candidatos_progreso, 'candidatos': onboardings_activos, 
+        'modulos_biblioteca': cursos_biblioteca, 'negocios': negocios
+    })
+
+@login_required(login_url='login')
+@solo_directivos
+def asignar_modulos_induccion(request, colab_id):
+    colaborador = get_object_or_404(Colaborador, id=colab_id)
+    cursos_disponibles = CursoInduccion.objects.filter(activo=True).order_by('-fecha_creacion')
+    
+    if request.method == 'POST':
+        cursos_seleccionados = request.POST.getlist('modulos_ids')
+        MatriculaCurso.objects.filter(colaborador=colaborador).exclude(curso_id__in=cursos_seleccionados).exclude(estado='COMPLETADO').delete()
+        for c_id in cursos_seleccionados: MatriculaCurso.objects.get_or_create(colaborador=colaborador, curso_id=c_id)
+        messages.success(request, f"Malla formativa actualizada para {colaborador.user.first_name}.")
+        return redirect('onboarding_admin')
+        
+    cursos_actuales = MatriculaCurso.objects.filter(colaborador=colaborador).values_list('curso_id', flat=True)
+    return render(request, 'intranet/asignar_modulos.html', {'colaborador': colaborador, 'modulos_disponibles': cursos_disponibles, 'modulos_actuales': cursos_actuales})
+
+@login_required(login_url='login')
+def mi_induccion(request):
+    colaborador = request.user.perfil
+    mis_matriculas = MatriculaCurso.objects.filter(colaborador=colaborador).select_related('curso').order_by('curso__fecha_creacion')
+    
+    if request.method == 'POST' and 'marcar_completado' in request.POST:
+        matricula_id = request.POST.get('progreso_id')
+        matricula = get_object_or_404(MatriculaCurso, id=matricula_id, colaborador=colaborador)
+        matricula.estado = 'COMPLETADO'
+        matricula.fecha_finalizacion = timezone.now()
+        matricula.save()
+        messages.success(request, f"¡Excelente! Has completado el curso: {matricula.curso.titulo}")
+        return redirect('mi_induccion')
+
+    total = mis_matriculas.count()
+    completados = mis_matriculas.filter(estado='COMPLETADO').count()
+    porcentaje = int((completados / total) * 100) if total > 0 else 0
+
+    return render(request, 'intranet/mi_induccion.html', {'mis_modulos': mis_matriculas, 'porcentaje': porcentaje, 'completados': completados, 'total': total})
+
+@login_required(login_url='login')
+@solo_directivos
+def actualizar_expediente(request, candidato_id):
+    candidato = get_object_or_404(CandidatoOnboarding, id=candidato_id)
+    if request.method == 'POST':
+        candidato.doc_cv = request.POST.get('doc_cv') == 'on'
+        candidato.doc_dni = request.POST.get('doc_dni') == 'on'
+        candidato.doc_antecedentes = request.POST.get('doc_antecedentes') == 'on'
+        candidato.doc_recibo_servicios = request.POST.get('doc_recibo_servicios') == 'on'
+        candidato.save()
+        messages.success(request, f"Expediente de {candidato.nombres} actualizado.")
+    return redirect('onboarding_admin')
+
+@login_required(login_url='login')
+@solo_directivos
+def pasar_a_planilla(request, candidato_id):
+    candidato = get_object_or_404(CandidatoOnboarding, id=candidato_id)
+    if candidato.porcentaje_expediente() < 100:
+        messages.error(request, "Expediente incompleto. Faltan documentos.")
+        return redirect('onboarding_admin')
+    try:
+        with transaction.atomic():
+            if candidato.colaborador:
+                candidato.estado = 'COMPLETADO'
+                candidato.save()
+            else:
+                username_final = f"{candidato.nombres.split()[0].lower()}.{candidato.apellidos.split()[0].lower()}"
+                if User.objects.filter(username=username_final).exists():
+                    username_final = f"{username_final}{candidato.dni[-2:]}"
+                nuevo_user = User.objects.create_user(username=username_final, email=candidato.correo or '', password=candidato.dni, first_name=candidato.nombres, last_name=candidato.apellidos)
+                nuevo_colaborador = Colaborador.objects.create(user=nuevo_user, dni=candidato.dni, rol=candidato.puesto_esperado, negocio=candidato.campaña_destino, fecha_ingreso=date.today())
+                candidato.colaborador = nuevo_colaborador
+                candidato.estado = 'COMPLETADO'
+                candidato.save()
+                messages.success(request, f"¡{candidato.nombres} ingresó a planilla!")
+    except Exception:
+        messages.error(request, "Error al procesar el alta. Verifique el DNI.")
+    return redirect('onboarding_admin')
+
+# ==========================================
+# MOTOR DE ENCUESTAS
+# ==========================================
+@login_required(login_url='login')
+def encuestas_personal(request):
+    perfil = getattr(request.user, 'perfil', None)
+    if request.method == 'POST' and 'enviar_encuesta' in request.POST:
+        enc_id = request.POST.get('encuesta_id')
+        encuesta_obj = get_object_or_404(Encuesta, id=enc_id)
+        sesion_uuid = str(uuid.uuid4())
+        for pregunta in encuesta_obj.preguntas.all():
+            valor = request.POST.get(f"pregunta_{pregunta.id}")
+            if valor:
+                resp = RespuestaEncuesta(pregunta=pregunta, sesion_id=sesion_uuid)
+                if not encuesta_obj.es_anonima: resp.colaborador = perfil
+                if pregunta.tipo == 'CERRADA': resp.valor_si_no = (valor == 'SI')
+                else: resp.valor_texto = valor
+                resp.save()
+        return render(request, 'intranet/encuesta_exito.html')
+    return render(request, 'intranet/encuestas_personal.html', {'encuestas': Encuesta.objects.filter(activa=True).order_by('-fecha_creacion')})
+
+@login_required(login_url='login')
+@solo_directivos
+def encuestas_admin(request):
+    if request.method == 'POST':
+        if 'crear_encuesta' in request.POST:
+            Encuesta.objects.create(titulo=request.POST.get('titulo'), descripcion=request.POST.get('descripcion'), es_anonima=request.POST.get('es_anonima') == '1', con_puntaje=request.POST.get('con_puntaje') == '1')
+        elif 'crear_pregunta' in request.POST:
+            enc_inst = get_object_or_404(Encuesta, id=request.POST.get('encuesta_id'))
+            Pregunta.objects.create(encuesta=enc_inst, texto=request.POST.get('texto'), tipo=request.POST.get('tipo'), puntos_si=int(request.POST.get('puntos_si') or 0))
+        return redirect('encuestas_admin')
+    return render(request, 'intranet/encuestas_admin.html', {'encuestas': Encuesta.objects.all().prefetch_related('preguntas')})
+
+@login_required(login_url='login')
+@solo_directivos
+def resultados_encuesta(request, pk):
+    encuesta = get_object_or_404(Encuesta, pk=pk)
+    preguntas = encuesta.preguntas.all()
+    datos_graficos = []
+    for p in preguntas:
+        if p.tipo == 'CERRADA':
+            datos_graficos.append({'id': p.id, 'texto': p.texto, 'tipo': p.tipo, 'si': p.respuestas.filter(valor_si_no=True).count(), 'no': p.respuestas.filter(valor_si_no=False).count()})
+        else:
+            datos_graficos.append({'id': p.id, 'texto': p.texto, 'tipo': p.tipo, 'respuestas': list(p.respuestas.exclude(valor_texto__isnull=True).exclude(valor_texto='').values_list('valor_texto', flat=True))})
+
+    sesiones_ids = RespuestaEncuesta.objects.filter(pregunta__encuesta=encuesta).values_list('sesion_id', flat=True).distinct()
+    tabla_respuestas = []
+    for s_id in sesiones_ids:
+        if not s_id: continue
+        resp_qs = RespuestaEncuesta.objects.filter(sesion_id=s_id).select_related('colaborador__user')
+        if not resp_qs.exists(): continue
+        primera = resp_qs.first()
+        usuario = "Anónimo" if encuesta.es_anonima else f"{primera.colaborador.user.last_name}, {primera.colaborador.user.first_name}" if primera.colaborador else "Desconocido"
+        fila = {'fecha': primera.fecha_respuesta, 'usuario': usuario, 'respuestas': {}}
+        for r in resp_qs: fila['respuestas'][r.pregunta_id] = "Sí" if r.valor_si_no is True else "No" if r.valor_si_no is False else r.valor_texto
+        tabla_respuestas.append(fila)
+
+    return render(request, 'intranet/encuesta_resultados.html', {'encuesta': encuesta, 'preguntas': preguntas, 'datos_graficos': datos_graficos, 'tabla_respuestas': tabla_respuestas})
+
+@login_required(login_url='login')
+@solo_directivos
+def exportar_encuesta(request, pk):
+    encuesta = get_object_or_404(Encuesta, pk=pk)
+    preguntas = encuesta.preguntas.order_by('id')
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Resultados"
+    ws.append(['Fecha de Envío', 'Colaborador'] + [p.texto for p in preguntas])
+    
+    for s_id in RespuestaEncuesta.objects.filter(pregunta__encuesta=encuesta).values_list('sesion_id', flat=True).distinct():
+        if not s_id: continue
+        resp_qs = RespuestaEncuesta.objects.filter(sesion_id=s_id)
+        primera = resp_qs.first()
+        row = [primera.fecha_respuesta.strftime('%Y-%m-%d %H:%M:%S'), "Anónimo" if encuesta.es_anonima else f"{primera.colaborador.user.last_name}, {primera.colaborador.user.first_name}" if primera.colaborador else "Desconocido"]
+        resp_dict = {r.pregunta_id: ("Sí" if r.valor_si_no is True else "No" if r.valor_si_no is False else r.valor_texto) for r in resp_qs}
+        for p in preguntas: row.append(resp_dict.get(p.id, ""))
+        ws.append(row)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="Resultados_{encuesta.titulo}.xlsx"'
+    wb.save(response)
+    return response
+
+# ==========================================
+# COMUNICACIÓN Y HERRAMIENTAS ADICIONALES
+# ==========================================
+@login_required(login_url='login')
+def mensajeria(request):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil: return HttpResponse("Acceso Denegado: Debes tener un perfil de trabajador para usar el buzón.")
+    if request.method == 'POST' and 'enviar_mensaje' in request.POST:
+        destinatarios_ids = request.POST.getlist('destinatarios')
+        for dest_id in destinatarios_ids:
+            destinatario = Colaborador.objects.filter(id=dest_id).first()
+            if destinatario: MensajeInterno.objects.create(remitente=perfil, destinatario=destinatario, asunto=request.POST.get('asunto', 'Sin Asunto'), cuerpo=request.POST.get('cuerpo', ''), adjunto=request.FILES.get('adjunto'))
+        return redirect('mensajeria')
+    query = request.GET.get('q', '').strip()
+    mensajes_recibidos = MensajeInterno.objects.filter(destinatario=perfil).order_by('-fecha_envio')
+    mensajes_enviados = MensajeInterno.objects.filter(remitente=perfil).order_by('-fecha_envio')
+    if query:
+        mensajes_recibidos = mensajes_recibidos.filter(Q(remitente__user__first_name__icontains=query) | Q(remitente__user__last_name__icontains=query) | Q(asunto__icontains=query))
+        mensajes_enviados = mensajes_enviados.filter(Q(destinatario__user__first_name__icontains=query) | Q(destinatario__user__last_name__icontains=query) | Q(asunto__icontains=query))
+    return render(request, 'intranet/mensajeria.html', {'recibidos': mensajes_recibidos, 'enviados': mensajes_enviados, 'compañeros': Colaborador.objects.exclude(id=perfil.id).select_related('user'), 'query': query})
+
+@login_required(login_url='login')
+def leer_mensaje(request, pk):
+    perfil, mensaje = getattr(request.user, 'perfil', None), get_object_or_404(MensajeInterno, pk=pk)
+    if mensaje.destinatario != perfil and mensaje.remitente != perfil: return redirect('mensajeria')
+    if mensaje.destinatario == perfil and not mensaje.leido: 
+        mensaje.leido = True
+        mensaje.save()
+    return render(request, 'intranet/leer_mensaje.html', {'mensaje': mensaje, 'es_receptor': mensaje.destinatario == perfil})
+
+@login_required(login_url='login')
+def calendario(request):
+    perfil = getattr(request.user, 'perfil', None)
+    es_admin = request.user.is_superuser or (perfil and perfil.es_directivo)
+    if request.method == 'POST' and es_admin:
+        titulo, inicio_str, fin_str = request.POST.get('titulo'), request.POST.get('fecha_inicio'), request.POST.get('fecha_fin')
+        if titulo and inicio_str and fin_str:
+            EventoCalendario.objects.create(titulo=titulo, descripcion=request.POST.get('descripcion'), fecha_inicio=datetime.strptime(inicio_str, '%Y-%m-%dT%H:%M'), fecha_fin=datetime.strptime(fin_str, '%Y-%m-%dT%H:%M'), color=request.POST.get('color', '#183D74'))
+        return redirect('calendario')
+    eventos_lista = [{'id': e.id, 'title': e.titulo, 'start': e.fecha_inicio.isoformat(), 'end': e.fecha_fin.isoformat(), 'description': e.descripcion or '', 'backgroundColor': e.color, 'borderColor': e.color} for e in EventoCalendario.objects.all()]
+    return render(request, 'intranet/calendario.html', {'eventos_json': json.dumps(eventos_lista), 'es_admin': es_admin})
+
+@login_required(login_url='login')
+def comunicados(request): return render(request, 'intranet/comunicados.html', {'comunicados': Comunicado.objects.all().order_by('-fecha_publicacion')})
+
+@login_required(login_url='login')
+@solo_directivos
+def gestor_comunicados(request):
+    if request.method == 'POST':
+        Comunicado.objects.create(titulo=request.POST.get('titulo'), mensaje=request.POST.get('mensaje'), adjunto=request.FILES.get('adjunto'))
+        return redirect('gestor_comunicados')
+    return render(request, 'intranet/gestor_comunicados.html', {'comunicados': Comunicado.objects.all().order_by('-fecha_publicacion')})
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_comunicado(request, pk): 
+    get_object_or_404(Comunicado, pk=pk).delete()
+    return redirect('gestor_comunicados')
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_evento(request, pk): 
+    get_object_or_404(EventoCalendario, pk=pk).delete()
+    return redirect('calendario')
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_candidato(request, pk): 
+    get_object_or_404(CandidatoOnboarding, pk=pk).delete()
+    return redirect('dashboard')
+
+@login_required(login_url='login')
+@solo_directivos
+def activos(request): return render(request, 'intranet/activos.html')
+
+@login_required(login_url='login')
+@solo_directivos
+def gestor_lms(request): return render(request, 'intranet/gestor_lms.html')
+
+@login_required(login_url='login')
+def academia(request): return render(request, 'intranet/academia.html')
+
+@login_required(login_url='login')
+def beneficios(request): return render(request, 'intranet/beneficios.html')

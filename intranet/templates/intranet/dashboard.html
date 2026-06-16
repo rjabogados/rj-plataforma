@@ -1,0 +1,65 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <h3 class="fw-bold mb-4"><i class="bi bi-speedometer2 text-warning me-2"></i> Dashboard Ejecutivo</h3>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="opacity-75">Personal Activo</h6>
+                    <h2 class="fw-bold">{{ total_colaboradores }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="opacity-75">Tickets Pendientes</h6>
+                    <h2 class="fw-bold">{{ tickets_pendientes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-info text-white">
+                <div class="card-body">
+                    <h6 class="opacity-75">Solicitudes Vacaciones</h6>
+                    <h2 class="fw-bold">{{ vacaciones_pendientes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-success text-white">
+                <div class="card-body">
+                    <h6 class="opacity-75">Asistencias Hoy</h6>
+                    <h2 class="fw-bold">{{ asistencias_hoy }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold mb-3">Acceso Directo a Gestión</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'tickets_admin' %}" class="btn btn-outline-danger py-3 fw-bold">Gestionar Tickets de Personal</a>
+                    <a href="{% url 'vacaciones_admin' %}" class="btn btn-outline-info py-3 fw-bold">Gestionar Calendario Vacaciones</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold mb-3">Sincronización</h5>
+                <p class="text-muted small">Mantén los datos del huellero actualizados con el Google Sheet oficial.</p>
+                <form method="POST" action="{% url 'sincronizar_sheets' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark w-100 py-3 fw-bold">
+                        <i class="bi bi-arrow-clockwise"></i> Sincronizar Google Sheets
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

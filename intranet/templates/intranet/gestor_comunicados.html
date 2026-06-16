@@ -1,0 +1,84 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-dark mb-0"><i class="bi bi-megaphone-fill text-warning"></i> Gestor de Anuncios Corporativos</h4>
+        
+        <button class="btn btn-warning fw-bold rounded-pill shadow-sm px-4 text-dark" data-bs-toggle="modal" data-bs-target="#modalComunicado">
+            <i class="bi bi-plus-circle"></i> Crear Nuevo Anuncio
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Fecha</th>
+                        <th>Título del Comunicado</th>
+                        <th>Adjunto</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in comunicados %}
+                    <tr>
+                        <td class="ps-4 small text-muted">{{ c.fecha_publicacion|date:"d M, Y - H:i" }}</td>
+                        <td class="fw-bold text-dark">{{ c.titulo }}</td>
+                        <td>
+                            {% if c.adjunto %}
+                                <span class="badge bg-info text-dark"><i class="bi bi-paperclip"></i> Multimedia</span>
+                            {% else %}
+                                <span class="small text-muted">Solo Texto</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <form method="POST" action="{% url 'eliminar_comunicado' c.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="return confirm('¿Seguro que deseas eliminar este anuncio?');">
+                                    <i class="bi bi-trash-fill"></i> Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center py-5 text-muted">No hay comunicados activos.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalComunicado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-warning border-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-megaphone"></i> Publicar Anuncio Oficial</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'gestor_comunicados' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4 bg-light">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Título del Anuncio</label>
+                        <input type="text" class="form-control border-secondary" name="titulo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Mensaje</label>
+                        <textarea class="form-control border-secondary" name="mensaje" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-muted"><i class="bi bi-image"></i> Adjuntar Foto/Video (Opcional)</label>
+                        <input type="file" class="form-control border-secondary bg-white" name="adjunto" accept="image/*,video/*">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-white">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-5 shadow-sm">Publicar Masivamente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

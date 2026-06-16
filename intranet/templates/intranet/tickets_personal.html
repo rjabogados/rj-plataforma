@@ -1,0 +1,82 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-primary text-white fw-bold pt-3 border-0">
+                    <i class="bi bi-ticket-detailed-fill"></i> Generar Nuevo Ticket
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="fw-bold small text-muted">¿Qué deseas reportar?</label>
+                            <select class="form-select" name="tipo" required>
+                                <option value="TARDANZA">Justificar Tardanza</option>
+                                <option value="INASISTENCIA">Justificar Falta</option>
+                                <option value="MEDICO">Descanso Médico / Salud</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold small text-muted">Motivo / Explicación</label>
+                            <textarea class="form-control" name="motivo" rows="4" placeholder="Explica brevemente tu situación..." required></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="fw-bold small text-muted">Adjuntar Evidencia (Opcional)</label>
+                            <input type="file" class="form-control" name="adjunto">
+                            <small class="text-muted" style="font-size: 0.7rem;">Sube tu receta médica, voucher o captura de pantalla.</small>
+                        </div>
+                        <button type="submit" name="crear_ticket" class="btn btn-primary w-100 fw-bold">Enviar a Recursos Humanos</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <h5 class="fw-bold text-dark mb-3">Mi Historial de Solicitudes</h5>
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-secondary">
+                                <tr>
+                                    <th class="ps-4">Fecha</th>
+                                    <th>Tipo de Ticket</th>
+                                    <th>Detalle</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in tickets %}
+                                <tr>
+                                    <td class="ps-4 text-muted small">{{ t.fecha_registro|date:"d/m/Y H:i" }}</td>
+                                    <td class="fw-bold text-dark">{{ t.get_tipo_display }}</td>
+                                    <td>
+                                        <p class="mb-0 small text-truncate" style="max-width: 200px;" title="{{ t.motivo }}">{{ t.motivo }}</p>
+                                        {% if t.adjunto_comprobante %}
+                                            <a href="{{ t.adjunto_comprobante.url }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1"><i class="bi bi-paperclip"></i> Ver adjunto</a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if t.estado == 'PENDIENTE' %}
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> En Revisión</span>
+                                        {% elif t.estado == 'APROBADO' %}
+                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Aprobado</span>
+                                        {% else %}
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> Rechazado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center py-5 text-muted">Aún no has generado ningún ticket de justificación.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

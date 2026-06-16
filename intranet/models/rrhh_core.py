@@ -1,0 +1,71 @@
+from django.db import models
+from django.contrib.auth.models import User
+
+class Negocio(models.Model):
+    nombre = models.CharField(max_length=150)
+    descripcion = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.nombre
+
+class Colaborador(models.Model):
+    ROLES = [
+        ('ASESOR', 'Asesor'),
+        ('BACKOFFICE', 'Backoffice'),
+        ('CALIDAD', 'Calidad'),
+        ('SUPERVISOR', 'Supervisor'),
+        ('SISTEMAS', 'Sistemas'),
+        ('ADMINISTRATIVO', 'Administrativo'),
+        ('RRHH', 'Recursos Humanos'),
+        ('GERENCIA', 'Gerencia')
+    ]
+    TIPO_HORARIO = [
+        ('T1', 'Turno Mañana'),
+        ('T2', 'Turno Tarde'),
+        ('TC', 'Turno Completo'),
+        ('PT', 'Part Time')
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
+    dni = models.CharField(max_length=20, unique=True, db_index=True)
+    rol = models.CharField(max_length=50, choices=ROLES, default='ASESOR', db_index=True)
+    negocio = models.ForeignKey(Negocio, on_delete=models.SET_NULL, null=True, blank=True)
+    tipo_horario = models.CharField(max_length=10, choices=TIPO_HORARIO, default='T1')
+    
+    hora_ingreso = models.TimeField(null=True, blank=True)
+    hora_salida = models.TimeField(null=True, blank=True)
+    fecha_ingreso = models.DateField(null=True, blank=True)
+    
+    sueldo_base = models.DecimalField(max_digits=10, decimal_places=2, default=1025.00)
+    banco_pago = models.CharField(max_length=100, default='BCP')
+    cuenta_bancaria = models.CharField(max_length=50, blank=True, null=True)
+    regimen_laboral = models.CharField(max_length=50, default='Regimen General Mype')
+
+    def __str__(self):
+        return f"{self.user.last_name}, {self.user.first_name} ({self.get_rol_display()})"
+
+    @property
+    def es_directivo(self):
+        return self.rol in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']
+
+    @property
+    def es_calidad(self):
+        return self.rol in ['CALIDAD', 'SUPERVISOR', 'GERENCIA']
+        
+    @property
+    def es_operativo(self):
+        return self.rol in ['ASESOR', 'BACKOFFICE']
+
+class Asistencia(models.Model):
+    colaborador = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='asistencias')
+    fecha = models.DateField(db_index=True) 
+    
+    f1_ingreso = models.TimeField(null=True, blank=True)
+    f2_salida_almuerzo = models.TimeField(null=True, blank=True)
+    f3_retorno_almuerzo = models.TimeField(null=True, blank=True)
+    f4_salida = models.TimeField(null=True, blank=True)
+    f7_salida_break = models.TimeField(null=True, blank=True)
+    f8_retorno_break = models.TimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('colaborador', 'fecha')

@@ -1,0 +1,59 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 600px; padding-top: 2rem;">
+    <div class="card shadow-lg border-0 rounded-4 p-4">
+        
+        <div class="text-center mb-4">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex p-3 mb-3 mx-auto">
+                <i class="bi bi-file-earmark-lock-fill display-4"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-1">Aceptación y Firma Legal</h3>
+            <p class="text-muted small">Estás a punto de firmar: <strong class="text-dark">{{ documento.titulo }}</strong></p>
+        </div>
+        
+        <div class="bg-light rounded-4 p-4 mb-4 small border">
+            <h6 class="fw-bold text-dark"><i class="bi bi-shield-exclamation text-warning"></i> Aviso de Auditoría</h6>
+            <p class="text-muted mb-2">Para garantizar la validez legal de este documento ante cualquier entidad, el sistema registrará los siguientes datos al momento de hacer clic en "Firmar":</p>
+            <ul class="mb-0 text-muted">
+                <li><strong>Usuario autenticado:</strong> {{ request.user.get_full_name }} (DNI: {{ request.user.perfil.dni }})</li>
+                <li><strong>Dirección IP:</strong> Se registrará tu red actual.</li>
+                <li><strong>Dispositivo:</strong> Se guardará el registro de tu navegador y sistema operativo.</li>
+                <li><strong>Integridad (Hash):</strong> Se generará una huella criptográfica SHA-256 del documento final para asegurar que no pueda ser alterado en el futuro.</li>
+            </ul>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-check bg-danger bg-opacity-10 p-3 rounded-3 border border-danger mb-4 d-flex align-items-center">
+                <input class="form-check-input ms-1 me-3 border-danger" type="checkbox" name="acepto_terminos" id="aceptoTerminos" required style="transform: scale(1.3);">
+                <label class="form-check-label small fw-bold text-dark" for="aceptoTerminos">
+                    He leído el documento original, acepto sus términos y consiento el uso de mi firma digital, IP y credenciales como medio de prueba vinculante.
+                </label>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-2">
+                <a href="{% url 'documentos_personal' %}" class="btn btn-light fw-bold rounded-pill px-4">Cancelar</a>
+                <button type="submit" class="btn btn-danger fw-bold rounded-pill px-4 shadow-sm" id="btnFirmar">
+                    <i class="bi bi-pen"></i> Firmar y Sellar Documento
+                </button>
+            </div>
+        </form>
+        
+    </div>
+</div>
+
+<script>
+    // Pequeña validación visual para evitar clics accidentales
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkbox = document.getElementById('aceptoTerminos');
+        const btnFirmar = document.getElementById('btnFirmar');
+        
+        btnFirmar.disabled = true; // Desactivado por defecto
+        
+        checkbox.addEventListener('change', function() {
+            btnFirmar.disabled = !this.checked;
+        });
+    });
+</script>
+{% endblock %}

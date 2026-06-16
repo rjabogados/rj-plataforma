@@ -1,0 +1,72 @@
+import uuid
+from django.db import models
+from django.contrib.auth.models import User
+from .rrhh_core import Colaborador
+
+class DocumentoPersonal(models.Model):
+    TIPOS_DOC = [
+        ('CONTRATO', 'Contrato de Trabajo'),
+        ('BOLETA', 'Boleta de Pago'),
+        ('LIQUIDACION', 'Liquidación de Beneficios'),
+        ('MEMORANDUM', 'Memorándum Interno'),
+        ('OTROS', 'Otros Documentos')
+    ]
+    colaborador = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='documentos_digitales')
+    tipo = models.CharField(max_length=20, choices=TIPOS_DOC, db_index=True)
+    titulo = models.CharField(max_length=150)
+    archivo = models.FileField(upload_to='boveda_personal/')
+    requiere_firma = models.BooleanField(default=False)
+    esta_firmado = models.BooleanField(default=False, db_index=True)
+    fecha_firma = models.DateTimeField(null=True, blank=True)
+    fecha_entrega = models.DateTimeField(auto_now_add=True)
+    emitido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+class CategoriaDocumento(models.Model):
+    nombre = models.CharField(max_length=100)
+    requiere_firma = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.nombre
+
+class PlantillaDocumento(models.Model):
+    nombre = models.CharField(max_length=200)
+    categoria = models.ForeignKey(CategoriaDocumento, on_delete=models.SET_NULL, null=True)
+    archivo_word = models.FileField(upload_to='plantillas_docs/')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+
+class DocumentoGenerado(models.Model):
+    ESTADOS = (
+        ('BORRADOR', 'Borrador / Pre-visualización'),
+        ('PENDIENTE', 'Pendiente de Firma'),
+        ('COMPLETADO', 'Firmado y Cerrado'),
+        ('ANULADO', 'Anulado / Rechazado'),
+    )
+    codigo_seguridad = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
+    colaborador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mis_documentos')
+    plantilla_origen = models.ForeignKey(PlantillaDocumento, on_delete=models.SET_NULL, null=True, blank=True)
+    titulo = models.CharField(max_length=255)
+    archivo_pdf = models.FileField(upload_to='boveda_pdf/', blank=True, null=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='BORRADOR', db_index=True)
+    visible_para_empleado = models.BooleanField(default=False)
+    fecha_emision = models.DateTimeField(auto_now_add=True)
+    fecha_cierre = models.DateTimeField(null=True, blank=True)
+
+class FirmaDigital(models.Model):
+    ROLES_FIRMA = (
+        ('EMPLEADO', 'Colaborador'),
+        ('SUPERVISOR', 'Supervisor Directo'),
+        ('RRHH', 'Recursos Humanos'),
+        ('LEGAL', 'Representante Legal'),
+    )
+    documento = models.ForeignKey(DocumentoGenerado, on_delete=models.CASCADE, related_name='firmas')
+    firmante = models.ForeignKey(User, on_delete=models.CASCADE)
+    rol_firma = models.CharField(max_length=20, choices=ROLES_FIRMA)
+    orden = models.PositiveIntegerField(default=1)
+    firmado = models.BooleanField(default=False, db_index=True)
+    fecha_firma = models.DateTimeField(null=True, blank=True)
+    direccion_ip = models.GenericIPAddressField(null=True, blank=True)
+    token_utilizado = models.CharField(max_length=6, null=True, blank=True)
+
+    class Meta:
+        ordering = ['orden']

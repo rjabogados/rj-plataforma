@@ -1,0 +1,54 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 700px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-gear-fill text-primary"></i> Estructurar Malla Formativa</h4>
+            <p class="text-muted small mb-0">Selecciona los módulos de inducción obligatorios para **{{ colaborador.user.first_name }} {{ colaborador.user.last_name }}**.</p>
+        </div>
+        <a href="{% url 'onboarding_admin' %}" class="btn btn-outline-secondary btn-sm fw-bold rounded-pill px-3">Volver</a>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 bg-white">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center bg-light p-3 rounded-3 border mb-4">
+                    <div class="bg-primary text-white rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                        <i class="bi bi-person-badge-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">{{ colaborador.user.first_name }} {{ colaborador.user.last_name }}</h6>
+                        <small class="text-muted">{{ colaborador.get_rol_display }} | Cartera: {{ colaborador.negocio.nombre|default:"Central" }}</small>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.9rem;">Selecciona los cursos obligatorios para su puesto:</h6>
+
+                <div class="list-group rounded-3 border border-secondary border-opacity-25">
+                    {% for m in modulos_disponibles %}
+                    <label class="list-group-item d-flex gap-3 py-3 px-4 align-items-center justify-content-between style-label-hover" style="cursor: pointer;">
+                        <div class="d-flex align-items-center gap-3">
+                            <input class="form-check-input flex-shrink-0 border-secondary" type="checkbox" name="modulos_ids" value="{{ m.id }}" style="width: 1.2em; height: 1.2em;" {% if m.id in modulos_actuales %}checked{% endif %}>
+                            <div>
+                                <span class="d-block fw-bold text-dark" style="font-size: 0.9rem;">{{ m.orden }}. {{ m.titulo }}</span>
+                                <small class="text-muted d-block text-truncate" style="max-width: 450px;">{{ m.descripcion }}</small>
+                            </div>
+                        </div>
+                    </label>
+                    {% empty %}
+                    <div class="p-4 text-center text-muted small">No hay módulos disponibles en la biblioteca. Crea uno primero en la pantalla anterior.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            {% if modulos_disponibles %}
+            <div class="card-footer bg-light border-0 p-4 text-end rounded-bottom-4">
+                <button type="submit" class="btn btn-primary fw-bold rounded-pill px-5 shadow-sm"><i class="bi bi-save-fill"></i> Guardar Malla e Inducir</button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

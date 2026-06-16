@@ -1,0 +1,55 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 800px;">
+    <h3 class="fw-bold text-dark mb-4"><i class="bi bi-person-gear text-primary"></i> Configuración de Mi Perfil</h3>
+    
+    {% if mensaje %}
+        <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">{{ mensaje }}</div>
+    {% endif %}
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-5">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small fw-bold">Nombres Completos</label>
+                        <input type="text" class="form-control bg-light text-muted" value="{{ user.first_name }} {{ user.last_name }}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small fw-bold">Correo de Acceso (Usuario)</label>
+                        <input type="text" class="form-control bg-light text-muted" value="{{ user.email }}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label text-muted small fw-bold">Puesto / Rango Asignado</label>
+                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil %}{{ perfil.get_rol_display }}{% else %}Soporte de Sistema (Admin){% endif %}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label text-muted small fw-bold">Cartera Operativa / Área</label>
+                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil and perfil.negocio %}{{ perfil.negocio.nombre }}{% elif perfil and perfil.area %}{{ perfil.area.nombre }}{% else %}Central Administrativa{% endif %}" readonly>
+                    </div>
+
+                    <hr class="mb-4">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pencil-square"></i> Información Actualizable</h6>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Número de Celular</label>
+                        <input type="text" class="form-control form-control-lg" name="celular" value="{% if perfil %}{{ perfil.celular|default:'' }}{% endif %}" placeholder="Ej: 987654321" {% if not perfil %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Fecha de Cumpleaños</label>
+                        <input type="date" class="form-control form-control-lg" name="fecha_nacimiento" value="{% if perfil %}{{ perfil.fecha_nacimiento|date:'Y-m-%d' }}{% endif %}" {% if not perfil %}disabled{% endif %}>
+                    </div>
+                </div>
+                
+                {% if perfil %}
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold rounded-3 mt-4 shadow-sm">Guardar Cambios de Contacto</button>
+                {% else %}
+                    <button type="button" class="btn btn-secondary btn-lg w-100 fw-bold rounded-3 mt-4 shadow-sm" disabled>No editable para el Administrador Base</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

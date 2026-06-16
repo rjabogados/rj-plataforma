@@ -1,0 +1,13 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 600px; padding-top: 5rem;">
+    <div class="card shadow-lg border-0 rounded-4 bg-white text-center p-5">
+        <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex p-3 mb-4 mx-auto">
+            <i class="bi bi-shield-check display-3"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-2">¡Respuestas Recibidas!</h3>
+        <p class="text-muted mb-4">La encuesta se ha procesado con éxito. Tu opinión es fundamental para seguir optimizando los procesos y el clima laboral en la oficina.</p>
+        <a href="{% url 'inicio' %}" class="btn btn-success fw-bold rounded-pill px-5 shadow-sm">Volver al Inicio</a>
+    </div>
+</div>
+{% endblock %}

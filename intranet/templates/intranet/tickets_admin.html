@@ -1,0 +1,67 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark"><i class="bi bi-inboxes-fill text-primary"></i> Buzón de Justificaciones</h3>
+            <p class="text-muted">Revisa y gestiona los descansos médicos y tardanzas del personal operativo.</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-4">Colaborador</th>
+                            <th>Tipo y Fecha</th>
+                            <th>Sustento / Motivo</th>
+                            <th>Evidencia</th>
+                            <th class="text-center">Acciones de RRHH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in tickets %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">
+                                {{ t.colaborador.user.first_name }} {{ t.colaborador.user.last_name }}
+                                <span class="d-block text-muted fw-normal small">DNI: {{ t.colaborador.dni }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary mb-1">{{ t.get_tipo_display }}</span>
+                                <small class="d-block text-muted">{{ t.fecha_registro|date:"d/m/Y H:i" }}</small>
+                            </td>
+                            <td style="max-width: 250px;">
+                                <p class="mb-0 small text-secondary" style="white-space: pre-wrap;">{{ t.motivo }}</p>
+                            </td>
+                            <td>
+                                {% if t.adjunto_comprobante %}
+                                    <a href="{{ t.adjunto_comprobante.url }}" target="_blank" class="btn btn-sm btn-outline-primary fw-bold"><i class="bi bi-file-earmark-medical"></i> Abrir Adjunto</a>
+                                {% else %}
+                                    <span class="text-muted small">Sin adjunto</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if t.estado == 'PENDIENTE' %}
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{% url 'revisar_ticket' t.id 'APROBADO' %}" class="btn btn-sm btn-success fw-bold"><i class="bi bi-check-lg"></i> Aprobar</a>
+                                        <a href="{% url 'revisar_ticket' t.id 'RECHAZADO' %}" class="btn btn-sm btn-danger fw-bold"><i class="bi bi-x-lg"></i> Rechazar</a>
+                                    </div>
+                                {% else %}
+                                    <span class="badge {% if t.estado == 'APROBADO' %}bg-success-subtle text-success border border-success{% else %}bg-danger-subtle text-danger border border-danger{% endif %} p-2">
+                                        {{ t.get_estado_display }} por {{ t.revisado_por.first_name }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center py-5 text-muted">Bandeja limpia. No hay solicitudes pendientes.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

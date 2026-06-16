@@ -1,0 +1,46 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <h4 class="fw-bold text-dark mb-4"><i class="bi bi-clipboard-check text-success"></i> Auditoría de Onboarding</h4>
+    
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-warning text-dark fw-bold border-0 pt-3">Pendientes de Firma (Calidad)</div>
+                <ul class="list-group list-group-flush">
+                    {% for p in pendientes %}
+                    <li class="list-group-item p-3">
+                        <div class="fw-bold text-dark">{{ p.colaborador.user.get_full_name }}</div>
+                        <div class="small text-muted mb-2">Módulo: {{ p.modulo.titulo }}</div>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="firmar_calidad" value="1">
+                            <input type="hidden" name="progreso_id" value="{{ p.id }}">
+                            <button type="submit" class="btn btn-sm btn-success fw-bold rounded-pill px-3"><i class="bi bi-pen"></i> Dar Conformidad</button>
+                        </form>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item p-4 text-center text-muted">Sin evaluaciones pendientes.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-success text-white fw-bold border-0 pt-3">Historial de Capacitaciones Aprobadas</div>
+                <ul class="list-group list-group-flush">
+                    {% for c in completos %}
+                    <li class="list-group-item p-3">
+                        <div class="fw-bold text-dark">{{ c.colaborador.user.get_full_name }}</div>
+                        <div class="small text-secondary">Módulo: {{ c.modulo.titulo }}</div>
+                        <div class="small text-muted"><i class="bi bi-check-all text-success"></i> Validado por: {{ c.revisado_por_calidad.first_name }}</div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item p-4 text-center text-muted">Aún no hay conformidades registradas.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
