@@ -26,7 +26,8 @@ ALLOWED_HOSTS = [
 # Aquí agregamos la dirección que te dio Ngrok:
 CSRF_TRUSTED_ORIGINS = [
     'https://why-unknown-wildfire.ngrok-free.dev', 
-    'https://*.ngrok-free.app'
+    'https://*.ngrok-free.app',
+    'https://rj-plataforma.onrender.com'
 ]
 
 # Application definition
@@ -87,8 +88,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'es-pe'
+TIME_ZONE = 'America/Lima'
 USE_I18N = True
 USE_TZ = True
 

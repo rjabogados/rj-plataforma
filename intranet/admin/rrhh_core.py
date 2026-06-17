@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.models import User
 from intranet.models import Negocio, Colaborador, Asistencia
 
 @admin.register(Negocio)
@@ -24,3 +25,18 @@ class AsistenciaAdmin(admin.ModelAdmin):
     list_display = ('colaborador', 'fecha', 'f1_ingreso', 'f4_salida')
     list_filter = ('fecha',)
     search_fields = ('colaborador__dni', 'colaborador__user__first_name', 'colaborador__user__last_name')
+
+# 1. Creamos el bloque que se va a incrustar
+class ColaboradorInline(admin.StackedInline):
+    model = Colaborador
+    can_delete = False
+    verbose_name_plural = 'Datos Operativos del Colaborador'
+    fk_name = 'user' # Cambia 'user' por el nombre exacto del campo que enlaza Colaborador con User
+
+# 2. Desconectamos el panel de Usuarios aburrido que viene por defecto
+admin.site.unregister(User)
+
+# 3. Conectamos un panel de Usuarios nuevo y vitaminado
+@admin.register(User)
+class UsuarioPersonalizadoAdmin(UserAdmin):
+    inlines = (ColaboradorInline, )
