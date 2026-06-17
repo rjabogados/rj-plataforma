@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin  # <- Importación corregida para el panel de usuarios
+from django.contrib.admin.sites import NotRegistered  # <- Importación corregida para el escudo de Render
 from intranet.models import Negocio, Colaborador, Asistencia
 
 @admin.register(Negocio)
@@ -31,10 +33,13 @@ class ColaboradorInline(admin.StackedInline):
     model = Colaborador
     can_delete = False
     verbose_name_plural = 'Datos Operativos del Colaborador'
-    fk_name = 'user' # Cambia 'user' por el nombre exacto del campo que enlaza Colaborador con User
+    fk_name = 'user' 
 
-# 2. Desconectamos el panel de Usuarios aburrido que viene por defecto
-admin.site.unregister(User)
+# 2. El escudo: Intentamos desconectar al User, si Django aún no lo cargó en milisegundos, lo ignora y no rompe
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
 
 # 3. Conectamos un panel de Usuarios nuevo y vitaminado
 @admin.register(User)
