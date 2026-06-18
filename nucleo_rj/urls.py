@@ -1,21 +1,23 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include  # <- Importamos 'include' para conectar tu intranet
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView # <- 1. Importamos el redireccionador
 from intranet.views.webhook import recibir_matriz_excel
 
-# --- PERSONALIZACIÓN DEL PANEL CORPORATIVO ---
+# --- PERSONALIZACIÓN DEL PANEL CORPORATIVO (BACKOFFICE) ---
 admin.site.site_header = "Intranet RJ Abogados"
 admin.site.site_title = "Panel Operativo Central"
 admin.site.index_title = "Bienvenido al Sistema Central"
 # ---------------------------------------------
 
 urlpatterns = [
-    # 2. La nueva ruta: Si alguien entra sin nada al final, lo mandamos al panel
-    path('', RedirectView.as_view(url='/admin/', permanent=False)), 
+    # 1. LA PUERTA PRINCIPAL: Conecta directamente con tu plataforma normal e intranet
+    path('', include('intranet.urls')), 
     
+    # 2. El panel de administración por detrás
     path('admin/', admin.site.urls),
+    
+    # 3. El webhook de Meta Ads
     path('api/webhook/', recibir_matriz_excel, name='webhook_matriz'),
 ]
 
