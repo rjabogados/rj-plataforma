@@ -1,7 +1,20 @@
+import os
 import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from .rrhh_core import Colaborador
+
+# --- FUNCIONES DE ENRUTAMIENTO DINÁMICO ---
+def ruta_dinamica_personal(instance, filename):
+    # Entra a través del modelo Colaborador para llegar al Username
+    username = instance.colaborador.user.username if instance.colaborador and instance.colaborador.user else "sin_usuario"
+    return os.path.join('boveda_personal', f'usuario_{username}', filename)
+
+def ruta_dinamica_pdf(instance, filename):
+    # Aquí el colaborador ya es un objeto User directo
+    username = instance.colaborador.username if instance.colaborador else "sin_usuario"
+    return os.path.join('boveda_pdf', f'usuario_{username}', filename)
+# ------------------------------------------
 
 class DocumentoPersonal(models.Model):
     TIPOS_DOC = [
@@ -14,7 +27,10 @@ class DocumentoPersonal(models.Model):
     colaborador = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='documentos_digitales')
     tipo = models.CharField(max_length=20, choices=TIPOS_DOC, db_index=True)
     titulo = models.CharField(max_length=150)
-    archivo = models.FileField(upload_to='boveda_personal/')
+    
+    # Aplicamos la función dinámica aquí
+    archivo = models.FileField(upload_to=ruta_dinamica_personal)
+    
     requiere_firma = models.BooleanField(default=False)
     esta_firmado = models.BooleanField(default=False, db_index=True)
     fecha_firma = models.DateTimeField(null=True, blank=True)
@@ -31,7 +47,7 @@ class CategoriaDocumento(models.Model):
 class PlantillaDocumento(models.Model):
     nombre = models.CharField(max_length=200)
     categoria = models.ForeignKey(CategoriaDocumento, on_delete=models.SET_NULL, null=True)
-    archivo_word = models.FileField(upload_to='plantillas_docs/')
+    archivo_word = models.FileField(upload_to='plantillas_docs/') # Las plantillas se quedan fijas
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     activo = models.BooleanField(default=True)
 
@@ -46,7 +62,10 @@ class DocumentoGenerado(models.Model):
     colaborador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mis_documentos')
     plantilla_origen = models.ForeignKey(PlantillaDocumento, on_delete=models.SET_NULL, null=True, blank=True)
     titulo = models.CharField(max_length=255)
-    archivo_pdf = models.FileField(upload_to='boveda_pdf/', blank=True, null=True)
+    
+    # Aplicamos la función dinámica aquí
+    archivo_pdf = models.FileField(upload_to=ruta_dinamica_pdf, blank=True, null=True)
+    
     estado = models.CharField(max_length=20, choices=ESTADOS, default='BORRADOR', db_index=True)
     visible_para_empleado = models.BooleanField(default=False)
     fecha_emision = models.DateTimeField(auto_now_add=True)

@@ -1,24 +1,25 @@
+import os
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from intranet.models import CandidatoOnboarding  # Ajusta si tu modelo se llama distinto en la carpeta models
 
-@csrf_exempt  # Desactiva la verificación CSRF para permitir peticiones externas de Excel
+@csrf_exempt  
 def recibir_matriz_excel(request):
     if request.method == 'POST':
         try:
             body = json.loads(request.body)
             
-            # Verificación de la llave de seguridad configurada en Excel
-            if body.get('api_key') != 'RJ_Secreto_2026_Aut':
+            # El sistema busca la llave oculta en Render. Si no la encuentra, usa la anterior por defecto para no romper nada
+            api_key_segura = os.environ.get('WEBHOOK_API_KEY', 'RJ_Secreto_2026_Aut')
+            
+            if body.get('api_key') != api_key_segura:
                 return JsonResponse({"error": "Acceso denegado. Llave incorrecta."}, status=403)
             
             lote = body.get('data', [])
             candidatos_creados = 0
             
-            # Procesamiento de los datos enviados por el script
             for item in lote:
-                # Evita duplicados usando el teléfono como identificador único
                 obj, created = CandidatoOnboarding.objects.update_or_create(
                     telefono=item.get('telefono'),
                     defaults={
