@@ -3,7 +3,6 @@ import dj_database_url
 from pathlib import Path
 from dotenv import load_dotenv
 
-
 # Cargar las variables ocultas desde el archivo .env
 load_dotenv()
 
@@ -50,7 +49,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'nucleo_rj.urls'
@@ -72,13 +70,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'nucleo_rj.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+# ==========================================
+# CONFIGURACIÓN HÍBRIDA DE BASE DE DATOS
+# ==========================================
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # 1. EN LA NUBE (Render - PostgreSQL)
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+    }
+else:
+    # 2. EN TU COMPUTADORA (Local - SQLite3)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
