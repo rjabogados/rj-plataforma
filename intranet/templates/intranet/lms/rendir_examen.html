@@ -1,0 +1,78 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="contenedor-examen" style="max-width: 800px; margin: 0 auto; padding: 20px;">
+    
+    <div style="background-color: #183D74; color: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h2 style="margin-top: 0; margin-bottom: 10px;">{{ evaluacion.titulo }}</h2>
+        <p style="margin: 0; font-size: 15px; opacity: 0.9;"><strong>Curso:</strong> {{ matricula.curso.titulo }}</p>
+        
+        {% if evaluacion.instrucciones %}
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 5px; margin-top: 15px; font-size: 14px;">
+            <strong>📋 Instrucciones:</strong><br>
+            {{ evaluacion.instrucciones }}
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="POST" id="form-examen" action="{% url 'rendir_examen' matricula.id %}">
+        {% csrf_token %}
+        
+        {% for pregunta in preguntas %}
+        <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
+            
+            <input type="hidden" name="preguntas_mostradas" value="{{ pregunta.id }}">
+
+            <div style="margin-bottom: 15px;">
+                <span style="background: #e9ecef; color: #555; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 10px;">Pregunta {{ forloop.counter }}</span>
+                <span style="font-size: 16px; font-weight: bold; color: #333;">{{ pregunta.enunciado }}</span>
+                <span style="display: block; font-size: 12px; color: #888; margin-top: 5px;">Vale: {{ pregunta.puntos }} pts</span>
+            </div>
+
+            {% if pregunta.imagen_apoyo %}
+            <div style="margin-bottom: 15px; text-align: center;">
+                <img src="{{ pregunta.imagen_apoyo.url }}" alt="Imagen de apoyo" style="max-width: 100%; max-height: 300px; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+            {% endif %}
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                {% for opcion in pregunta.alternativas.all %}
+                <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; transition: 0.2s; background: #fbfbfb;">
+                    <input type="radio" name="pregunta_{{ pregunta.id }}" value="{{ opcion.id }}" style="margin-right: 15px; transform: scale(1.2);" required>
+                    <span style="font-size: 15px; color: #444;">{{ opcion.texto }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+        </div>
+        {% endfor %}
+
+        <div style="text-align: right; margin-top: 30px; margin-bottom: 50px;">
+            <button type="submit" onclick="return confirm('¿Estás seguro de enviar tus respuestas? Una vez enviado, no podrás modificarlo y se registrará tu nota final.');" style="background-color: #28a745; color: white; padding: 15px 30px; border: none; border-radius: 5px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);">
+                Terminar y Enviar Examen
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const labels = document.querySelectorAll("label");
+    labels.forEach(label => {
+        const radio = label.querySelector("input[type='radio']");
+        radio.addEventListener("change", function() {
+            // Quitamos el color a todas las opciones de esa pregunta
+            const siblings = label.parentElement.querySelectorAll("label");
+            siblings.forEach(s => {
+                s.style.borderColor = "#ddd";
+                s.style.background = "#fbfbfb";
+            });
+            // Pintamos la que acaba de seleccionar
+            label.style.borderColor = "#183D74";
+            label.style.background = "#eef4fb";
+        });
+    });
+});
+</script>
+{% endblock %}

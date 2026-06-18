@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from .views.reclutamiento import actualizar_estado_ajax , obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
+from .views import lms
 
 urlpatterns = [
     # ==========================================
@@ -33,6 +34,9 @@ urlpatterns = [
     path('onboarding/', views.induccion, name='induccion'),
     path('onboarding-admin/', views.induccion_admin, name='induccion_admin'),
     path('candidato/eliminar/<int:pk>/', views.eliminar_candidato, name='eliminar_candidato'),
+    path('lms/evaluacion/<int:evaluacion_id>/importar/', lms.importar_excel_balotario, name='importar_balotario'),
+    path('lms/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
+    path('lms/matricula/<int:matricula_id>/examen/', lms.rendir_evaluacion, name='rendir_examen'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS
@@ -102,4 +106,6 @@ urlpatterns = [
     path('api/actualizar-candidato/', actualizar_candidato_ajax, name='api_actualizar_candidato'),
     path('api/descartar-candidato/', descartar_candidato_ajax, name='api_descartar_candidato'),
     path('api/metricas-dashboard/', views.metricas_dashboard_ajax, name='api_metricas_dashboard'),
+    path('lms/evaluacion/<int:evaluacion_id>/importar/', lms.importar_excel_balotario, name='importar_balotario'),
+    path('lms/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
 ]

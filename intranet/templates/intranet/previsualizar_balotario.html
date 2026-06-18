@@ -1,0 +1,123 @@
+{% extends 'intranet/base.html' %} {% block content %}
+<div class="contenedor-lms" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+    
+    <div style="background-color: #183D74; color: white; padding: 15px; border-radius: 8px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3 style="margin: 0;">Vista Previa: {{ evaluacion.titulo }}</h3>
+            <small>Revisa y ajusta los puntajes antes de inyectar a la base de datos.</small>
+        </div>
+        <div style="text-align: right; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px;">
+            <span style="font-size: 14px; display: block;">Puntaje Máximo Permitido: <strong>{{ evaluacion.puntaje_maximo }}</strong></span>
+            <span style="font-size: 18px; font-weight: bold;" id="marcador-total">Total Actual: 0.00</span>
+            <div id="alerta-puntos" style="color: #ff4d4d; font-size: 12px; display: none; margin-top: 5px;">
+                ⚠️ Te has excedido del límite.
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="{% url 'previsualizar_balotario' %}" id="form-balotario">
+        {% csrf_token %}
+        
+        {% for p in preguntas %}
+        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="flex-grow: 1;">
+                    <label style="font-weight: bold; color: #333;">Pregunta {{ forloop.counter }}</label>
+                    <input type="text" name="enunciado_{{ p.id_temp }}" value="{{ p.enunciado }}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+                </div>
+                <div style="width: 120px;">
+                    <label style="font-weight: bold; color: #333;">Puntos</label>
+                    <input type="number" step="0.10" min="0.10" name="puntos_{{ p.id_temp }}" value="{{ p.puntos }}" class="input-puntos" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #183D74;" required>
+                </div>
+            </div>
+
+            <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #bbb;">
+                <p style="margin-top: 0; margin-bottom: 10px; font-size: 13px; font-weight: bold;">Alternativas (Marca la correcta):</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="1" {% if p.correcta == '1' %}checked{% endif %}>
+                        <input type="text" name="opcion_1_{{ p.id_temp }}" value="{{ p.opcion_1 }}" style="width: 100%; padding: 5px;" required>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="2" {% if p.correcta == '2' %}checked{% endif %}>
+                        <input type="text" name="opcion_2_{{ p.id_temp }}" value="{{ p.opcion_2 }}" style="width: 100%; padding: 5px;" required>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="3" {% if p.correcta == '3' %}checked{% endif %}>
+                        <input type="text" name="opcion_3_{{ p.id_temp }}" value="{{ p.opcion_3 }}" style="width: 100%; padding: 5px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="4" {% if p.correcta == '4' %}checked{% endif %}>
+                        <input type="text" name="opcion_4_{{ p.id_temp }}" value="{{ p.opcion_4 }}" style="width: 100%; padding: 5px;">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+
+        <div style="text-align: right; margin-top: 20px; margin-bottom: 40px;">
+            <a href="{% url 'gestor_lms' %}" style="padding: 10px 20px; text-decoration: none; color: #555; border: 1px solid #ccc; border-radius: 5px; margin-right: 10px;">Cancelar</a>
+            <button type="submit" id="btn-guardar" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">
+                Confirmar e Inyectar a BD
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Obtenemos el límite desde Python y lo convertimos a número
+    const limitePuntaje = parseFloat("{{ evaluacion.puntaje_maximo|stringformat:'f' }}");
+    
+    // 2. Seleccionamos todos los campos de texto que tienen los puntos y elementos visuales
+    const inputsPuntos = document.querySelectorAll('.input-puntos');
+    const marcadorTotal = document.getElementById('marcador-total');
+    const alertaPuntos = document.getElementById('alerta-puntos');
+    const btnGuardar = document.getElementById('btn-guardar');
+
+    // 3. Función que suma y bloquea
+    function calcularTotal() {
+        let suma = 0;
+        
+        // Recorremos todos los inputs y sumamos sus valores
+        inputsPuntos.forEach(function(input) {
+            let valor = parseFloat(input.value);
+            if (!isNaN(valor)) {
+                suma += valor;
+            }
+        });
+
+        // Actualizamos el texto en pantalla
+        marcadorTotal.innerText = "Total Actual: " + suma.toFixed(2);
+
+        // Lógica de bloqueo de seguridad
+        if (suma > limitePuntaje) {
+            // Se pasó del límite: Fondo rojo, mostrar alerta y apagar botón
+            marcadorTotal.style.color = "#ff4d4d";
+            alertaPuntos.style.display = "block";
+            btnGuardar.disabled = true;
+            btnGuardar.style.backgroundColor = "#cccccc";
+            btnGuardar.style.cursor = "not-allowed";
+        } else {
+            // Todo en orden: Fondo normal, ocultar alerta y encender botón
+            marcadorTotal.style.color = "white";
+            alertaPuntos.style.display = "none";
+            btnGuardar.disabled = false;
+            btnGuardar.style.backgroundColor = "#28a745";
+            btnGuardar.style.cursor = "pointer";
+        }
+    }
+
+    // 4. Hacemos que la función se dispare cada vez que alguien escriba un número nuevo
+    inputsPuntos.forEach(function(input) {
+        input.addEventListener('input', calcularTotal);
+    });
+
+    // 5. Calculamos una vez al cargar la página por si el Excel ya venía descuadrado
+    calcularTotal();
+});
+</script>
+{% endblock %}

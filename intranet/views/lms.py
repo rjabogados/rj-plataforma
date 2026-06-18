@@ -9,16 +9,16 @@ from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.utils import timezone
 from django.http import HttpResponse
 
-# Importamos los modelos
+# Importamos los modelos (Agregué OpcionRespuesta al final)
 from intranet.models import (
     Colaborador, Negocio, Encuesta, Pregunta, RespuestaEncuesta,
     MensajeInterno, EventoCalendario, Comunicado, CandidatoOnboarding,
     CursoInduccion, MaterialFormativo, MatriculaCurso, EvaluacionCurso,
-    PreguntaEvaluacion, RespuestaColaborador
+    PreguntaEvaluacion, RespuestaColaborador, OpcionRespuesta
 )
 
 # Herramientas globales de tu archivo utils.py
@@ -504,10 +504,227 @@ def activos(request): return render(request, 'intranet/activos.html')
 
 @login_required(login_url='login')
 @solo_directivos
-def gestor_lms(request): return render(request, 'intranet/gestor_lms.html')
+def gestor_lms(request):
+    if request.method == 'POST' and 'crear_evaluacion' in request.POST:
+        curso_id = request.POST.get('curso_id')
+        titulo = request.POST.get('titulo')
+        instrucciones = request.POST.get('instrucciones', '')
+        p_maximo = request.POST.get('puntaje_maximo', 20.00)
+        p_aprobatorio = request.POST.get('puntaje_aprobatorio', 14.00)
+        p_mostrar = request.POST.get('preguntas_a_mostrar', 10)
+        aleatorio = request.POST.get('orden_aleatorio') == 'on'
+
+        curso = get_object_or_404(CursoInduccion, id=curso_id)
+
+        # Verificamos que el curso no tenga ya un examen asignado
+        if hasattr(curso, 'evaluacion'):
+            messages.error(request, f"El curso '{curso.titulo}' ya tiene una evaluación configurada.")
+        else:
+            EvaluacionCurso.objects.create(
+                curso=curso,
+                titulo=titulo,
+                instrucciones=instrucciones,
+                puntaje_maximo=p_maximo,
+                puntaje_aprobatorio=p_aprobatorio,
+                preguntas_a_mostrar=p_mostrar,
+                orden_aleatorio=aleatorio
+            )
+            messages.success(request, "¡Examen creado! Ahora puedes subir el balotario de preguntas.")
+        return redirect('gestor_lms')
+
+    # Traemos los cursos para el desplegable y las evaluaciones para la tabla
+    cursos_disponibles = CursoInduccion.objects.filter(activo=True)
+    evaluaciones = EvaluacionCurso.objects.all().select_related('curso').prefetch_related('preguntas_balotario')
+
+    return render(request, 'intranet/gestor_lms.html', {
+        'cursos': cursos_disponibles,
+        'evaluaciones': evaluaciones
+    })
 
 @login_required(login_url='login')
 def academia(request): return render(request, 'intranet/academia.html')
 
 @login_required(login_url='login')
 def beneficios(request): return render(request, 'intranet/beneficios.html')
+
+
+# ==========================================
+# MOTOR DE EXÁMENES Y BALOTARIOS (NUEVO)
+# ==========================================
+@login_required(login_url='login')
+@solo_directivos
+def importar_excel_balotario(request, evaluacion_id):
+    evaluacion = get_object_or_404(EvaluacionCurso, id=evaluacion_id)
+
+    if request.method == 'POST' and request.FILES.get('archivo_excel'):
+        excel = request.FILES['archivo_excel']
+        
+        try:
+            wb = openpyxl.load_workbook(excel)
+            hoja = wb.active
+            preguntas_temporales = []
+
+            for i, fila in enumerate(hoja.iter_rows(min_row=2, values_only=True)):
+                if not fila[0]:  
+                    break
+
+                preguntas_temporales.append({
+                    'id_temp': i, 
+                    'enunciado': str(fila[0]),
+                    'opcion_1': str(fila[1]) if fila[1] else "",
+                    'opcion_2': str(fila[2]) if fila[2] else "",
+                    'opcion_3': str(fila[3]) if fila[3] else "",
+                    'opcion_4': str(fila[4]) if fila[4] else "",
+                    'correcta': str(fila[5]) if fila[5] else "1", 
+                    'puntos': 2.00 
+                })
+
+            request.session['balotario_temporal'] = preguntas_temporales
+            request.session['evaluacion_id_temporal'] = evaluacion.id
+
+            return redirect('previsualizar_balotario')
+
+        except Exception as e:
+            messages.error(request, f"Ocurrió un error leyendo el Excel: {str(e)}")
+            return redirect(request.path)
+
+    return render(request, 'intranet/lms/subir_excel.html', {'evaluacion': evaluacion})
+
+
+@login_required(login_url='login')
+@solo_directivos
+def previsualizar_y_guardar_balotario(request):
+    preguntas = request.session.get('balotario_temporal')
+    eval_id = request.session.get('evaluacion_id_temporal')
+
+    if not preguntas or not eval_id:
+        messages.warning(request, "No hay ningún balotario pendiente en memoria.")
+        return redirect('gestor_lms')
+
+    evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
+
+    if request.method == 'POST':
+        for req_key in request.POST:
+            if req_key.startswith('enunciado_'):
+                idx = req_key.split('_')[1] 
+
+                nueva_pregunta = PreguntaEvaluacion.objects.create(
+                    evaluacion=evaluacion,
+                    enunciado=request.POST.get(f'enunciado_{idx}'),
+                    puntos=request.POST.get(f'puntos_{idx}', 2.00)
+                )
+
+                correcta_marcada = request.POST.get(f'correcta_{idx}', '1')
+
+                for num in range(1, 5):
+                    texto_opcion = request.POST.get(f'opcion_{num}_{idx}')
+                    if texto_opcion:
+                        OpcionRespuesta.objects.create(
+                            pregunta=nueva_pregunta,
+                            texto=texto_opcion,
+                            es_correcta=(str(num) == correcta_marcada) 
+                        )
+
+        del request.session['balotario_temporal']
+        del request.session['evaluacion_id_temporal']
+
+        messages.success(request, "¡Balotario inyectado y guardado con éxito!")
+        return redirect('gestor_lms')
+
+    context = {
+        'preguntas': preguntas,
+        'evaluacion': evaluacion
+    }
+    return render(request, 'intranet/lms/previsualizar_balotario.html', context)
+
+@login_required(login_url='login')
+def rendir_evaluacion(request, matricula_id):
+    # 1. Identificamos al colaborador y su matrícula
+    perfil = request.user.perfil
+    matricula = get_object_or_404(MatriculaCurso, id=matricula_id, colaborador=perfil)
+    
+    # Validamos que el curso realmente tenga un examen configurado
+    if not hasattr(matricula.curso, 'evaluacion'):
+        messages.error(request, "Este curso aún no tiene un examen configurado.")
+        return redirect('mi_induccion')
+        
+    evaluacion = matricula.curso.evaluacion
+
+    # Si ya lo aprobó o lo jaló, no lo dejamos volver a darlo por esta ruta
+    if matricula.estado in ['COMPLETADO', 'REPROBADO']:
+        messages.info(request, f"Ya rendiste este examen. Tu nota final fue: {matricula.nota_obtenida}")
+        return redirect('mi_induccion')
+
+    # === FASE 2: EL CALIFICADOR AUTOMÁTICO (CUANDO PRESIONA "ENVIAR EXAMEN") ===
+    if request.method == 'POST':
+        nota_final = 0.00
+        
+        # Rescatamos los IDs de las preguntas exactas que le tocaron a este usuario
+        preguntas_ids = request.POST.getlist('preguntas_mostradas')
+        preguntas_evaluadas = PreguntaEvaluacion.objects.filter(id__in=preguntas_ids).prefetch_related('alternativas')
+
+        # Usamos transaction.atomic para que si la luz parpadea, no se guarde un examen a medias
+        with transaction.atomic():
+            for pregunta in preguntas_evaluadas:
+                # Vemos qué bolita (radio button) marcó el asesor
+                opcion_marcada_id = request.POST.get(f'pregunta_{pregunta.id}')
+                
+                puntos_ganados = 0.00
+                es_correcta = False
+                opcion_obj = None
+
+                if opcion_marcada_id:
+                    opcion_obj = pregunta.alternativas.filter(id=opcion_marcada_id).first()
+                    # Si la alternativa que marcó era la correcta, le sumamos los puntos
+                    if opcion_obj and opcion_obj.es_correcta:
+                        puntos_ganados = float(pregunta.puntos)
+                        es_correcta = True
+                        nota_final += puntos_ganados
+
+                # Guardamos la evidencia (El registro exacto de qué marcó, útil para auditorías)
+                respuesta_registro = RespuestaColaborador.objects.create(
+                    matricula=matricula,
+                    pregunta=pregunta,
+                    es_correcta=es_correcta,
+                    puntos_obtenidos=puntos_ganados
+                )
+                if opcion_obj:
+                    respuesta_registro.opciones_marcadas.add(opcion_obj)
+
+            # Escribimos la nota final en su matrícula
+            matricula.nota_obtenida = nota_final
+            matricula.fecha_finalizacion = timezone.now()
+            
+            # EL VEREDICTO: Comparamos contra la nota aprobatoria que fijaste
+            if nota_final >= float(evaluacion.puntaje_aprobatorio):
+                matricula.estado = 'COMPLETADO'
+                messages.success(request, f"¡Felicidades! Has aprobado el examen con {nota_final} puntos.")
+            else:
+                matricula.estado = 'REPROBADO'
+                messages.error(request, f"No alcanzaste la nota mínima. Obtuviste {nota_final} puntos. Deberás repasar los materiales.")
+            
+            matricula.save()
+            return redirect('mi_induccion')
+
+    # === FASE 1: EL REPARTIDOR (CUANDO RECIÉN ENTRA A LA PANTALLA) ===
+    # Actualizamos su estado para que en el panel de RRHH se vea que está "EVALUANDO"
+    if matricula.estado != 'EVALUANDO':
+        matricula.estado = 'EVALUANDO'
+        matricula.save()
+
+    # EL TRUCO MAGISTRAL: Seleccionamos X preguntas al azar del balotario gigante
+    if evaluacion.orden_aleatorio:
+        preguntas = evaluacion.preguntas_balotario.filter(activa=True).order_by('?')[:evaluacion.preguntas_a_mostrar]
+    else:
+        preguntas = evaluacion.preguntas_balotario.filter(activa=True).order_by('id')[:evaluacion.preguntas_a_mostrar]
+
+    # Mezclamos también el orden de las alternativas para que no sea siempre la "A"
+    preguntas = preguntas.prefetch_related(
+        Prefetch('alternativas', queryset=OpcionRespuesta.objects.order_by('?'))
+    )
+
+    return render(request, 'intranet/lms/rendir_examen.html', {
+        'matricula': matricula,
+        'evaluacion': evaluacion,
+        'preguntas': preguntas
+    })

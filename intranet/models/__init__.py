@@ -14,5 +14,7 @@ from .documentos import (
 from .lms import (
     CursoInduccion, MaterialFormativo, EvaluacionCurso, PreguntaEvaluacion, 
     MatriculaCurso, RespuestaColaborador, Encuesta, Pregunta, 
-    RespuestaEncuesta, CandidatoOnboarding
+    RespuestaEncuesta, CandidatoOnboarding, CursoInduccion, MaterialFormativo, 
+    EvaluacionCurso, PreguntaEvaluacion, MatriculaCurso, RespuestaColaborador,
+    OpcionRespuesta
 )
