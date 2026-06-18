@@ -40,34 +40,48 @@ class MaterialFormativo(models.Model):
     def __str__(self):
         return f"{self.orden}. {self.titulo}"
 
+# --- MOTOR DE EXÁMENES (NUEVO) ---
 class EvaluacionCurso(models.Model):
     curso = models.OneToOneField(CursoInduccion, on_delete=models.CASCADE, related_name='evaluacion')
     titulo = models.CharField(max_length=200, default="Examen de Conocimientos")
     instrucciones = models.TextField(blank=True)
-    puntaje_aprobatorio = models.IntegerField(default=14)
+    
+    # Configuraciones Dinámicas para el Balotario
+    puntaje_maximo = models.DecimalField(max_digits=5, decimal_places=2, default=20.00)
+    puntaje_aprobatorio = models.DecimalField(max_digits=5, decimal_places=2, default=14.00)
+    
+    # ¿Cuántas del total del Excel se van a mostrar?
+    preguntas_a_mostrar = models.PositiveIntegerField(default=10, help_text="Ej: Mostrar solo 10 al azar de un Excel de 100")
+    orden_aleatorio = models.BooleanField(default=True, help_text="Mezclar las preguntas y alternativas")
     
     def __str__(self):
         return f"Evaluación: {self.curso.titulo}"
 
 class PreguntaEvaluacion(models.Model):
-    TIPOS_PREGUNTA = [
-        ('ABIERTA', 'Respuesta Abierta (Desarrollo)'),
-        ('MULTIPLE', 'Opción Múltiple (Una correcta)'),
-        ('CASILLAS', 'Casillas (Varias correctas)'),
-        ('ORDENAR', 'Ordenar Pasos Lógicos'),
-        ('RELACIONAR', 'Relacionar Conceptos'),
-    ]
-    evaluacion = models.ForeignKey(EvaluacionCurso, on_delete=models.CASCADE, related_name='preguntas')
+    # Ya no usamos JSON ni opciones fijas. Ahora es 100% dinámico.
+    evaluacion = models.ForeignKey(EvaluacionCurso, on_delete=models.CASCADE, related_name='preguntas_balotario')
     enunciado = models.TextField()
-    tipo = models.CharField(max_length=20, choices=TIPOS_PREGUNTA)
     imagen_apoyo = models.ImageField(upload_to='lms_preguntas/', null=True, blank=True)
-    puntos = models.IntegerField(default=1)
-    orden = models.PositiveIntegerField(default=1)
-    configuracion_json = models.JSONField(default=dict, blank=True)
+    
+    # Puntaje en decimales para ser exactos (ej: 2.50)
+    puntos = models.DecimalField(max_digits=5, decimal_places=2, default=2.00)
+    
+    # Permite apagar una pregunta defectuosa sin borrarla de la base de datos
+    activa = models.BooleanField(default=True)
 
-    class Meta:
-        ordering = ['orden']
+    def __str__(self):
+        return self.enunciado[:50]
 
+class OpcionRespuesta(models.Model):
+    # Las columnas del Excel (Opcion_1, Opcion_2...) se convertirán en filas aquí
+    pregunta = models.ForeignKey(PreguntaEvaluacion, on_delete=models.CASCADE, related_name='alternativas')
+    texto = models.CharField(max_length=255)
+    es_correcta = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.texto} - {'Correcta' if self.es_correcta else 'Incorrecta'}"
+
+# --- MATRÍCULAS Y RESPUESTAS DEL COLABORADOR ---
 class MatriculaCurso(models.Model):
     ESTADOS = [
         ('PENDIENTE', 'Pendiente de Iniciar'),
@@ -80,6 +94,8 @@ class MatriculaCurso(models.Model):
     curso = models.ForeignKey(CursoInduccion, on_delete=models.CASCADE)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE', db_index=True)
     materiales_vistos = models.ManyToManyField(MaterialFormativo, blank=True)
+    
+    # Aquí se guardará la suma matemática final
     nota_obtenida = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     fecha_finalizacion = models.DateTimeField(null=True, blank=True)
 
@@ -87,14 +103,17 @@ class MatriculaCurso(models.Model):
         unique_together = ('colaborador', 'curso')
 
 class RespuestaColaborador(models.Model):
-    matricula = models.ForeignKey(MatriculaCurso, on_delete=models.CASCADE, related_name='respuestas')
+    matricula = models.ForeignKey(MatriculaCurso, on_delete=models.CASCADE, related_name='respuestas_examen')
     pregunta = models.ForeignKey(PreguntaEvaluacion, on_delete=models.CASCADE)
-    respuesta_json = models.JSONField(default=dict)
+    
+    # Relacionamos directamente con la tabla de alternativas para calcular el puntaje fácil
+    opciones_marcadas = models.ManyToManyField(OpcionRespuesta, blank=True)
+    
     es_correcta = models.BooleanField(default=False)
-    puntos_obtenidos = models.IntegerField(default=0)
+    puntos_obtenidos = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     fecha_respuesta = models.DateTimeField(auto_now_add=True)
 
-# --- ENCUESTAS ---
+# --- ENCUESTAS (MANTENIDO INTACTO) ---
 class Encuesta(models.Model):
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True, null=True)
@@ -124,7 +143,7 @@ class RespuestaEncuesta(models.Model):
     valor_si_no = models.BooleanField(null=True, blank=True)
     fecha_respuesta = models.DateTimeField(auto_now_add=True)
 
-# --- ONBOARDING Y RECLUTAMIENTO ---
+# --- ONBOARDING Y RECLUTAMIENTO (MANTENIDO INTACTO) ---
 class CandidatoOnboarding(models.Model):
     ESTADOS = (
         ('EN_PROCESO', 'En Proceso de Inducción'),
