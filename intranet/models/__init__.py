@@ -19,4 +19,3 @@ from .lms import (
     OpcionRespuesta
 )
 
-from .evaluaciones import Examen, PreguntaExamen, OpcionExamen, Intento, RespuestaUsuario
