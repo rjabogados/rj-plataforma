@@ -6,7 +6,7 @@
             <i class="bi bi-shield-lock-fill fs-5"></i>
         </div>
         <div class="d-flex flex-column">
-            <span class="fs-5 fw-bold tracking-wide brand-title">RJ Talent</span>
+            <span class="fs-5 fw-bold tracking-wide brand-title">RJ Abogados</span>
             <span class="brand-subtitle">Intranet Corporativa</span>
         </div>
     </a>
@@ -34,8 +34,8 @@
             </a>
             <div class="collapse submenu" id="menuMiEspacio">
                 <ul class="nav flex-column gap-1 py-1">
-                    <li><a href="{% url 'documentos_personal' %}" class="nav-link submenu-link"><i class="bi bi-folder-check me-2"></i> Mi Bóveda</a></li>
-                    <li><a href="{% url 'mensajeria' %}" class="nav-link submenu-link"><i class="bi bi-chat-left-dots-fill me-2"></i> Mensajería</a></li>
+                    <li><a href="{% url 'documentos_personal' %}" class="nav-link submenu-link"><i class="bi bi-folder-check me-2"></i> Mis Documentos</a></li>
+                    <li><a href="{% url 'mensajeria' %}" class="nav-link submenu-link"><i class="bi bi-chat-left-dots-fill me-2"></i> Bandeja de Entrada</a></li>
                     <li><a href="{% url 'vacaciones' %}" class="nav-link submenu-link"><i class="bi bi-airplane-engines-fill me-2"></i> Vacaciones</a></li>
                     <li><a href="{% url 'tickets' %}" class="nav-link submenu-link"><i class="bi bi-ticket-detailed-fill me-2"></i> Tickets / Faltas</a></li>
                 </ul>
@@ -53,7 +53,8 @@
                     <li><a href="{% url 'encuestas_personal' %}" class="nav-link submenu-link"><i class="bi bi-ui-radios-grid me-2"></i> Encuestas</a></li>
                     <li><a href="{% url 'beneficios' %}" class="nav-link submenu-link"><i class="bi bi-gift-fill me-2"></i> Beneficios</a></li>
                     <li><a href="{% url 'academia' %}" class="nav-link submenu-link"><i class="bi bi-mortarboard-fill me-2"></i> Academia LMS</a></li>
-                    
+
+                    <li><a href="{% url 'lista_examenes' %}" class="nav-link submenu-link"><i class="bi bi-journal-check me-2"></i> Mis Evaluaciones</a></li>
                     {% if request.user.perfil.onboarding_progreso %}
                     <li><a href="{% url 'mi_induccion' %}" class="nav-link submenu-link text-warning fw-bold"><i class="bi bi-rocket-takeoff-fill me-2"></i> Mi Inducción</a></li>
                     {% endif %}

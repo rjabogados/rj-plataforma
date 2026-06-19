@@ -18,3 +18,5 @@ from .lms import (
     EvaluacionCurso, PreguntaEvaluacion, MatriculaCurso, RespuestaColaborador,
     OpcionRespuesta
 )
+
+from .evaluaciones import Examen, PreguntaExamen, OpcionExamen, Intento, RespuestaUsuario

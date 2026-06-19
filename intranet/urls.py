@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from .views.reclutamiento import actualizar_estado_ajax , obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
 from .views import lms
+from intranet.views import evaluaciones 
 
 urlpatterns = [
     # ==========================================
@@ -108,4 +109,6 @@ urlpatterns = [
     path('api/metricas-dashboard/', views.metricas_dashboard_ajax, name='api_metricas_dashboard'),
     path('lms/evaluacion/<int:evaluacion_id>/importar/', lms.importar_excel_balotario, name='importar_balotario'),
     path('lms/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
+    path('academia/examenes/', evaluaciones.lista_examenes, name='lista_examenes'),
+    path('academia/examenes/<int:examen_id>/', evaluaciones.rendir_examen, name='rendir_examen'),
 ]
