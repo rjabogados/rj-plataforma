@@ -20,14 +20,14 @@ from django.http import HttpResponse
 from intranet.models import (
     Colaborador, Negocio, Encuesta, Pregunta, RespuestaEncuesta,
     MensajeInterno, EventoCalendario, Comunicado, CandidatoOnboarding,
-    CursoInduccion, MaterialFormativo, MatriculaCurso, EvaluacionCurso,
+    MaterialFormativo, MatriculaCurso,
     PreguntaEvaluacion, RespuestaColaborador, OpcionRespuesta
 )
 
 # Herramientas globales de tu archivo utils.py
 from .utils import solo_directivos, solo_calidad, generar_username_unico
 
-from ..models.lms import EvaluacionCurso, CursoInduccion # Asegúrate de que las importaciones sean correctas
+from intranet.models.lms import EvaluacionCurso, CursoInduccion # Asegúrate de que las importaciones sean correctas
 
 # ==========================================
 # DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
@@ -159,12 +159,70 @@ from django.contrib.auth.decorators import login_required
 
 @login_required(login_url='login')
 def procesar_mapeo_balotario(request):
-    # Esto va a forzar un mensaje rojo en la consola de Render
-    print("=========================================", file=sys.stderr, flush=True)
-    print("¡LA PETICIÓN LLEGÓ A LA VISTA CON ÉXITO!", file=sys.stderr, flush=True)
-    print("=========================================", file=sys.stderr, flush=True)
-    
-    return HttpResponse("<h1>¡LA VISTA FUNCIONA Y NO HAY ERROR 500!</h1>", status=200)
+    if request.method == 'POST':
+        try:
+            ruta_archivo = request.session.get('ruta_excel_balotario')
+            eval_id = request.session.get('evaluacion_id_temporal')
+            
+            if not ruta_archivo or not default_storage.exists(ruta_archivo):
+                messages.error(request, "El archivo expiró. Vuelve a subirlo.")
+                return redirect('gestor_lms')
+
+            evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
+            puntos_automaticos = round(evaluacion.puntaje_maximo / evaluacion.preguntas_a_mostrar, 2) if evaluacion.preguntas_a_mostrar > 0 else 0.00
+
+            idx_pregunta = int(request.POST.get('prop_pregunta', -1))
+            idx_correcta = int(request.POST.get('prop_correcta', -1))
+            idx_alt1 = int(request.POST.get('prop_alt1', -1))
+            idx_alt2 = int(request.POST.get('prop_alt2', -1))
+            idx_alt3 = int(request.POST.get('prop_alt3', -1))
+            idx_alt4 = int(request.POST.get('prop_alt4', -1))
+
+            archivo_excel = default_storage.open(ruta_archivo)
+            
+            # --- LA LÍNEA MÁGICA SALVA-MEMORIA ---
+            wb = openpyxl.load_workbook(archivo_excel, data_only=True, read_only=True)
+            # -------------------------------------
+            
+            preguntas_temporales = []
+            for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
+                def get_val(idx):
+                    if idx >= 0 and idx < len(fila):
+                        val = fila[fila.index(fila[idx])] # Ajuste menor de seguridad
+                        return str(val).strip() if val is not None else ""
+                    return ""
+
+                enunciado = get_val(idx_pregunta)
+                correcta = get_val(idx_correcta)
+                alt1 = get_val(idx_alt1)
+                alt2 = get_val(idx_alt2)
+                alt3 = get_val(idx_alt3)
+                alt4 = get_val(idx_alt4)
+
+                if enunciado and correcta and alt1: 
+                    preguntas_temporales.append({
+                        'id_temp': i,
+                        'enunciado': enunciado,
+                        'correcta': correcta,
+                        'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
+                        'puntos': puntos_automaticos
+                    })
+
+            wb.close()
+            archivo_excel.close()
+            default_storage.delete(ruta_archivo)
+            
+            if 'ruta_excel_balotario' in request.session:
+                del request.session['ruta_excel_balotario']
+
+            request.session['balotario_temporal'] = preguntas_temporales
+            return redirect('previsualizar_balotario')
+            
+        except Exception as e:
+            error_texto = traceback.format_exc()
+            return HttpResponse(f"<div style='padding:20px;color:red;border:2px solid red;'><pre>{error_texto}</pre></div>", status=200)
+            
+    return redirect('gestor_lms')
 
 # ==========================================
 # ONBOARDING CORPORATIVO
