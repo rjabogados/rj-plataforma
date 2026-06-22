@@ -690,6 +690,7 @@ def importar_excel_balotario(request, evaluacion_id):
             
             request.session['ruta_excel_balotario'] = nombre_tmp
             request.session['evaluacion_id_temporal'] = evaluacion.id
+            request.session.modified = True
             
             # Pasamos a la pantalla de mapeo
             return render(request, 'intranet/lms/mapear_balotario.html', {
