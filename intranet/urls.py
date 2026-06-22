@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from .views.reclutamiento import actualizar_estado_ajax , obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
 from .views import lms
-from intranet.views import evaluaciones 
+from intranet.views import lms
 
 urlpatterns = [
     # ==========================================
