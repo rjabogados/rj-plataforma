@@ -157,49 +157,56 @@ def procesar_mapeo_balotario(request):
         eval_id = request.session.get('evaluacion_id_temporal')
         
         if not ruta_archivo or not default_storage.exists(ruta_archivo):
-            messages.error(request, "El archivo expiró. Vuelve a subirlo.")
+            messages.error(request, "El archivo expiró o no se encontró. Vuelve a subirlo.")
             return redirect('gestor_lms')
 
-        # === MAGIA MATEMÁTICA AQUÍ ===
         evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
-        # Si el examen vale 20 y muestra 10, cada pregunta vale 2.00 automático
         puntos_automaticos = round(evaluacion.puntaje_maximo / evaluacion.preguntas_a_mostrar, 2) if evaluacion.preguntas_a_mostrar > 0 else 0.00
-        # =============================
 
-        idx_pregunta = int(request.POST.get('prop_pregunta', -1))
-        idx_correcta = int(request.POST.get('prop_correcta', -1))
-        idx_alt1 = int(request.POST.get('prop_alt1', -1))
-        idx_alt2 = int(request.POST.get('prop_alt2', -1))
-        idx_alt3 = int(request.POST.get('prop_alt3', -1))
-        idx_alt4 = int(request.POST.get('prop_alt4', -1))
+        # Captura de índices con seguridad
+        try:
+            idx_pregunta = int(request.POST.get('prop_pregunta', -1))
+            idx_correcta = int(request.POST.get('prop_correcta', -1))
+            idx_alt1 = int(request.POST.get('prop_alt1', -1))
+            idx_alt2 = int(request.POST.get('prop_alt2', -1))
+            idx_alt3 = int(request.POST.get('prop_alt3', -1))
+            idx_alt4 = int(request.POST.get('prop_alt4', -1))
+        except ValueError:
+            messages.error(request, "Error en el mapeo de columnas.")
+            return redirect('gestor_lms')
 
         archivo_excel = default_storage.open(ruta_archivo)
-        wb = openpyxl.load_workbook(archivo_excel)
+        wb = openpyxl.load_workbook(archivo_excel, data_only=True) # data_only=True evita errores con fórmulas
         
         preguntas_temporales = []
         for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
-            if idx_pregunta >= 0 and fila[idx_pregunta]:
-                enunciado = str(fila[idx_pregunta]).strip()
-                correcta = str(fila[idx_correcta]).strip() if idx_correcta >= 0 and fila[idx_correcta] is not None else ""
-                alt1 = str(fila[idx_alt1]).strip() if idx_alt1 >= 0 and fila[idx_alt1] is not None else ""
-                
-                alt2 = str(fila[idx_alt2]).strip() if idx_alt2 >= 0 and fila[idx_alt2] is not None else ""
-                alt3 = str(fila[idx_alt3]).strip() if idx_alt3 >= 0 and fila[idx_alt3] is not None else ""
-                alt4 = str(fila[idx_alt4]).strip() if idx_alt4 >= 0 and fila[idx_alt4] is not None else ""
+            # SEGURIDAD EXTRA: Validar que el índice exista en esta fila específica
+            def get_val(idx):
+                return str(fila[idx]).strip() if (idx >= 0 and idx < len(fila) and fila[idx] is not None) else ""
 
-                if enunciado and correcta and alt1: 
-                    preguntas_temporales.append({
-                        'id_temp': i,
-                        'enunciado': enunciado,
-                        'correcta': correcta,
-                        'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
-                        'puntos': puntos_automaticos # <-- ASIGNADO AUTOMÁTICAMENTE
-                    })
+            enunciado = get_val(idx_pregunta)
+            correcta = get_val(idx_correcta)
+            alt1 = get_val(idx_alt1)
+            alt2 = get_val(idx_alt2)
+            alt3 = get_val(idx_alt3)
+            alt4 = get_val(idx_alt4)
+
+            if enunciado and correcta and alt1: 
+                preguntas_temporales.append({
+                    'id_temp': i,
+                    'enunciado': enunciado,
+                    'correcta': correcta,
+                    'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
+                    'puntos': puntos_automaticos
+                })
 
         wb.close()
         archivo_excel.close()
         default_storage.delete(ruta_archivo)
-        del request.session['ruta_excel_balotario']
+        
+        # Limpiamos sesión
+        if 'ruta_excel_balotario' in request.session:
+            del request.session['ruta_excel_balotario']
 
         request.session['balotario_temporal'] = preguntas_temporales
         return redirect('previsualizar_balotario')
