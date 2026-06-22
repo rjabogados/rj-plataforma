@@ -3,74 +3,117 @@
 <div class="container-fluid" style="max-width: 850px;">
     
     <div class="mb-4 text-center">
-        <h3 class="fw-bold text-dark"><i class="bi bi-rocket-takeoff-fill text-primary"></i> Mi Ruta de Inducción</h3>
-        <p class="text-muted">Completa los módulos asignados para finalizar tu proceso formativo en RJ Abogados.</p>
+        <h3 class="fw-bold text-dark"><i class="bi bi-rocket-takeoff-fill text-primary"></i> Mi Ruta de Inducción y Capacitación</h3>
+        <p class="text-muted">Completa los cursos asignados y rinde tus evaluaciones para finalizar tu proceso en RJ Abogados.</p>
     </div>
 
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i> {{ message }}
+                <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
+    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white border-top border-primary border-4">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h6 class="fw-bold text-secondary mb-0">Tu Avance Actual</h6>
-                <span class="badge bg-primary rounded-pill">{{ completados }} de {{ total }} Módulos</span>
+                <span class="badge bg-primary rounded-pill fs-6">{{ completados }} de {{ total }} Cursos Completados</span>
             </div>
-            <div class="progress" style="height: 12px;">
+            <div class="progress rounded-pill shadow-sm" style="height: 15px;">
                 <div class="progress-bar progress-bar-striped progress-bar-animated {% if porcentaje == 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ porcentaje }}%;"></div>
             </div>
             {% if porcentaje == 100 %}
-            <div class="mt-3 text-success fw-bold small text-center"><i class="bi bi-trophy-fill"></i> ¡Felicidades! Has completado tu inducción exitosamente.</div>
+            <div class="mt-3 text-success fw-bold text-center fs-5"><i class="bi bi-trophy-fill text-warning me-2"></i> ¡Felicidades! Has completado tu malla formativa exitosamente.</div>
             {% endif %}
         </div>
     </div>
 
     {% if total == 0 %}
-    <div class="text-center p-5 bg-light rounded-4 border border-secondary border-opacity-25">
+    <div class="text-center p-5 bg-white rounded-4 shadow-sm border-0">
         <i class="bi bi-inbox fs-1 text-muted"></i>
-        <h6 class="fw-bold text-dark mt-3">No tienes módulos asignados</h6>
-        <p class="text-muted small">Tu supervisor o RRHH aún no te ha habilitado cursos. Vuelve más tarde.</p>
+        <h6 class="fw-bold text-dark mt-3">No tienes cursos asignados</h6>
+        <p class="text-muted small">Tu supervisor o RRHH aún no te ha habilitado la malla formativa. Vuelve más tarde.</p>
     </div>
     {% else %}
     
     <div class="accordion shadow-sm" id="accordionInduccion">
         {% for item in mis_modulos %}
-        <div class="accordion-item border-0 mb-3 rounded-4 bg-white overflow-hidden">
+        <div class="accordion-item border-0 mb-3 rounded-4 bg-white overflow-hidden shadow-sm">
             <h2 class="accordion-header" id="heading{{ item.id }}">
-                <button class="accordion-button {% if item.aprobado_empleado %}bg-success text-white bg-opacity-75{% else %}collapsed{% endif %} fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ item.id }}">
+                <button class="accordion-button {% if item.estado == 'COMPLETADO' %}bg-success text-white bg-opacity-75{% elif item.estado == 'REPROBADO' %}bg-danger text-white bg-opacity-75{% else %}collapsed{% endif %} fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ item.id }}">
                     <div class="d-flex align-items-center w-100 me-3">
-                        <span class="me-3 fs-5">
-                            {% if item.aprobado_empleado %}<i class="bi bi-check-circle-fill text-white"></i>
-                            {% else %}<i class="bi bi-book text-primary"></i>{% endif %}
+                        <span class="me-3 fs-4">
+                            {% if item.estado == 'COMPLETADO' %}
+                                <i class="bi bi-check-circle-fill text-white"></i>
+                            {% elif item.estado == 'REPROBADO' %}
+                                <i class="bi bi-x-circle-fill text-white"></i>
+                            {% else %}
+                                <i class="bi bi-book-half text-primary"></i>
+                            {% endif %}
                         </span>
                         <div>
-                            Módulo {{ item.modulo.orden }}: {{ item.modulo.titulo }}
-                            {% if item.aprobado_empleado %}
-                            <div class="small fw-normal text-white-50 mt-1" style="font-size: 0.75rem;">Completado el {{ item.fecha_empleado|date:"d M Y, H:i" }}</div>
+                            {{ item.curso.titulo }}
+                            
+                            {% if item.estado == 'COMPLETADO' %}
+                                <div class="small fw-normal text-white-50 mt-1" style="font-size: 0.8rem;">
+                                    Aprobado el {{ item.fecha_finalizacion|date:"d M Y" }} con <strong>{{ item.nota_obtenida }} pts</strong>
+                                </div>
+                            {% elif item.estado == 'REPROBADO' %}
+                                <div class="small fw-normal text-white-50 mt-1" style="font-size: 0.8rem;">
+                                    Reprobado con <strong>{{ item.nota_obtenida }} pts</strong>. Requiere reintento.
+                                </div>
                             {% endif %}
                         </div>
                     </div>
                 </button>
             </h2>
-            <div id="collapse{{ item.id }}" class="accordion-collapse collapse {% if forloop.first and not item.aprobado_empleado %}show{% endif %}" data-bs-parent="#accordionInduccion">
+            
+            <div id="collapse{{ item.id }}" class="accordion-collapse collapse {% if forloop.first and item.estado != 'COMPLETADO' %}show{% endif %}" data-bs-parent="#accordionInduccion">
                 <div class="accordion-body p-4 bg-light">
-                    <div class="mb-4 text-dark" style="white-space: pre-wrap;">{{ item.modulo.descripcion }}</div>
+                    <div class="mb-4 text-dark" style="white-space: pre-wrap;">{{ item.curso.descripcion }}</div>
                     
-                    {% if not item.aprobado_empleado %}
-                    <form method="POST" action="{% url 'mi_induccion' %}" class="text-end border-top pt-3">
-                        {% csrf_token %}
-                        <input type="hidden" name="progreso_id" value="{{ item.id }}">
-                        <button type="submit" name="marcar_completado" class="btn btn-success fw-bold rounded-pill shadow-sm px-4" onclick="return confirm('¿Confirmas que leíste y entendiste todo el material de este módulo?');">
-                            <i class="bi bi-check-lg"></i> Marcar como Completado
-                        </button>
-                    </form>
-                    {% endif %}
+                    <div class="border-top pt-4">
+                        {% if item.curso.evaluacion %}
+                            <div class="card bg-white border-0 shadow-sm rounded-3 border-start border-primary border-4">
+                                <div class="card-body d-flex justify-content-between align-items-center p-3">
+                                    <div>
+                                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-journal-text text-primary me-2"></i>{{ item.curso.evaluacion.titulo }}</h6>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i> {{ item.curso.evaluacion.duracion_minutos }} min | 
+                                            <i class="bi bi-bullseye ms-2 me-1"></i> Mínimo para aprobar: {{ item.curso.evaluacion.puntaje_aprobatorio }} pts
+                                        </small>
+                                    </div>
+                                    
+                                    {% if item.estado == 'COMPLETADO' %}
+                                        <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-lg me-1"></i> Nota: {{ item.nota_obtenida }}</span>
+                                    {% elif item.estado == 'REPROBADO' %}
+                                        <span class="badge bg-danger fs-6 px-3 py-2"><i class="bi bi-x-lg me-1"></i> Nota: {{ item.nota_obtenida }}</span>
+                                    {% else %}
+                                        <a href="{% url 'rendir_evaluacion' item.id %}" class="btn btn-primary fw-bold shadow-sm px-4 rounded-pill">
+                                            <i class="bi bi-pencil-square me-2"></i> Rendir Examen
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        
+                        {% else %}
+                            {% if item.estado != 'COMPLETADO' %}
+                            <form method="POST" action="{% url 'mi_induccion' %}" class="text-end">
+                                {% csrf_token %}
+                                <input type="hidden" name="progreso_id" value="{{ item.id }}">
+                                <button type="submit" name="marcar_completado" class="btn btn-success fw-bold rounded-pill shadow-sm px-4" onclick="return confirm('¿Confirmas que leíste y entendiste todo el material de este módulo?');">
+                                    <i class="bi bi-check-lg me-1"></i> Marcar como Completado
+                                </button>
+                            </form>
+                            {% else %}
+                                <div class="text-end"><span class="badge bg-success fs-6"><i class="bi bi-check-lg me-1"></i> Completado Manualmente</span></div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    
                 </div>
             </div>
         </div>
