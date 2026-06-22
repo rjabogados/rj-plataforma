@@ -215,63 +215,69 @@ def procesar_mapeo_balotario(request):
 
 @login_required(login_url='login')
 @solo_directivos
-def procesar_excel_mapeado(request):
+def procesar_mapeo_balotario(request):
     if request.method == 'POST':
-        ruta_archivo = request.session.get('ruta_excel_tmp')
-        if not ruta_archivo or not default_storage.exists(ruta_archivo): 
-            return redirect('colaboradores')
-        
-        separar_nombres = request.POST.get('separar_nombres') == '1'
-        tiene_subcartera = request.POST.get('tiene_subcartera') == '1'
-        indices = {
-            'nombres': int(request.POST.get('prop_nombres')), 'dni': int(request.POST.get('prop_dni')),
-            'correo': int(request.POST.get('prop_correo') or -1), 'rol': int(request.POST.get('prop_rol')),
-            'tipo_horario': int(request.POST.get('prop_tipo_horario') or -1), 'cartera': int(request.POST.get('prop_cartera')),
-        }
-        if separar_nombres: indices['apellidos'] = int(request.POST.get('prop_apellidos'))
-        if tiene_subcartera: indices['subcartera'] = int(request.POST.get('prop_subcartera'))
+        try:
+            ruta_archivo = request.session.get('ruta_excel_balotario')
+            eval_id = request.session.get('evaluacion_id_temporal')
             
-        archivo_excel = default_storage.open(ruta_archivo)
-        wb = openpyxl.load_workbook(archivo_excel)
-        
-        with transaction.atomic():
-            for fila in wb.active.iter_rows(min_row=2, values_only=True):
-                try:
-                    dni_val = str(fila[indices['dni']]).strip() if fila[indices['dni']] is not None else None
-                    if not dni_val or Colaborador.objects.filter(dni=dni_val).exists(): continue
-                    
-                    correo_val = str(fila[indices['correo']]).strip().lower() if indices['correo'] >= 0 and fila[indices['correo']] is not None else ""
-                    if separar_nombres:
-                        nombres_bruto, apellidos_bruto = str(fila[indices['nombres']]).strip(), str(fila[indices['apellidos']]).strip()
-                    else:
-                        nombre_completo = str(fila[indices['nombres']]).strip() if fila[indices['nombres']] is not None else ""
-                        partes = nombre_completo.split(",", 1) if "," in nombre_completo else nombre_completo.split()
-                        if "," in nombre_completo: apellidos_bruto, nombres_bruto = partes[0].strip(), partes[1].strip()
-                        elif len(partes) >= 3: apellidos_bruto, nombres_bruto = f"{partes[0]} {partes[1]}", " ".join(partes[2:])
-                        elif len(partes) == 2: apellidos_bruto, nombres_bruto = partes[0], partes[1]
-                        else: apellidos_bruto, nombres_bruto = nombre_completo, "Asesor"
+            if not ruta_archivo or not default_storage.exists(ruta_archivo):
+                messages.error(request, "El archivo expiró. Vuelve a subirlo.")
+                return redirect('gestor_lms')
 
-                    username_final = generar_username_unico(nombres_bruto, apellidos_bruto, dni_val)
-                    rol_str = str(fila[indices['rol']]).upper().strip()
-                    rol_val = 'CALIDAD' if 'CALIDAD' in rol_str else 'BACKOFFICE' if 'BACK' in rol_str else 'SISTEMAS' if 'SISTEMA' in rol_str or 'TI' in rol_str else 'SUPERVISOR' if 'SUPERVISOR' in rol_str else 'RRHH' if 'RRHH' in rol_str else 'ADMINISTRATIVO' if 'ADMIN' in rol_str else 'GERENCIA' if 'GEREN' in rol_str else 'ASESOR'
-                    horario_val = str(fila[indices['tipo_horario']]).strip().upper() if indices['tipo_horario'] >= 0 and fila[indices['tipo_horario']] is not None else 'T1'
-                    
-                    negocio_instancia = None
-                    if fila[indices['cartera']] is not None:
-                        nombre_cartera = str(fila[indices['cartera']]).strip()
-                        if tiene_subcartera and fila[indices['subcartera']] is not None: nombre_cartera = f"{nombre_cartera} - {str(fila[indices['subcartera']]).strip()}"
-                        negocio_instancia, _ = Negocio.objects.get_or_create(nombre=nombre_cartera)
-                    
-                    nuevo_user = User.objects.create_user(username=username_final, email=correo_val, password=dni_val, first_name=nombres_bruto, last_name=apellidos_bruto)
-                    Colaborador.objects.create(user=nuevo_user, dni=dni_val, rol=rol_val, tipo_horario=horario_val, negocio=negocio_instancia, fecha_ingreso=date.today())
-                except Exception: pass
-        
-        wb.close()
-        archivo_excel.close()
-        default_storage.delete(ruta_archivo)
-        del request.session['ruta_excel_tmp']
-        
-    return redirect('colaboradores')
+            evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
+            puntos_automaticos = round(evaluacion.puntaje_maximo / evaluacion.preguntas_a_mostrar, 2) if evaluacion.preguntas_a_mostrar > 0 else 0.00
+
+            idx_pregunta = int(request.POST.get('prop_pregunta', -1))
+            idx_correcta = int(request.POST.get('prop_correcta', -1))
+            idx_alt1 = int(request.POST.get('prop_alt1', -1))
+            idx_alt2 = int(request.POST.get('prop_alt2', -1))
+            idx_alt3 = int(request.POST.get('prop_alt3', -1))
+            idx_alt4 = int(request.POST.get('prop_alt4', -1))
+
+            archivo_excel = default_storage.open(ruta_archivo)
+            wb = openpyxl.load_workbook(archivo_excel, data_only=True)
+            
+            preguntas_temporales = []
+            for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
+                # Función segura de acceso
+                def get_val(idx):
+                    if idx >= 0 and idx < len(fila):
+                        val = fila[idx]
+                        return str(val).strip() if val is not None else ""
+                    return ""
+
+                enunciado = get_val(idx_pregunta)
+                correcta = get_val(idx_correcta)
+                alt1 = get_val(idx_alt1)
+                alt2 = get_val(idx_alt2)
+                alt3 = get_val(idx_alt3)
+                alt4 = get_val(idx_alt4)
+
+                if enunciado and correcta and alt1: 
+                    preguntas_temporales.append({
+                        'id_temp': i,
+                        'enunciado': enunciado,
+                        'correcta': correcta,
+                        'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
+                        'puntos': puntos_automaticos
+                    })
+
+            wb.close()
+            archivo_excel.close()
+            default_storage.delete(ruta_archivo)
+            
+            if 'ruta_excel_balotario' in request.session:
+                del request.session['ruta_excel_balotario']
+
+            request.session['balotario_temporal'] = preguntas_temporales
+            return redirect('previsualizar_balotario')
+            
+        except Exception:
+            # ESTO TE MOSTRARÁ EL ERROR REAL EN PANTALLA
+            return HttpResponse(f"<pre>{traceback.format_exc()}</pre>", status=500)
+            
+    return redirect('gestor_lms')
 
 # ==========================================
 # ONBOARDING CORPORATIVO
