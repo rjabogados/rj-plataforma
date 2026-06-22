@@ -2,6 +2,7 @@ import traceback
 import openpyxl
 import uuid
 import json
+import random  # <-- Importación agregada para el chocolateo
 from datetime import datetime, date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -227,7 +228,6 @@ def onboarding_admin(request):
         if 'crear_modulo' in request.POST:
             titulo = request.POST.get('titulo')
             descripcion = request.POST.get('descripcion')
-            # SEPARACIÓN 1: Todo lo creado aquí va con la etiqueta oculta INDUCCION
             CursoInduccion.objects.create(titulo=titulo, descripcion=descripcion, tipo='INDUCCION')
             messages.success(request, f"Módulo de Inducción '{titulo}' creado exitosamente.")
         else:
@@ -259,7 +259,6 @@ def onboarding_admin(request):
             ratio = "Expediente"
         lista_candidatos_progreso.append({'onboarding': item, 'porcentaje': porcentaje, 'ratio': ratio})
 
-    # SEPARACIÓN 2: El admin de Inducción solo ve los cursos de tipo INDUCCION
     cursos_biblioteca = CursoInduccion.objects.filter(activo=True, tipo='INDUCCION').order_by('-fecha_creacion')
     negocios = Negocio.objects.all()
 
@@ -292,7 +291,6 @@ def mi_induccion(request):
         messages.error(request, "Tu usuario no tiene un perfil de trabajador asociado.")
         return redirect('inicio')
 
-    # SEPARACIÓN 3: El nuevo ingreso SOLO ve módulos de Inducción
     cursos_disponibles = CursoInduccion.objects.filter(
         Q(publico_general=True) | 
         Q(rol_permitido=colaborador.rol) | 
@@ -371,7 +369,6 @@ def pasar_a_planilla(request, candidato_id):
 
 # ==========================================
 # MOTOR DE ENCUESTAS, COMUNICADOS, CALENDARIO...
-# (Las funciones se mantienen idénticas para no alterar nada)
 # ==========================================
 @login_required(login_url='login')
 def encuestas_personal(request): return render(request, 'intranet/encuestas_personal.html', {'encuestas': Encuesta.objects.filter(activa=True).order_by('-fecha_creacion')})
@@ -428,7 +425,6 @@ def gestor_lms(request):
             cartera_id = request.POST.get('cartera_vinculada')
             cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
 
-            # SEPARACIÓN 4: Todo lo creado aquí va oculto con la etiqueta ACADEMIA
             CursoInduccion.objects.create(
                 titulo=titulo,
                 descripcion=descripcion,
@@ -462,7 +458,6 @@ def gestor_lms(request):
                 messages.success(request, "¡Examen creado! Ahora puedes subir el balotario de preguntas.")
             return redirect('gestor_lms')
 
-    # SEPARACIÓN 5: El Gestor LMS solo muestra cursos tipo ACADEMIA
     cursos_disponibles = CursoInduccion.objects.filter(activo=True, tipo='ACADEMIA')
     evaluaciones = EvaluacionCurso.objects.filter(curso__tipo='ACADEMIA').select_related('curso').prefetch_related('preguntas_balotario')
     
@@ -481,7 +476,6 @@ def academia(request):
         messages.error(request, "Tu usuario no tiene un perfil de trabajador asociado.")
         return redirect('inicio')
 
-    # SEPARACIÓN 6: La vista del asesor SOLO muestra cursos ACADEMIA
     cursos_disponibles = CursoInduccion.objects.filter(
         Q(publico_general=True) | 
         Q(rol_permitido=colaborador.rol) | 
@@ -544,6 +538,11 @@ def previsualizar_y_guardar_balotario(request):
 
         if request.method == 'POST':
             with transaction.atomic():
+                
+                # --- LIMPIEZA ANTI-DUPLICADOS (Borrador automático) ---
+                evaluacion.preguntas_balotario.all().delete()
+                # ------------------------------------------------------
+
                 # 1. Contamos cuántas preguntas llegaron para dividir los puntos automáticamente
                 ids_llegados = [k.split('_')[1] for k in request.POST if k.startswith('enunciado_')]
                 if ids_llegados:
@@ -638,10 +637,17 @@ def rendir_evaluacion(request, matricula_id):
         matricula.save()
 
     if evaluacion.orden_aleatorio:
-        preguntas = evaluacion.preguntas_balotario.filter(activa=True).order_by('?')[:evaluacion.preguntas_a_mostrar]
+        preguntas_qs = evaluacion.preguntas_balotario.filter(activa=True).order_by('?')[:evaluacion.preguntas_a_mostrar]
     else:
-        preguntas = evaluacion.preguntas_balotario.filter(activa=True).order_by('id')[:evaluacion.preguntas_a_mostrar]
+        preguntas_qs = evaluacion.preguntas_balotario.filter(activa=True).order_by('id')[:evaluacion.preguntas_a_mostrar]
 
-    preguntas = preguntas.prefetch_related(Prefetch('alternativas', queryset=OpcionRespuesta.objects.order_by('?')))
+    # --- EL CHOCOLATEO DE OPCIONES ---
+    preguntas = list(preguntas_qs)
+    
+    for p in preguntas:
+        opciones = list(p.alternativas.all())
+        random.shuffle(opciones)
+        # Guardamos la lista barajada para usarla en el HTML
+        p.opciones_mezcladas = opciones
 
     return render(request, 'intranet/lms/rendir_examen.html', {'matricula': matricula, 'evaluacion': evaluacion, 'preguntas': preguntas})
