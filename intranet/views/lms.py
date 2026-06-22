@@ -644,49 +644,55 @@ def importar_excel_balotario(request, evaluacion_id):
 @login_required(login_url='login')
 @solo_directivos
 def previsualizar_y_guardar_balotario(request):
-    preguntas = request.session.get('balotario_temporal')
-    eval_id = request.session.get('evaluacion_id_temporal')
+    try:
+        preguntas = request.session.get('balotario_temporal')
+        eval_id = request.session.get('evaluacion_id_temporal')
 
-    if not preguntas or not eval_id:
-        messages.warning(request, "No hay ningún balotario pendiente en memoria.")
-        return redirect('gestor_lms')
+        if not preguntas or not eval_id:
+            messages.warning(request, "No hay ningún balotario pendiente en memoria.")
+            return redirect('gestor_lms')
 
-    evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
+        evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
 
-    if request.method == 'POST':
-        with transaction.atomic():
-            for req_key in request.POST:
-                if req_key.startswith('enunciado_'):
-                    idx = req_key.split('_')[1] 
+        if request.method == 'POST':
+            from django.db import transaction # Aseguramos la importación aquí mismo por si acaso
+            with transaction.atomic():
+                for req_key in request.POST:
+                    if req_key.startswith('enunciado_'):
+                        idx = req_key.split('_')[1] 
 
-                    nueva_pregunta = PreguntaEvaluacion.objects.create(
-                        evaluacion=evaluacion,
-                        enunciado=request.POST.get(f'enunciado_{idx}'),
-                        puntos=request.POST.get(f'puntos_{idx}', 2.00)
-                    )
+                        nueva_pregunta = PreguntaEvaluacion.objects.create(
+                            evaluacion=evaluacion,
+                            enunciado=request.POST.get(f'enunciado_{idx}'),
+                            puntos=request.POST.get(f'puntos_{idx}', 2.00)
+                        )
 
-                    # Guardamos la opción Correcta
-                    txt_correcta = request.POST.get(f'correcta_{idx}')
-                    if txt_correcta:
-                        OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=txt_correcta, es_correcta=True)
-                    
-                    # Guardamos las opciones Incorrectas
-                    for i in range(1, 5):
-                        txt_alt = request.POST.get(f'alt{i}_{idx}')
-                        if txt_alt:
-                            OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=txt_alt, es_correcta=False)
+                        # Guardamos la opción Correcta
+                        txt_correcta = request.POST.get(f'correcta_{idx}')
+                        if txt_correcta:
+                            OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=txt_correcta, es_correcta=True)
+                        
+                        # Guardamos las opciones Incorrectas
+                        for i in range(1, 5):
+                            txt_alt = request.POST.get(f'alt{i}_{idx}')
+                            if txt_alt:
+                                OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=txt_alt, es_correcta=False)
 
-        del request.session['balotario_temporal']
-        del request.session['evaluacion_id_temporal']
+            del request.session['balotario_temporal']
+            del request.session['evaluacion_id_temporal']
 
-        messages.success(request, "¡Balotario mapeado y guardado con éxito!")
-        return redirect('gestor_lms')
+            messages.success(request, "¡Balotario mapeado y guardado con éxito!")
+            return redirect('gestor_lms')
 
-    context = {
-        'preguntas': preguntas,
-        'evaluacion': evaluacion
-    }
-    return render(request, 'intranet/lms/previsualizar_balotario.html', context)
+        context = {
+            'preguntas': preguntas,
+            'evaluacion': evaluacion
+        }
+        return render(request, 'intranet/lms/previsualizar_balotario.html', context)
+
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"<h2>¡Atrapado en la inyección! El error real es:</h2><pre style='background:#eee; padding:20px;'>{traceback.format_exc()}</pre>")
 
 @login_required(login_url='login')
 def rendir_evaluacion(request, matricula_id):
