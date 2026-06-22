@@ -26,7 +26,6 @@ from intranet.models import (
 from .utils import solo_directivos, solo_calidad, generar_username_unico
 
 from ..models.lms import EvaluacionCurso, CursoInduccion # Asegúrate de que las importaciones sean correctas
-from ..decorators import solo_directivos
 
 # ==========================================
 # DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
