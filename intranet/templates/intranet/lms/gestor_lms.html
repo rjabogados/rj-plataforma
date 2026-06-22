@@ -2,9 +2,16 @@
 
 {% block content %}
 <div class="container-fluid p-4">
-    <div class="mb-4">
-        <h2 class="navbar-main-title fw-bold mb-1" style="color: var(--rj-azul);">Gestor de Evaluaciones LMS</h2>
-        <p class="text-muted">Configura las reglas de los exámenes y sube los balotarios masivos.</p>
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="navbar-main-title fw-bold mb-1" style="color: var(--rj-azul);">Gestor de Evaluaciones LMS</h2>
+            <p class="text-muted">Configura reglas, segmenta cursos y gestiona balotarios masivos.</p>
+        </div>
+        <div>
+            <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearCurso">
+                <i class="bi bi-book me-2"></i> Crear Nuevo Curso
+            </button>
+        </div>
     </div>
 
     {% if messages %}
@@ -39,7 +46,7 @@
 
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary">Título del Examen:</label>
-                            <input type="text" class="form-control" name="titulo" placeholder="Ej: Evaluación de Políticas Internas" required>
+                            <input type="text" class="form-control" name="titulo" placeholder="Ej: Evaluación de Políticas" required>
                         </div>
 
                         <div class="row mb-3">
@@ -54,21 +61,18 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-primary">Preguntas a Mostrar al Colaborador:</label>
-                            <input type="number" class="form-control border-primary" name="preguntas_a_mostrar" value="10" placeholder="Ej: 10" required>
-                            <div class="form-text" style="font-size: 0.8rem;">De todo el balotario, ¿cuántas se le mostrarán?</div>
+                            <label class="form-label small fw-bold text-primary">Preguntas a Mostrar:</label>
+                            <input type="number" class="form-control border-primary" name="preguntas_a_mostrar" value="10" required>
                         </div>
 
                         <div class="form-check form-switch mb-4 bg-light p-3 rounded-3">
                             <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="orden_aleatorio" id="orden_aleatorio" checked>
                             <label class="form-check-label small fw-bold text-dark" style="cursor: pointer;" for="orden_aleatorio">
-                                Seleccionar al azar y chocolatear (Recomendado)
+                                Mezclar preguntas (Chocolatear)
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
-                            Guardar Reglas del Examen
-                        </button>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Guardar Reglas del Examen</button>
                     </form>
                 </div>
             </div>
@@ -76,7 +80,6 @@
 
         <div class="col-md-8 mb-4">
             <h5 class="fw-bold text-dark mb-3">2. Exámenes Configurados</h5>
-            
             {% if evaluaciones %}
                 <div class="d-flex flex-column gap-3">
                     {% for eval in evaluaciones %}
@@ -85,19 +88,14 @@
                             <div>
                                 <h5 class="fw-bold mb-1" style="color: var(--rj-azul);">{{ eval.titulo }}</h5>
                                 <p class="text-muted small mb-2"><i class="bi bi-book-half me-1"></i> Curso: {{ eval.curso.titulo }}</p>
-                                
                                 <div class="d-flex flex-wrap gap-2">
-                                    <span class="badge bg-light text-dark border"><i class="bi bi-bullseye text-danger"></i> Max: {{ eval.puntaje_maximo }} pts</span>
-                                    <span class="badge bg-light text-dark border"><i class="bi bi-ui-checks-grid text-primary"></i> Muestra: {{ eval.preguntas_a_mostrar }} preg.</span>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                        <i class="bi bi-database"></i> En BD: <strong>{{ eval.preguntas_balotario.count }}</strong> preg. subidas
-                                    </span>
+                                    <span class="badge bg-light text-dark border">Max: {{ eval.puntaje_maximo }} pts</span>
+                                    <span class="badge bg-success-subtle text-success border">En BD: {{ eval.preguntas_balotario.count }} preg.</span>
                                 </div>
                             </div>
-                            
                             <div class="text-end ms-3">
                                 <a href="{% url 'importar_excel_balotario' eval.id %}" class="btn btn-success fw-bold shadow-sm">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> Subir Balotario Excel
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Subir Balotario
                                 </a>
                             </div>
                         </div>
@@ -105,21 +103,71 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="card border-0 shadow-sm rounded-4 bg-light border-dashed">
-                    <div class="card-body p-5 text-center text-muted">
-                        <i class="bi bi-inbox fs-1 mb-3 text-secondary"></i>
-                        <h5>No hay evaluaciones configuradas</h5>
-                        <p class="mb-0">Usa el formulario de la izquierda para empezar a crear las reglas de los exámenes.</p>
-                    </div>
+                <div class="card border-0 shadow-sm rounded-4 bg-light p-5 text-center text-muted">
+                    <i class="bi bi-inbox fs-1 mb-3"></i>
+                    <h5>No hay evaluaciones</h5>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<style>
-    .border-dashed {
-        border: 2px dashed #dee2e6 !important;
+<div class="modal fade" id="modalCrearCurso" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-book me-2"></i> Crear Nuevo Curso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small">Título del Curso</label>
+                            <input type="text" class="form-control" name="titulo" required>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small">Descripción</label>
+                            <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                        </div>
+                        <hr>
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="publico_general" id="checkPublico" checked onchange="toggleFiltros()">
+                                <label class="form-check-label fw-bold" for="checkPublico">Visible para toda la empresa</label>
+                            </div>
+                        </div>
+                        <div class="row" id="filtrosSegmentacion" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold small text-warning">Filtrar por Rol</label>
+                                <select class="form-select border-warning" name="rol_permitido">
+                                    <option value="">-- Todos los Roles --</option>
+                                    {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold small text-info">Filtrar por Cartera</label>
+                                <select class="form-select border-info" name="cartera_vinculada">
+                                    <option value="">-- Todas las Carteras --</option>
+                                    {% for n in negocios %}<option value="{{ n.id }}">{{ n.nombre }}</option>{% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" name="crear_curso" class="btn btn-primary fw-bold">Guardar Curso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleFiltros() {
+        const check = document.getElementById('checkPublico');
+        document.getElementById('filtrosSegmentacion').style.display = check.checked ? 'none' : 'flex';
     }
-</style>
+</script>
 {% endblock %}

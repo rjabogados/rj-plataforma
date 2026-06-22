@@ -592,8 +592,33 @@ def activos(request): return render(request, 'intranet/activos.html')
 @login_required(login_url='login')
 @solo_directivos
 def gestor_lms(request):
-    try:
-        if request.method == 'POST' and 'crear_evaluacion' in request.POST:
+    from intranet.models.rrhh_core import Negocio, Colaborador # Importamos para leer carteras y roles
+
+    if request.method == 'POST':
+        # --- LÓGICA PARA CREAR UN CURSO NUEVO ---
+        if 'crear_curso' in request.POST:
+            titulo = request.POST.get('titulo')
+            descripcion = request.POST.get('descripcion')
+            tipo = request.POST.get('tipo', 'GENERAL')
+            publico_general = request.POST.get('publico_general') == 'on'
+            rol_permitido = request.POST.get('rol_permitido') or None
+            cartera_id = request.POST.get('cartera_vinculada')
+
+            cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
+
+            CursoInduccion.objects.create(
+                titulo=titulo,
+                descripcion=descripcion,
+                tipo=tipo,
+                publico_general=publico_general,
+                rol_permitido=rol_permitido,
+                cartera_vinculada=cartera_obj
+            )
+            messages.success(request, f"¡Curso '{titulo}' creado exitosamente!")
+            return redirect('gestor_lms')
+
+        # --- LÓGICA PARA CREAR EVALUACIÓN (La que ya tenías) ---
+        elif 'crear_evaluacion' in request.POST:
             curso_id = request.POST.get('curso_id')
             titulo = request.POST.get('titulo')
             instrucciones = request.POST.get('instrucciones', '')
@@ -608,28 +633,27 @@ def gestor_lms(request):
                 messages.error(request, f"El curso '{curso.titulo}' ya tiene una evaluación configurada.")
             else:
                 EvaluacionCurso.objects.create(
-                    curso=curso,
-                    titulo=titulo,
-                    instrucciones=instrucciones,
-                    puntaje_maximo=p_maximo,
-                    puntaje_aprobatorio=p_aprobatorio,
-                    preguntas_a_mostrar=p_mostrar,
-                    orden_aleatorio=aleatorio
+                    curso=curso, titulo=titulo, instrucciones=instrucciones,
+                    puntaje_maximo=p_maximo, puntaje_aprobatorio=p_aprobatorio,
+                    preguntas_a_mostrar=p_mostrar, orden_aleatorio=aleatorio
                 )
                 messages.success(request, "¡Examen creado! Ahora puedes subir el balotario de preguntas.")
             return redirect('gestor_lms')
 
-        cursos_disponibles = CursoInduccion.objects.filter(activo=True)
-        evaluaciones = EvaluacionCurso.objects.all().select_related('curso').prefetch_related('preguntas_balotario')
+    # Datos para la pantalla
+    cursos_disponibles = CursoInduccion.objects.filter(activo=True)
+    evaluaciones = EvaluacionCurso.objects.all().select_related('curso').prefetch_related('preguntas_balotario')
+    
+    # Enviamos los roles y negocios para pintar el formulario
+    negocios = Negocio.objects.all()
+    roles = Colaborador.ROLES
 
-        return render(request, 'intranet/lms/gestor_lms.html', {
-            'cursos': cursos_disponibles,
-            'evaluaciones': evaluaciones
-        })
-        
-    except Exception as e:
-        # ESTA ES LA TRAMPA: Si algo falla, lo imprime en la pantalla en lugar de dar error 500
-        return HttpResponse(f"<h2>¡Te atrapé! Este es el error real:</h2><pre style='background:#eee; padding:20px;'>{traceback.format_exc()}</pre>")
+    return render(request, 'intranet/lms/gestor_lms.html', {
+        'cursos': cursos_disponibles,
+        'evaluaciones': evaluaciones,
+        'negocios': negocios,
+        'roles': roles
+    })
 
 @login_required(login_url='login')
 def academia(request): return render(request, 'intranet/academia.html')
