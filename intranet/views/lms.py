@@ -1,3 +1,4 @@
+import traceback
 import openpyxl
 import uuid
 import json
@@ -505,41 +506,44 @@ def activos(request): return render(request, 'intranet/activos.html')
 @login_required(login_url='login')
 @solo_directivos
 def gestor_lms(request):
-    if request.method == 'POST' and 'crear_evaluacion' in request.POST:
-        curso_id = request.POST.get('curso_id')
-        titulo = request.POST.get('titulo')
-        instrucciones = request.POST.get('instrucciones', '')
-        p_maximo = request.POST.get('puntaje_maximo', 20.00)
-        p_aprobatorio = request.POST.get('puntaje_aprobatorio', 14.00)
-        p_mostrar = request.POST.get('preguntas_a_mostrar', 10)
-        aleatorio = request.POST.get('orden_aleatorio') == 'on'
+    try:
+        if request.method == 'POST' and 'crear_evaluacion' in request.POST:
+            curso_id = request.POST.get('curso_id')
+            titulo = request.POST.get('titulo')
+            instrucciones = request.POST.get('instrucciones', '')
+            p_maximo = request.POST.get('puntaje_maximo', 20.00)
+            p_aprobatorio = request.POST.get('puntaje_aprobatorio', 14.00)
+            p_mostrar = request.POST.get('preguntas_a_mostrar', 10)
+            aleatorio = request.POST.get('orden_aleatorio') == 'on'
 
-        curso = get_object_or_404(CursoInduccion, id=curso_id)
+            curso = get_object_or_404(CursoInduccion, id=curso_id)
 
-        # Verificamos que el curso no tenga ya un examen asignado
-        if hasattr(curso, 'evaluacion'):
-            messages.error(request, f"El curso '{curso.titulo}' ya tiene una evaluación configurada.")
-        else:
-            EvaluacionCurso.objects.create(
-                curso=curso,
-                titulo=titulo,
-                instrucciones=instrucciones,
-                puntaje_maximo=p_maximo,
-                puntaje_aprobatorio=p_aprobatorio,
-                preguntas_a_mostrar=p_mostrar,
-                orden_aleatorio=aleatorio
-            )
-            messages.success(request, "¡Examen creado! Ahora puedes subir el balotario de preguntas.")
-        return redirect('gestor_lms')
+            if hasattr(curso, 'evaluacion'):
+                messages.error(request, f"El curso '{curso.titulo}' ya tiene una evaluación configurada.")
+            else:
+                EvaluacionCurso.objects.create(
+                    curso=curso,
+                    titulo=titulo,
+                    instrucciones=instrucciones,
+                    puntaje_maximo=p_maximo,
+                    puntaje_aprobatorio=p_aprobatorio,
+                    preguntas_a_mostrar=p_mostrar,
+                    orden_aleatorio=aleatorio
+                )
+                messages.success(request, "¡Examen creado! Ahora puedes subir el balotario de preguntas.")
+            return redirect('gestor_lms')
 
-    # Traemos los cursos para el desplegable y las evaluaciones para la tabla
-    cursos_disponibles = CursoInduccion.objects.filter(activo=True)
-    evaluaciones = EvaluacionCurso.objects.all().select_related('curso').prefetch_related('preguntas_balotario')
+        cursos_disponibles = CursoInduccion.objects.filter(activo=True)
+        evaluaciones = EvaluacionCurso.objects.all().select_related('curso').prefetch_related('preguntas_balotario')
 
-    return render(request, 'intranet/gestor_lms.html', {
-        'cursos': cursos_disponibles,
-        'evaluaciones': evaluaciones
-    })
+        return render(request, 'intranet/lms/gestor_lms.html', {
+            'cursos': cursos_disponibles,
+            'evaluaciones': evaluaciones
+        })
+        
+    except Exception as e:
+        # ESTA ES LA TRAMPA: Si algo falla, lo imprime en la pantalla en lugar de dar error 500
+        return HttpResponse(f"<h2>¡Te atrapé! Este es el error real:</h2><pre style='background:#eee; padding:20px;'>{traceback.format_exc()}</pre>")
 
 @login_required(login_url='login')
 def academia(request): return render(request, 'intranet/academia.html')
