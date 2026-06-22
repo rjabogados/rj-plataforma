@@ -27,7 +27,7 @@ from .documentos import (
 )
 
 from .lms import (
-    colaboradores, editar_colaborador, eliminar_colaborador, mapear_excel, procesar_excel_mapeado,
+    colaboradores, editar_colaborador, eliminar_colaborador, mapear_excel, procesar_mapeo_balotario,
     induccion, induccion_admin, gestionar_onboarding, onboarding_admin,
     asignar_modulos_induccion, mi_induccion, actualizar_expediente, pasar_a_planilla,
     encuestas_personal, encuestas_admin, resultados_encuesta, exportar_encuesta,
