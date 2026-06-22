@@ -30,19 +30,19 @@
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="1" {% if p.correcta == '1' or p.correcta|lower == 'a' %}checked{% endif %} required>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="1" {% if p.correcta == '1' or p.correcta == '1.0' or p.correcta|lower == 'a' or p.correcta == p.alt1 %}checked{% endif %} required>
                         <input type="text" name="alt1_{{ p.id_temp }}" value="{{ p.alt1 }}" style="width: 100%; padding: 5px;" required>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="2" {% if p.correcta == '2' or p.correcta|lower == 'b' %}checked{% endif %} required>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="2" {% if p.correcta == '2' or p.correcta == '2.0' or p.correcta|lower == 'b' or p.correcta == p.alt2 %}checked{% endif %} required>
                         <input type="text" name="alt2_{{ p.id_temp }}" value="{{ p.alt2 }}" style="width: 100%; padding: 5px;" required>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="3" {% if p.correcta == '3' or p.correcta|lower == 'c' %}checked{% endif %}>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="3" {% if p.correcta == '3' or p.correcta == '3.0' or p.correcta|lower == 'c' or p.correcta == p.alt3 %}checked{% endif %}>
                         <input type="text" name="alt3_{{ p.id_temp }}" value="{{ p.alt3 }}" style="width: 100%; padding: 5px;">
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="4" {% if p.correcta == '4' or p.correcta|lower == 'd' %}checked{% endif %}>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="4" {% if p.correcta == '4' or p.correcta == '4.0' or p.correcta|lower == 'd' or p.correcta == p.alt4 %}checked{% endif %}>
                         <input type="text" name="alt4_{{ p.id_temp }}" value="{{ p.alt4 }}" style="width: 100%; padding: 5px;">
                     </div>
                 </div>
