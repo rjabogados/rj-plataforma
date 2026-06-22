@@ -52,9 +52,30 @@
                     <li><a href="{% url 'comunicados' %}" class="nav-link submenu-link"><i class="bi bi-newspaper me-2"></i> Anuncios</a></li>
                     <li><a href="{% url 'encuestas_personal' %}" class="nav-link submenu-link"><i class="bi bi-ui-radios-grid me-2"></i> Encuestas</a></li>
                     <li><a href="{% url 'beneficios' %}" class="nav-link submenu-link"><i class="bi bi-gift-fill me-2"></i> Beneficios</a></li>
-                    <li><a href="{% url 'academia' %}" class="nav-link submenu-link"><i class="bi bi-mortarboard-fill me-2"></i> Academia LMS</a></li>
+                </ul>
+            </div>
+        </li>
 
-                    <li><a href="{% url 'mi_induccion' %}" class="nav-link submenu-link text-warning fw-bold"><i class="bi bi-journal-bookmark-fill me-2"></i> Mis Capacitaciones</a></li>
+        <li class="nav-item mt-2">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuInduccion" role="button" aria-expanded="false">
+                <div><i class="bi bi-rocket-takeoff-fill menu-icon me-3 text-warning"></i><span class="text-warning fw-bold">Inducción RJ</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuInduccion">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'mi_induccion' %}" class="nav-link submenu-link"><i class="bi bi-flag-fill me-2"></i> Mi Primer Día</a></li>
+                </ul>
+            </div>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAcademia" role="button" aria-expanded="false">
+                <div><i class="bi bi-mortarboard-fill menu-icon me-3"></i><span>Academia LMS</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuAcademia">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'academia' %}" class="nav-link submenu-link"><i class="bi bi-journal-text me-2"></i> Mis Cursos y Exámenes</a></li>
                 </ul>
             </div>
         </li>
