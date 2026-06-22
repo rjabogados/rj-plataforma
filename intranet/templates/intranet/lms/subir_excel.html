@@ -1,0 +1,79 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="navbar-main-title fw-bold mb-0" style="color: var(--rj-azul);">Importar Balotario</h2>
+            <span class="text-muted">Evaluación: {{ evaluacion.titulo }}</span>
+        </div>
+        <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary fw-bold shadow-sm">
+            <i class="bi bi-arrow-left"></i> Volver al Gestor
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 border-top border-info border-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle-fill text-info me-2"></i>Estructura del Excel</h5>
+                    <p class="text-muted">El archivo debe ser un <strong>.xlsx</strong> y no debe tener celdas combinadas. La primera fila se asume que son títulos y será ignorada. Asegúrate de respetar este orden de columnas:</p>
+                    
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-sm text-center align-middle" style="font-size: 0.9rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>A (Enunciado)</th>
+                                    <th>B (Opción 1)</th>
+                                    <th>C (Opción 2)</th>
+                                    <th>D (Opción 3)</th>
+                                    <th>E (Opción 4)</th>
+                                    <th>F (Correcta)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-start">¿Qué es el lavado de activos?</td>
+                                    <td>Un delito financiero</td>
+                                    <td>Limpiar billetes</td>
+                                    <td>Un préstamo</td>
+                                    <td>Ninguna</td>
+                                    <td class="fw-bold text-success">1</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-danger fw-bold">* En la columna F, debes poner obligatoriamente el NÚMERO (1, 2, 3 o 4) de la alternativa que es correcta.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4 border-top border-success border-4">
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-file-earmark-excel-fill text-success" style="font-size: 3.5rem;"></i>
+                    <h5 class="fw-bold mt-2 text-dark">Subir Archivo</h5>
+                    <p class="text-muted small mb-4">Selecciona tu balotario de preguntas.</p>
+                    
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input class="form-control mb-4 border-success bg-light" type="file" name="archivo_excel" accept=".xlsx" required>
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm">
+                            <i class="bi bi-cloud-upload me-2"></i> Leer Preguntas
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
