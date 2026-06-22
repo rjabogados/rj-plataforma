@@ -19,9 +19,7 @@ urlpatterns = [
     path('colaboradores/editar/<int:pk>/', views.editar_colaborador, name='editar_colaborador'),
     path('colaboradores/eliminar/<int:pk>/', views.eliminar_colaborador, name='eliminar_colaborador'),
     path('colaboradores/mapear-excel/', views.mapear_excel, name='mapear_excel'),
-    # Nota: Aquí llamas a procesar_mapeo_balotario, si era un error de copiado tuyo para el directorio, 
-    # sugiero cambiarlo a la función real de mapear empleados si la tienes, pero la dejo tal cual la tenías.
-    path('colaboradores/procesar-mapeado/', lms.procesar_mapeo_balotario, name='procesar_mapeo_balotario'), 
+    path('colaboradores/procesar-mapeado/', lms.procesar_mapeo_balotario, name='procesar_mapeo_balotario'),
 
     # ==========================================
     # ONBOARDING CORPORATIVO (INDUCCIÓN)
@@ -43,6 +41,11 @@ urlpatterns = [
     path('academia/evaluacion/<int:evaluacion_id>/importar/', lms.importar_excel_balotario, name='importar_excel_balotario'),
     path('academia/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
     path('academia/rendir/<int:matricula_id>/', lms.rendir_evaluacion, name='rendir_evaluacion'),
+    
+    # --- LAS 3 RUTAS NUEVAS PARA EL DASHBOARD DE RESULTADOS ---
+    path('academia/evaluacion/<int:evaluacion_id>/resultados/', lms.resultados_evaluacion, name='resultados_evaluacion'),
+    path('academia/matricula/<int:matricula_id>/reabrir/', lms.reabrir_examen, name='reabrir_examen'),
+    path('academia/evaluacion/<int:evaluacion_id>/exportar/', lms.exportar_resultados_lms, name='exportar_resultados_lms'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS
