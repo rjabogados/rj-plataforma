@@ -176,7 +176,7 @@ def procesar_mapeo_balotario(request):
             idx_alt4 = int(request.POST.get('prop_alt4', -1))
 
             archivo_excel = default_storage.open(ruta_archivo)
-            wb = openpyxl.load_workbook(archivo_excel, data_only=True)
+            wb = openpyxl.load_workbook(archivo_excel, data_only=True, read_only=True)
             
             preguntas_temporales = []
             for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
