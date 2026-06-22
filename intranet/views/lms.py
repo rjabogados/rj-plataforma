@@ -162,18 +162,12 @@ def procesar_mapeo_balotario(request):
     if request.method == 'POST':
         try:
             ruta_archivo = request.session.get('ruta_excel_balotario')
-            eval_id = request.session.get('evaluacion_id_temporal')
             
             if not ruta_archivo or not default_storage.exists(ruta_archivo):
                 messages.error(request, "El archivo expiró. Vuelve a subirlo.")
                 return redirect('gestor_lms')
 
-            evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
-            
-            # 1. LA CURA AL VENENO DE SESIÓN: Forzar explícitamente a float
-            puntos_calc = evaluacion.puntaje_maximo / evaluacion.preguntas_a_mostrar if evaluacion.preguntas_a_mostrar > 0 else 0
-            puntos_automaticos = float(round(puntos_calc, 2))
-
+            # Capturamos los índices que manda tu HTML de mapeo
             idx_pregunta = int(request.POST.get('prop_pregunta', -1))
             idx_correcta = int(request.POST.get('prop_correcta', -1))
             idx_alt1 = int(request.POST.get('prop_alt1', -1))
@@ -186,8 +180,10 @@ def procesar_mapeo_balotario(request):
             
             preguntas_temporales = []
             for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
+                
+                # Función extractora súper segura
                 def get_val(idx):
-                    if 0 <= idx < len(fila):
+                    if idx != -1 and idx < len(fila):
                         val = fila[idx]
                         return str(val).strip() if val is not None else ""
                     return ""
@@ -199,36 +195,36 @@ def procesar_mapeo_balotario(request):
                 alt3 = get_val(idx_alt3)
                 alt4 = get_val(idx_alt4)
 
-                if enunciado and correcta and alt1: 
+                # Si hay enunciado, guardamos la pregunta (eliminamos el puntaje)
+                if enunciado: 
                     preguntas_temporales.append({
                         'id_temp': int(i),
                         'enunciado': enunciado,
                         'correcta': correcta,
-                        'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
-                        'puntos': puntos_automaticos # Ahora es un float seguro
+                        'alt1': alt1, 
+                        'alt2': alt2, 
+                        'alt3': alt3, 
+                        'alt4': alt4
                     })
 
             wb.close()
             archivo_excel.close()
             
-            # Limpieza segura
+            # Limpieza del archivo temporal
             try:
                 default_storage.delete(ruta_archivo)
             except Exception:
-                pass # Si el archivo ya se borró, ignoramos el error
+                pass 
             
             if 'ruta_excel_balotario' in request.session:
                 del request.session['ruta_excel_balotario']
 
             request.session['balotario_temporal'] = preguntas_temporales
-            
-            # 2. LA TRAMPA MAESTRA: Forzamos el guardado AQUÍ MISMO
             request.session.save()
             
             return redirect('previsualizar_balotario')
             
         except Exception as e:
-            # Ahora SÍ atraparemos cualquier error de sesión o de lectura
             error_texto = traceback.format_exc()
             return HttpResponse(
                 f"<div style='padding:20px; font-family: monospace; background:#ffe6e6; color:red; border:2px solid red;'>"
