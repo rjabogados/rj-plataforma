@@ -154,7 +154,7 @@ def mapear_excel(request):
     return redirect('colaboradores')
 
 @login_required(login_url='login')
-# @solo_directivos
+@solo_directivos
 def procesar_mapeo_balotario(request):
     if request.method == 'POST':
         try:
@@ -212,8 +212,17 @@ def procesar_mapeo_balotario(request):
             request.session['balotario_temporal'] = preguntas_temporales
             return redirect('previsualizar_balotario')
             
-        except Exception:
-            return HttpResponse(f"<pre>{traceback.format_exc()}</pre>", status=500)
+        except Exception as e:
+            # ENGAÑAMOS AL NAVEGADOR: Enviamos el error pero con status 200 (Éxito)
+            # Así Render y Chrome están obligados a mostrarte este texto
+            error_texto = traceback.format_exc()
+            return HttpResponse(
+                f"<div style='padding: 20px; font-family: monospace; background: #ffe6e6; color: red; border: 2px solid red;'>"
+                f"<h2>¡ENCONTRAMOS EL ERROR! Copia esto:</h2>"
+                f"<pre>{error_texto}</pre>"
+                f"</div>", 
+                status=200
+            )
             
     return redirect('gestor_lms')
 
