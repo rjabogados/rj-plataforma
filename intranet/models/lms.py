@@ -17,7 +17,6 @@ class CursoInduccion(models.Model):
     # === REGLAS DE VISIBILIDAD INTELIGENTE (SMART TARGETING) ===
     publico_general = models.BooleanField(default=True, help_text="Si está activo, TODOS los empleados lo verán.")
     
-    from .rrhh_core import Colaborador # Importación local para leer los roles
     rol_permitido = models.CharField(
         max_length=50, choices=Colaborador.ROLES, null=True, blank=True, 
         help_text="Mostrar SOLO a este Rol (Déjalo en blanco para no filtrar por rol)."
@@ -35,6 +34,27 @@ class CursoInduccion(models.Model):
 
     def __str__(self):
         return f"[{self.get_tipo_display()}] {self.titulo}"
+    
+class MaterialFormativo(models.Model):
+    TIPOS_MATERIAL = [
+        ('VIDEO_MP4', 'Video Subido (MP4)'),
+        ('YOUTUBE', 'Video Externo (YouTube/Vimeo)'),
+        ('DOCUMENTO', 'PDF / Word / Diapositivas PPT'),
+        ('TEXTO', 'Artículo / Políticas en Texto Rico'),
+    ]
+    curso = models.ForeignKey(CursoInduccion, on_delete=models.CASCADE, related_name='materiales')
+    titulo = models.CharField(max_length=200)
+    tipo = models.CharField(max_length=20, choices=TIPOS_MATERIAL)
+    orden = models.PositiveIntegerField(default=1)
+    archivo_adjunto = models.FileField(upload_to='lms_materiales/', null=True, blank=True)
+    url_externa = models.URLField(null=True, blank=True)
+    contenido_texto = models.TextField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['orden']
+
+    def __str__(self):
+        return f"{self.orden}. {self.titulo}"
 
 # ==========================================
 # 2. MOTOR DE EXÁMENES (FUSIONADO Y MEJORADO)
