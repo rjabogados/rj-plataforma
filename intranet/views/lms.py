@@ -1,3 +1,5 @@
+# Force update for Render deploy
+
 import traceback
 import openpyxl
 import uuid
@@ -152,7 +154,7 @@ def mapear_excel(request):
     return redirect('colaboradores')
 
 @login_required(login_url='login')
-@solo_directivos
+# @solo_directivos
 def procesar_mapeo_balotario(request):
     if request.method == 'POST':
         try:
