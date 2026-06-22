@@ -345,23 +345,52 @@ def asignar_modulos_induccion(request, colab_id):
 
 @login_required(login_url='login')
 def mi_induccion(request):
-    colaborador = request.user.perfil
-    mis_matriculas = MatriculaCurso.objects.filter(colaborador=colaborador).select_related('curso').order_by('curso__fecha_creacion')
-    
+    try:
+        colaborador = request.user.perfil
+    except:
+        messages.error(request, "Tu usuario no tiene un perfil de trabajador asociado.")
+        return redirect('home')
+
+    # 1. EL MOTOR DE SMART TARGETING: Buscamos cursos que hagan "Match" con el empleado
+    cursos_disponibles = CursoInduccion.objects.filter(
+        Q(publico_general=True) | 
+        Q(rol_permitido=colaborador.rol) | 
+        Q(cartera_vinculada=colaborador.negocio),
+        activo=True
+    ).distinct()
+
+    # 2. AUTO-MATRÍCULA INVISIBLE: Creamos el registro si no existe
+    mis_modulos = []
+    for curso in cursos_disponibles:
+        matricula, created = MatriculaCurso.objects.get_or_create(
+            colaborador=colaborador, 
+            curso=curso,
+            defaults={'estado': 'PENDIENTE'}
+        )
+        mis_modulos.append(matricula)
+
+    # 3. LÓGICA DE BOTONES (Si hizo clic en "Marcar como Completado" manual)
     if request.method == 'POST' and 'marcar_completado' in request.POST:
-        matricula_id = request.POST.get('progreso_id')
-        matricula = get_object_or_404(MatriculaCurso, id=matricula_id, colaborador=colaborador)
-        matricula.estado = 'COMPLETADO'
-        matricula.fecha_finalizacion = timezone.now()
-        matricula.save()
-        messages.success(request, f"¡Excelente! Has completado el curso: {matricula.curso.titulo}")
+        progreso_id = request.POST.get('progreso_id')
+        matricula_actualizar = MatriculaCurso.objects.get(id=progreso_id, colaborador=colaborador)
+        matricula_actualizar.estado = 'COMPLETADO'
+        from django.utils import timezone
+        matricula_actualizar.fecha_finalizacion = timezone.now()
+        matricula_actualizar.save()
+        messages.success(request, f"¡Módulo '{matricula_actualizar.curso.titulo}' completado con éxito!")
         return redirect('mi_induccion')
 
-    total = mis_matriculas.count()
-    completados = mis_matriculas.filter(estado='COMPLETADO').count()
-    porcentaje = int((completados / total) * 100) if total > 0 else 0
+    # 4. CÁLCULO DE PROGRESO DE LA BARRA
+    total_modulos = len(mis_modulos)
+    completados = sum(1 for m in mis_modulos if m.estado == 'COMPLETADO')
+    porcentaje = int((completados / total_modulos) * 100) if total_modulos > 0 else 0
 
-    return render(request, 'intranet/mi_induccion.html', {'mis_modulos': mis_matriculas, 'porcentaje': porcentaje, 'completados': completados, 'total': total})
+    return render(request, 'intranet/mi_induccion.html', {
+        'mis_modulos': mis_modulos,
+        'total': total_modulos,
+        'completados': completados,
+        'porcentaje': porcentaje
+    })
 
 @login_required(login_url='login')
 @solo_directivos
