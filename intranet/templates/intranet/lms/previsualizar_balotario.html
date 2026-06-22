@@ -9,8 +9,7 @@
         </div>
         <div style="text-align: right; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px;">
             <span style="font-size: 14px; display: block;">Preguntas Extraídas: <strong>{{ preguntas|length }}</strong></span>
-            <span style="font-size: 14px; display: block;">Puntaje Máximo del Curso: <strong>{{ evaluacion.puntaje_maximo }}</strong></span>
-            <small style="color: #a3c2ff; font-style: italic;">(El puntaje por pregunta se calculará y asignará automáticamente)</small>
+            <small style="color: #a3c2ff; font-style: italic;">(Puntajes automatizados en BD)</small>
         </div>
     </div>
 
@@ -18,7 +17,7 @@
         {% csrf_token %}
         
         {% for p in preguntas %}
-        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div class="pregunta-block" data-correcta="{{ p.correcta }}" style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
             
             <div style="margin-bottom: 15px;">
                 <label style="font-weight: bold; color: #333;">Pregunta {{ forloop.counter }}</label>
@@ -27,25 +26,25 @@
 
             <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #bbb;">
                 <p style="margin-top: 0; margin-bottom: 10px; font-size: 13px; font-weight: bold;">
-                    Alternativas <span style="background-color: #ffcccc; color: #990000; padding: 3px 6px; border-radius: 4px; margin-left: 5px;">(Valor extraído del Excel: "{{ p.correcta }}")</span>
+                    Alternativas <span style="background-color: #ffcccc; color: #990000; padding: 3px 6px; border-radius: 4px; margin-left: 5px;">(Excel indica: "{{ p.correcta }}")</span>
                 </p>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="1" {% if p.correcta == '1' or p.correcta == '1.0' or p.correcta|lower == 'a' or p.correcta == p.alt1 %}checked{% endif %} required>
-                        <input type="text" name="alt1_{{ p.id_temp }}" value="{{ p.alt1 }}" style="width: 100%; padding: 5px;" required>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="1" required>
+                        <input type="text" name="alt1_{{ p.id_temp }}" value="{{ p.alt1 }}" class="input-alt" style="width: 100%; padding: 5px;" required>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="2" {% if p.correcta == '2' or p.correcta == '2.0' or p.correcta|lower == 'b' or p.correcta == p.alt2 %}checked{% endif %} required>
-                        <input type="text" name="alt2_{{ p.id_temp }}" value="{{ p.alt2 }}" style="width: 100%; padding: 5px;" required>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="2" required>
+                        <input type="text" name="alt2_{{ p.id_temp }}" value="{{ p.alt2 }}" class="input-alt" style="width: 100%; padding: 5px;" required>
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="3" {% if p.correcta == '3' or p.correcta == '3.0' or p.correcta|lower == 'c' or p.correcta == p.alt3 %}checked{% endif %}>
-                        <input type="text" name="alt3_{{ p.id_temp }}" value="{{ p.alt3 }}" style="width: 100%; padding: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="3">
+                        <input type="text" name="alt3_{{ p.id_temp }}" value="{{ p.alt3 }}" class="input-alt" style="width: 100%; padding: 5px;">
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="4" {% if p.correcta == '4' or p.correcta == '4.0' or p.correcta|lower == 'd' or p.correcta == p.alt4 %}checked{% endif %}>
-                        <input type="text" name="alt4_{{ p.id_temp }}" value="{{ p.alt4 }}" style="width: 100%; padding: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="4">
+                        <input type="text" name="alt4_{{ p.id_temp }}" value="{{ p.alt4 }}" class="input-alt" style="width: 100%; padding: 5px;">
                     </div>
                 </div>
             </div>
@@ -61,4 +60,37 @@
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const preguntas = document.querySelectorAll('.pregunta-block');
+    
+    preguntas.forEach(bloque => {
+        // Obtenemos el valor crudo del Excel, lo pasamos a minúsculas y le quitamos espacios fantasma
+        const correctaExcel = bloque.getAttribute('data-correcta').toString().trim().toLowerCase();
+        
+        const radios = bloque.querySelectorAll('input[type="radio"]');
+        const textosAlt = bloque.querySelectorAll('.input-alt');
+        
+        let fueMarcado = false;
+
+        // ESTRATEGIA 1: Si en Excel pusieron números o letras directas (Ej: 1, 1.0, A)
+        if (['1', '1.0', 'a'].includes(correctaExcel)) { radios[0].checked = true; fueMarcado = true; }
+        else if (['2', '2.0', 'b'].includes(correctaExcel)) { radios[1].checked = true; fueMarcado = true; }
+        else if (['3', '3.0', 'c'].includes(correctaExcel)) { radios[2].checked = true; fueMarcado = true; }
+        else if (['4', '4.0', 'd'].includes(correctaExcel)) { radios[3].checked = true; fueMarcado = true; }
+
+        // ESTRATEGIA 2: Si en Excel pusieron el TEXTO COMPLETO de la respuesta en vez del número
+        if (!fueMarcado) {
+            textosAlt.forEach((cajaTexto, index) => {
+                const textoLimpio = cajaTexto.value.toString().trim().toLowerCase();
+                // Si coinciden los textos, marcamos ese circulito
+                if (textoLimpio !== '' && textoLimpio === correctaExcel) {
+                    radios[index].checked = true;
+                }
+            });
+        }
+    });
+});
+</script>
 {% endblock %}
