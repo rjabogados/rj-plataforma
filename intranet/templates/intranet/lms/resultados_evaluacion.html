@@ -1,0 +1,159 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<!-- Cargamos Chart.js para los gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary btn-sm mb-2"><i class="bi bi-arrow-left"></i> Volver al Gestor</a>
+            <h3 class="fw-bold text-dark mb-0">Resultados: {{ evaluacion.titulo }}</h3>
+        </div>
+        <div>
+            <a href="{% url 'exportar_resultados_lms' evaluacion.id %}" class="btn btn-success fw-bold shadow-sm">
+                <i class="bi bi-file-earmark-excel-fill me-2"></i> Exportar a Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Mini-Dashboard KPIs -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body text-center">
+                    <h6 class="text-uppercase fw-bold opacity-75">Nota Promedio</h6>
+                    <h2 class="fw-bold mb-0">{{ promedio }} pts</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body text-center">
+                    <h6 class="text-uppercase fw-bold opacity-75">Aprobados</h6>
+                    <h2 class="fw-bold mb-0">{{ aprobados }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body text-center">
+                    <h6 class="text-uppercase fw-bold opacity-75">Reprobados</h6>
+                    <h2 class="fw-bold mb-0">{{ reprobados }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body text-center">
+                    <h6 class="text-uppercase fw-bold opacity-75">Exámenes Rendidos</h6>
+                    <h2 class="fw-bold mb-0">{{ total_completados }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <ul class="nav nav-tabs fw-bold mb-4" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab"><i class="bi bi-people-fill me-2"></i>Por Colaborador</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab"><i class="bi bi-pie-chart-fill me-2"></i>Analítica por Pregunta</button>
+        </li>
+    </ul>
+
+    <div class="tab-content bg-white p-4 border border-top-0 rounded-bottom shadow-sm" id="myTabContent">
+        
+        <!-- PESTAÑA 1: LISTADO DE COLABORADORES -->
+        <div class="tab-pane fade show active" id="users" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Colaborador</th>
+                            <th>Estado</th>
+                            <th>Nota Obtenida</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in matriculas %}
+                        <tr>
+                            <td class="fw-bold text-secondary">{{ m.colaborador.user.get_full_name }}</td>
+                            <td>
+                                {% if m.estado == 'COMPLETADO' %}<span class="badge bg-success">Aprobado</span>
+                                {% elif m.estado == 'REPROBADO' %}<span class="badge bg-danger">Reprobado</span>
+                                {% elif m.estado == 'EVALUANDO' %}<span class="badge bg-warning text-dark">Rindiendo Ahora</span>
+                                {% else %}<span class="badge bg-secondary">Pendiente</span>{% endif %}
+                            </td>
+                            <td class="fw-bold">{{ m.nota_obtenida|default:"-" }}</td>
+                            <td class="small">{{ m.fecha_finalizacion|date:"d/m/Y H:i"|default:"-" }}</td>
+                            <td>
+                                <!-- BOTÓN MAGICO PARA REABRIR EXAMEN -->
+                                {% if m.estado == 'COMPLETADO' or m.estado == 'REPROBADO' %}
+                                <a href="{% url 'reabrir_examen' m.id %}" class="btn btn-sm btn-outline-primary" onclick="return confirm('¿Estás seguro de reabrir el examen? Esto borrará sus respuestas anteriores.');">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Reabrir Intento
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: GRÁFICOS Y ANALÍTICA -->
+        <div class="tab-pane fade" id="charts" role="tabpanel">
+            <div class="row g-4">
+                {% for grafico in graficos %}
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100 bg-light">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-dark mb-4 text-center">{{ grafico.enunciado }}</h6>
+                            <div style="height: 250px; position: relative;">
+                                <canvas id="chart_{{ grafico.id }}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{{ graficos|json_script:"data-graficos" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Leemos los datos limpios directamente del script generado por Django
+    const configGraficos = JSON.parse(document.getElementById('data-graficos').textContent);
+
+    configGraficos.forEach(item => {
+        const ctx = document.getElementById('chart_' + item.id).getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: item.labels,
+                datasets: [{
+                    data: item.data,
+                    backgroundColor: ['#183D74', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6f42c1'],
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 11} } }
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

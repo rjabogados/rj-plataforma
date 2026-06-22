@@ -2,7 +2,7 @@ import traceback
 import openpyxl
 import uuid
 import json
-import random  # <-- Importación agregada para el chocolateo
+import random 
 from datetime import datetime, date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -15,7 +15,6 @@ from django.db.models import Q, Prefetch
 from django.utils import timezone
 from django.http import HttpResponse
 
-# Importamos los modelos
 from intranet.models import (
     Colaborador, Negocio, Encuesta, Pregunta, RespuestaEncuesta,
     MensajeInterno, EventoCalendario, Comunicado, CandidatoOnboarding,
@@ -409,7 +408,7 @@ def beneficios(request): return render(request, 'intranet/beneficios.html')
 
 
 # ==========================================
-# ACADEMIA LMS: GESTOR Y EXÁMENES (LA NUEVA ZONA)
+# ACADEMIA LMS: GESTOR Y EXÁMENES
 # ==========================================
 @login_required(login_url='login')
 @solo_directivos
@@ -543,29 +542,42 @@ def previsualizar_y_guardar_balotario(request):
                 evaluacion.preguntas_balotario.all().delete()
                 # ------------------------------------------------------
 
-                # 1. Contamos cuántas preguntas llegaron para dividir los puntos automáticamente
                 ids_llegados = [k.split('_')[1] for k in request.POST if k.startswith('enunciado_')]
                 if ids_llegados:
                     puntos_por_pregunta = round(evaluacion.puntaje_maximo / len(ids_llegados), 2)
                 else:
                     puntos_por_pregunta = 0.00
 
-                # 2. Guardamos todo formalmente
+                # 2. Guardamos formalmente
                 for idx in ids_llegados:
                     enunciado_texto = request.POST.get(f'enunciado_{idx}')
+                    
+                    # Evitamos guardar preguntas que lleguen vacías
+                    if not enunciado_texto or not enunciado_texto.strip():
+                        continue
+
                     nueva_pregunta = PreguntaEvaluacion.objects.create(
                         evaluacion=evaluacion,
-                        enunciado=enunciado_texto,
+                        enunciado=enunciado_texto.strip(),
                         puntos=puntos_por_pregunta
                     )
 
                     opcion_correcta_id = request.POST.get(f'correcta_{idx}')
+                    textos_agregados = set()  # <--- FILTRO MÁGICO: Evita duplicar textos en la misma pregunta
                     
                     for i in range(1, 5):
                         txt_alt = request.POST.get(f'alt{i}_{idx}')
-                        if txt_alt:
-                            es_correcta = (str(i) == str(opcion_correcta_id))
-                            OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=txt_alt, es_correcta=es_correcta)
+                        
+                        # Si la caja estaba vacía (ej: V o F de solo 2 opciones), la ignoramos por completo
+                        if txt_alt and txt_alt.strip():
+                            texto_limpio = txt_alt.strip()
+                            texto_lower = texto_limpio.lower()
+                            
+                            # Si no hemos guardado esta opción antes, la agregamos
+                            if texto_lower not in textos_agregados:
+                                es_correcta = (str(i) == str(opcion_correcta_id))
+                                OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=texto_limpio, es_correcta=es_correcta)
+                                textos_agregados.add(texto_lower)
 
             del request.session['balotario_temporal']
             del request.session['evaluacion_id_temporal']
@@ -651,3 +663,109 @@ def rendir_evaluacion(request, matricula_id):
         p.opciones_mezcladas = opciones
 
     return render(request, 'intranet/lms/rendir_examen.html', {'matricula': matricula, 'evaluacion': evaluacion, 'preguntas': preguntas})
+
+@login_required(login_url='login')
+@solo_directivos
+def resultados_evaluacion(request, evaluacion_id):
+    evaluacion = get_object_or_404(EvaluacionCurso, id=evaluacion_id)
+    matriculas = MatriculaCurso.objects.filter(curso=evaluacion.curso).select_related('colaborador__user')
+    
+    completados = matriculas.filter(estado__in=['COMPLETADO', 'REPROBADO'])
+    total_completados = completados.count()
+    
+    promedio = 0
+    if total_completados > 0:
+        promedio = sum(m.nota_obtenida for m in completados) / total_completados
+        
+    aprobados = matriculas.filter(estado='COMPLETADO').count()
+    reprobados = matriculas.filter(estado='REPROBADO').count()
+
+   # Preparamos los datos matemáticos para los gráficos circulares
+    graficos = []
+    for pregunta in evaluacion.preguntas_balotario.filter(activa=True):
+        opciones = pregunta.alternativas.all()
+        labels = [op.texto for op in opciones]
+        data = []
+        for op in opciones:
+            cantidad_votos = RespuestaColaborador.objects.filter(pregunta=pregunta, opciones_marcadas=op).count()
+            data.append(cantidad_votos)
+        
+        graficos.append({
+            'id': pregunta.id,
+            'enunciado': pregunta.enunciado,
+            'labels': labels, # <-- Lo dejamos como una lista normal de Python
+            'data': data      # <-- Lo dejamos como una lista normal de Python
+        })
+
+    return render(request, 'intranet/lms/resultados_evaluacion.html', {
+        'evaluacion': evaluacion,
+        'matriculas': matriculas,
+        'promedio': round(promedio, 2),
+        'aprobados': aprobados,
+        'reprobados': reprobados,
+        'total_completados': total_completados,
+        'graficos': graficos
+    })
+
+@login_required(login_url='login')
+@solo_directivos
+def reabrir_examen(request, matricula_id):
+    matricula = get_object_or_404(MatriculaCurso, id=matricula_id)
+    evaluacion_id = matricula.curso.evaluacion.id
+    
+    # Reseteamos los valores para que pueda darlo de nuevo
+    matricula.estado = 'PENDIENTE'
+    matricula.nota_obtenida = 0.00
+    matricula.fecha_finalizacion = None
+    matricula.save()
+    
+    # Destruimos sus respuestas anteriores para dejar la hoja en blanco
+    RespuestaColaborador.objects.filter(matricula=matricula).delete()
+    
+    messages.success(request, f"Examen reabierto exitosamente para {matricula.colaborador.user.first_name}.")
+    return redirect('resultados_evaluacion', evaluacion_id=evaluacion_id)
+
+@login_required(login_url='login')
+@solo_directivos
+def exportar_resultados_lms(request, evaluacion_id):
+    evaluacion = get_object_or_404(EvaluacionCurso, id=evaluacion_id)
+    matriculas = MatriculaCurso.objects.filter(curso=evaluacion.curso, estado__in=['COMPLETADO', 'REPROBADO'])
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Resultados Examen"
+    
+    # Cabeceras Base
+    headers = ['Colaborador', 'DNI', 'Nota Obtenida', 'Estado', 'Fecha Examen']
+    preguntas = evaluacion.preguntas_balotario.filter(activa=True).order_by('id')
+    
+    # Agregamos las preguntas como cabeceras en el Excel
+    for p in preguntas:
+        headers.append(p.enunciado)
+        
+    ws.append(headers)
+    
+    # Llenamos la data de los colaboradores
+    for m in matriculas:
+        row = [
+            f"{m.colaborador.user.first_name} {m.colaborador.user.last_name}",
+            m.colaborador.dni,
+            float(m.nota_obtenida),
+            m.estado,
+            m.fecha_finalizacion.strftime('%Y-%m-%d %H:%M') if m.fecha_finalizacion else ''
+        ]
+        
+        # Buscamos qué marcó exactamente en cada pregunta
+        for p in preguntas:
+            resp = RespuestaColaborador.objects.filter(matricula=m, pregunta=p).first()
+            if resp and resp.opciones_marcadas.exists():
+                marcada = resp.opciones_marcadas.first().texto
+                row.append(marcada)
+            else:
+                row.append("-")
+        ws.append(row)
+        
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="Resultados_{evaluacion.titulo}.xlsx"'
+    wb.save(response)
+    return response

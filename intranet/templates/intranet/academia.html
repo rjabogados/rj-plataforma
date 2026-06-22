@@ -19,7 +19,7 @@
         <div class="col-md-6 col-lg-4">
             <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden transition-hover">
                 
-                <!-- Miniatura Default (Fondo azul con ícono) -->
+                <!-- Miniatura Default -->
                 <div class="bg-primary bg-gradient d-flex align-items-center justify-content-center" style="height: 160px; background-color: #183D74 !important;">
                     <i class="bi bi-laptop text-white opacity-50" style="font-size: 4rem;"></i>
                 </div>
@@ -45,8 +45,15 @@
 
                 <div class="card-footer bg-white border-top-0 p-4 pt-0">
                     {% if matricula.estado == 'COMPLETADO' %}
-                        <button class="btn btn-light w-100 fw-bold text-success" disabled>Curso Finalizado</button>
+                        <!-- Botón Aprobado (Verde claro y bloqueado) -->
+                        <button class="btn btn-light w-100 fw-bold text-success" disabled><i class="bi bi-check-all me-2"></i>Curso Aprobado</button>
+                    
+                    {% elif matricula.estado == 'REPROBADO' %}
+                        <!-- Botón Reprobado (Plomo, bloqueado y te avisa que no hay intentos) -->
+                        <button class="btn w-100 fw-bold text-white" style="background-color: #6c757d; cursor: not-allowed;" disabled><i class="bi bi-x-circle-fill me-2"></i>Sin Intentos Restantes</button>
+                    
                     {% else %}
+                        <!-- Botón Pendiente (Azul para rendir) -->
                         <a href="{% url 'rendir_evaluacion' matricula.id %}" class="btn btn-primary w-100 fw-bold shadow-sm" style="background-color: #183D74; border-color: #183D74;">
                             {% if matricula.estado == 'EVALUANDO' %}<i class="bi bi-play-circle-fill me-2"></i>Continuar Examen{% else %}<i class="bi bi-play-fill me-2"></i>Iniciar Evaluación{% endif %}
                         </a>

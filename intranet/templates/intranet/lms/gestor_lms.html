@@ -93,7 +93,11 @@
                                     <span class="badge bg-success-subtle text-success border">En BD: {{ eval.preguntas_balotario.count }} preg.</span>
                                 </div>
                             </div>
-                            <div class="text-end ms-3">
+                            <!-- BOTONES DE GESTIÓN Y ANALÍTICA -->
+                            <div class="text-end ms-3 d-flex flex-column gap-2 justify-content-center">
+                                <a href="{% url 'resultados_evaluacion' eval.id %}" class="btn btn-info text-white fw-bold shadow-sm">
+                                    <i class="bi bi-pie-chart-fill me-1"></i> Ver Resultados
+                                </a>
                                 <a href="{% url 'importar_excel_balotario' eval.id %}" class="btn btn-success fw-bold shadow-sm">
                                     <i class="bi bi-file-earmark-excel me-1"></i> Subir Balotario
                                 </a>
