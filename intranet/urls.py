@@ -20,7 +20,7 @@ urlpatterns = [
     path('colaboradores/editar/<int:pk>/', views.editar_colaborador, name='editar_colaborador'),
     path('colaboradores/eliminar/<int:pk>/', views.eliminar_colaborador, name='eliminar_colaborador'),
     path('colaboradores/mapear-excel/', views.mapear_excel, name='mapear_excel'),
-    path('colaboradores/procesar-mapeo/', views.procesar_mapeo_balotario, name='procesar_mapeo_balotario'),
+    path('colaboradores/procesar-mapeo/', lms.procesar_mapeo_balotario, name='procesar_mapeo_balotario'),
 
     # ==========================================
     # ONBOARDING Y ACADEMIA CORPORATIVA
