@@ -160,7 +160,12 @@ def procesar_mapeo_balotario(request):
             messages.error(request, "El archivo expiró. Vuelve a subirlo.")
             return redirect('gestor_lms')
 
-        # Recibimos qué columna eligió el usuario para cada cosa
+        # === MAGIA MATEMÁTICA AQUÍ ===
+        evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
+        # Si el examen vale 20 y muestra 10, cada pregunta vale 2.00 automático
+        puntos_automaticos = round(evaluacion.puntaje_maximo / evaluacion.preguntas_a_mostrar, 2) if evaluacion.preguntas_a_mostrar > 0 else 0.00
+        # =============================
+
         idx_pregunta = int(request.POST.get('prop_pregunta', -1))
         idx_correcta = int(request.POST.get('prop_correcta', -1))
         idx_alt1 = int(request.POST.get('prop_alt1', -1))
@@ -178,19 +183,17 @@ def procesar_mapeo_balotario(request):
                 correcta = str(fila[idx_correcta]).strip() if idx_correcta >= 0 and fila[idx_correcta] is not None else ""
                 alt1 = str(fila[idx_alt1]).strip() if idx_alt1 >= 0 and fila[idx_alt1] is not None else ""
                 
-                # Opcionales
                 alt2 = str(fila[idx_alt2]).strip() if idx_alt2 >= 0 and fila[idx_alt2] is not None else ""
                 alt3 = str(fila[idx_alt3]).strip() if idx_alt3 >= 0 and fila[idx_alt3] is not None else ""
                 alt4 = str(fila[idx_alt4]).strip() if idx_alt4 >= 0 and fila[idx_alt4] is not None else ""
 
-                # Validamos que al menos tenga la pregunta, la respuesta correcta y 1 distractor
                 if enunciado and correcta and alt1: 
                     preguntas_temporales.append({
                         'id_temp': i,
                         'enunciado': enunciado,
                         'correcta': correcta,
                         'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
-                        'puntos': 2.00
+                        'puntos': puntos_automaticos # <-- ASIGNADO AUTOMÁTICAMENTE
                     })
 
         wb.close()

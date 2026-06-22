@@ -54,9 +54,7 @@
                     <li><a href="{% url 'beneficios' %}" class="nav-link submenu-link"><i class="bi bi-gift-fill me-2"></i> Beneficios</a></li>
                     <li><a href="{% url 'academia' %}" class="nav-link submenu-link"><i class="bi bi-mortarboard-fill me-2"></i> Academia LMS</a></li>
 
-                    {% if request.user.perfil.onboarding_progreso %}
-                    <li><a href="{% url 'mi_induccion' %}" class="nav-link submenu-link text-warning fw-bold"><i class="bi bi-rocket-takeoff-fill me-2"></i> Mi Inducción</a></li>
-                    {% endif %}
+                    <li><a href="{% url 'mi_induccion' %}" class="nav-link submenu-link text-warning fw-bold"><i class="bi bi-journal-bookmark-fill me-2"></i> Mis Capacitaciones</a></li>
                 </ul>
             </div>
         </li>
@@ -89,7 +87,7 @@
                     <li><a href="{% url 'gestor_comunicados' %}" class="nav-link submenu-link"><i class="bi bi-megaphone-fill me-2"></i> Gestor de Anuncios</a></li>
                     <li><a href="{% url 'encuestas_admin' %}" class="nav-link submenu-link"><i class="bi bi-file-earmark-medical-fill me-2"></i> Panel Encuestas</a></li>
                     <li><a href="{% url 'activos' %}" class="nav-link submenu-link"><i class="bi bi-pc-display-horizontal me-2"></i> Control de Activos</a></li>
-                    <li><a href="{% url 'gestor_lms' %}" class="nav-link"><i class="bi bi-sliders me-2"></i> Gestor LMS</a></li>
+                    <li><a href="{% url 'gestor_lms' %}" class="nav-link submenu-link"><i class="bi bi-sliders me-2"></i> Gestor LMS</a></li>
                     <li><a href="{% url 'onboarding_admin' %}" class="nav-link submenu-link"><i class="bi bi-journal-bookmark-fill me-2"></i> Onboarding Admin</a></li>
                 </ul>
             </div>
