@@ -25,6 +25,9 @@ from intranet.models import (
 # Herramientas globales de tu archivo utils.py
 from .utils import solo_directivos, solo_calidad, generar_username_unico
 
+from ..models.lms import EvaluacionCurso, CursoInduccion # Asegúrate de que las importaciones sean correctas
+from ..decorators import solo_directivos
+
 # ==========================================
 # DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
 # ==========================================
@@ -153,70 +156,6 @@ def mapear_excel(request):
 @solo_directivos
 def procesar_mapeo_balotario(request):
     if request.method == 'POST':
-        ruta_archivo = request.session.get('ruta_excel_balotario')
-        eval_id = request.session.get('evaluacion_id_temporal')
-        
-        if not ruta_archivo or not default_storage.exists(ruta_archivo):
-            messages.error(request, "El archivo expiró o no se encontró. Vuelve a subirlo.")
-            return redirect('gestor_lms')
-
-        evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
-        puntos_automaticos = round(evaluacion.puntaje_maximo / evaluacion.preguntas_a_mostrar, 2) if evaluacion.preguntas_a_mostrar > 0 else 0.00
-
-        # Captura de índices con seguridad
-        try:
-            idx_pregunta = int(request.POST.get('prop_pregunta', -1))
-            idx_correcta = int(request.POST.get('prop_correcta', -1))
-            idx_alt1 = int(request.POST.get('prop_alt1', -1))
-            idx_alt2 = int(request.POST.get('prop_alt2', -1))
-            idx_alt3 = int(request.POST.get('prop_alt3', -1))
-            idx_alt4 = int(request.POST.get('prop_alt4', -1))
-        except ValueError:
-            messages.error(request, "Error en el mapeo de columnas.")
-            return redirect('gestor_lms')
-
-        archivo_excel = default_storage.open(ruta_archivo)
-        wb = openpyxl.load_workbook(archivo_excel, data_only=True) # data_only=True evita errores con fórmulas
-        
-        preguntas_temporales = []
-        for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
-            # SEGURIDAD EXTRA: Validar que el índice exista en esta fila específica
-            def get_val(idx):
-                return str(fila[idx]).strip() if (idx >= 0 and idx < len(fila) and fila[idx] is not None) else ""
-
-            enunciado = get_val(idx_pregunta)
-            correcta = get_val(idx_correcta)
-            alt1 = get_val(idx_alt1)
-            alt2 = get_val(idx_alt2)
-            alt3 = get_val(idx_alt3)
-            alt4 = get_val(idx_alt4)
-
-            if enunciado and correcta and alt1: 
-                preguntas_temporales.append({
-                    'id_temp': i,
-                    'enunciado': enunciado,
-                    'correcta': correcta,
-                    'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
-                    'puntos': puntos_automaticos
-                })
-
-        wb.close()
-        archivo_excel.close()
-        default_storage.delete(ruta_archivo)
-        
-        # Limpiamos sesión
-        if 'ruta_excel_balotario' in request.session:
-            del request.session['ruta_excel_balotario']
-
-        request.session['balotario_temporal'] = preguntas_temporales
-        return redirect('previsualizar_balotario')
-        
-    return redirect('gestor_lms')
-
-@login_required(login_url='login')
-@solo_directivos
-def procesar_mapeo_balotario(request):
-    if request.method == 'POST':
         try:
             ruta_archivo = request.session.get('ruta_excel_balotario')
             eval_id = request.session.get('evaluacion_id_temporal')
@@ -240,7 +179,6 @@ def procesar_mapeo_balotario(request):
             
             preguntas_temporales = []
             for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
-                # Función segura de acceso
                 def get_val(idx):
                     if idx >= 0 and idx < len(fila):
                         val = fila[idx]
@@ -274,7 +212,6 @@ def procesar_mapeo_balotario(request):
             return redirect('previsualizar_balotario')
             
         except Exception:
-            # ESTO TE MOSTRARÁ EL ERROR REAL EN PANTALLA
             return HttpResponse(f"<pre>{traceback.format_exc()}</pre>", status=500)
             
     return redirect('gestor_lms')
