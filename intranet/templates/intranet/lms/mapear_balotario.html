@@ -1,0 +1,77 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="mb-4">
+        <h2 class="navbar-main-title fw-bold mb-0 text-primary">Mapear Columnas</h2>
+        <p class="text-muted">Indica qué columna de tu Excel corresponde a cada dato del examen.</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <form method="POST" action="{% url 'procesar_mapeo_balotario' %}">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 border-end pe-4">
+                        <h5 class="fw-bold text-dark mb-4 border-bottom pb-2"><i class="bi bi-exclamation-circle text-danger me-2"></i>Campos Obligatorios</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Columna de la Pregunta</label>
+                            <select class="form-select border-danger" name="prop_pregunta" required>
+                                <option value="">Selecciona la columna...</option>
+                                {% for cabecera in cabeceras %}<option value="{{ forloop.counter0 }}">{{ cabecera }}</option>{% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-success">Respuesta Correcta</label>
+                            <select class="form-select border-success" name="prop_correcta" required>
+                                <option value="">Selecciona la columna...</option>
+                                {% for cabecera in cabeceras %}<option value="{{ forloop.counter0 }}">{{ cabecera }}</option>{% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-warning">Alternativa Incorrecta 1</label>
+                            <select class="form-select border-warning" name="prop_alt1" required>
+                                <option value="">Selecciona la columna...</option>
+                                {% for cabecera in cabeceras %}<option value="{{ forloop.counter0 }}">{{ cabecera }}</option>{% endfor %}
+                            </select>
+                            <div class="form-text" style="font-size:0.75rem;">Para preguntas de Verdadero/Falso, esta sería tu única alternativa incorrecta.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 ps-4">
+                        <h5 class="fw-bold text-secondary mb-4 border-bottom pb-2"><i class="bi bi-list-check me-2"></i>Alternativas Opcionales</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Alternativa Incorrecta 2</label>
+                            <select class="form-select" name="prop_alt2">
+                                <option value="-1">-- No aplica / Dejar en blanco --</option>
+                                {% for cabecera in cabeceras %}<option value="{{ forloop.counter0 }}">{{ cabecera }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Alternativa Incorrecta 3</label>
+                            <select class="form-select" name="prop_alt3">
+                                <option value="-1">-- No aplica / Dejar en blanco --</option>
+                                {% for cabecera in cabeceras %}<option value="{{ forloop.counter0 }}">{{ cabecera }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Alternativa Incorrecta 4</label>
+                            <select class="form-select" name="prop_alt4">
+                                <option value="-1">-- No aplica / Dejar en blanco --</option>
+                                {% for cabecera in cabeceras %}<option value="{{ forloop.counter0 }}">{{ cabecera }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mt-4 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary fw-bold px-5 shadow-sm">Generar Vista Previa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

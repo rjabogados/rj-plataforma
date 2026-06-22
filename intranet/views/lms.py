@@ -151,6 +151,60 @@ def mapear_excel(request):
 
 @login_required(login_url='login')
 @solo_directivos
+def procesar_mapeo_balotario(request):
+    if request.method == 'POST':
+        ruta_archivo = request.session.get('ruta_excel_balotario')
+        eval_id = request.session.get('evaluacion_id_temporal')
+        
+        if not ruta_archivo or not default_storage.exists(ruta_archivo):
+            messages.error(request, "El archivo expiró. Vuelve a subirlo.")
+            return redirect('gestor_lms')
+
+        # Recibimos qué columna eligió el usuario para cada cosa
+        idx_pregunta = int(request.POST.get('prop_pregunta', -1))
+        idx_correcta = int(request.POST.get('prop_correcta', -1))
+        idx_alt1 = int(request.POST.get('prop_alt1', -1))
+        idx_alt2 = int(request.POST.get('prop_alt2', -1))
+        idx_alt3 = int(request.POST.get('prop_alt3', -1))
+        idx_alt4 = int(request.POST.get('prop_alt4', -1))
+
+        archivo_excel = default_storage.open(ruta_archivo)
+        wb = openpyxl.load_workbook(archivo_excel)
+        
+        preguntas_temporales = []
+        for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
+            if idx_pregunta >= 0 and fila[idx_pregunta]:
+                enunciado = str(fila[idx_pregunta]).strip()
+                correcta = str(fila[idx_correcta]).strip() if idx_correcta >= 0 and fila[idx_correcta] is not None else ""
+                alt1 = str(fila[idx_alt1]).strip() if idx_alt1 >= 0 and fila[idx_alt1] is not None else ""
+                
+                # Opcionales
+                alt2 = str(fila[idx_alt2]).strip() if idx_alt2 >= 0 and fila[idx_alt2] is not None else ""
+                alt3 = str(fila[idx_alt3]).strip() if idx_alt3 >= 0 and fila[idx_alt3] is not None else ""
+                alt4 = str(fila[idx_alt4]).strip() if idx_alt4 >= 0 and fila[idx_alt4] is not None else ""
+
+                # Validamos que al menos tenga la pregunta, la respuesta correcta y 1 distractor
+                if enunciado and correcta and alt1: 
+                    preguntas_temporales.append({
+                        'id_temp': i,
+                        'enunciado': enunciado,
+                        'correcta': correcta,
+                        'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
+                        'puntos': 2.00
+                    })
+
+        wb.close()
+        archivo_excel.close()
+        default_storage.delete(ruta_archivo)
+        del request.session['ruta_excel_balotario']
+
+        request.session['balotario_temporal'] = preguntas_temporales
+        return redirect('previsualizar_balotario')
+        
+    return redirect('gestor_lms')
+
+@login_required(login_url='login')
+@solo_directivos
 def procesar_excel_mapeado(request):
     if request.method == 'POST':
         ruta_archivo = request.session.get('ruta_excel_tmp')
@@ -561,36 +615,28 @@ def importar_excel_balotario(request, evaluacion_id):
     evaluacion = get_object_or_404(EvaluacionCurso, id=evaluacion_id)
 
     if request.method == 'POST' and request.FILES.get('archivo_excel'):
-        excel = request.FILES['archivo_excel']
+        excel_file = request.FILES['archivo_excel']
         
         try:
-            wb = openpyxl.load_workbook(excel)
-            hoja = wb.active
-            preguntas_temporales = []
-
-            for i, fila in enumerate(hoja.iter_rows(min_row=2, values_only=True)):
-                if not fila[0]:  
-                    break
-
-                preguntas_temporales.append({
-                    'id_temp': i, 
-                    'enunciado': str(fila[0]),
-                    'opcion_1': str(fila[1]) if fila[1] else "",
-                    'opcion_2': str(fila[2]) if fila[2] else "",
-                    'opcion_3': str(fila[3]) if fila[3] else "",
-                    'opcion_4': str(fila[4]) if fila[4] else "",
-                    'correcta': str(fila[5]) if fila[5] else "1", 
-                    'puntos': 2.00 
-                })
-
-            request.session['balotario_temporal'] = preguntas_temporales
+            # Guardamos el archivo temporalmente
+            nombre_tmp = default_storage.save(f'tmp/balotario_{request.user.id}.xlsx', ContentFile(excel_file.read()))
+            wb = openpyxl.load_workbook(default_storage.open(nombre_tmp))
+            
+            # Sacamos las cabeceras de la primera fila
+            cabeceras_excel = [str(celda.value).strip() for celda in wb.active[1] if celda.value is not None]
+            
+            request.session['ruta_excel_balotario'] = nombre_tmp
             request.session['evaluacion_id_temporal'] = evaluacion.id
-
-            return redirect('previsualizar_balotario')
-
+            
+            # Pasamos a la pantalla de mapeo
+            return render(request, 'intranet/lms/mapear_balotario.html', {
+                'cabeceras': cabeceras_excel,
+                'evaluacion': evaluacion
+            })
+            
         except Exception as e:
             messages.error(request, f"Ocurrió un error leyendo el Excel: {str(e)}")
-            return redirect(request.path)
+            return redirect('gestor_lms')
 
     return render(request, 'intranet/lms/subir_excel.html', {'evaluacion': evaluacion})
 
@@ -608,31 +654,32 @@ def previsualizar_y_guardar_balotario(request):
     evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
 
     if request.method == 'POST':
-        for req_key in request.POST:
-            if req_key.startswith('enunciado_'):
-                idx = req_key.split('_')[1] 
+        with transaction.atomic():
+            for req_key in request.POST:
+                if req_key.startswith('enunciado_'):
+                    idx = req_key.split('_')[1] 
 
-                nueva_pregunta = PreguntaEvaluacion.objects.create(
-                    evaluacion=evaluacion,
-                    enunciado=request.POST.get(f'enunciado_{idx}'),
-                    puntos=request.POST.get(f'puntos_{idx}', 2.00)
-                )
+                    nueva_pregunta = PreguntaEvaluacion.objects.create(
+                        evaluacion=evaluacion,
+                        enunciado=request.POST.get(f'enunciado_{idx}'),
+                        puntos=request.POST.get(f'puntos_{idx}', 2.00)
+                    )
 
-                correcta_marcada = request.POST.get(f'correcta_{idx}', '1')
-
-                for num in range(1, 5):
-                    texto_opcion = request.POST.get(f'opcion_{num}_{idx}')
-                    if texto_opcion:
-                        OpcionRespuesta.objects.create(
-                            pregunta=nueva_pregunta,
-                            texto=texto_opcion,
-                            es_correcta=(str(num) == correcta_marcada) 
-                        )
+                    # Guardamos la opción Correcta
+                    txt_correcta = request.POST.get(f'correcta_{idx}')
+                    if txt_correcta:
+                        OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=txt_correcta, es_correcta=True)
+                    
+                    # Guardamos las opciones Incorrectas
+                    for i in range(1, 5):
+                        txt_alt = request.POST.get(f'alt{i}_{idx}')
+                        if txt_alt:
+                            OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=txt_alt, es_correcta=False)
 
         del request.session['balotario_temporal']
         del request.session['evaluacion_id_temporal']
 
-        messages.success(request, "¡Balotario inyectado y guardado con éxito!")
+        messages.success(request, "¡Balotario mapeado y guardado con éxito!")
         return redirect('gestor_lms')
 
     context = {

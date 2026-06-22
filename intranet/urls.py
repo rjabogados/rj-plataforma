@@ -110,4 +110,7 @@ urlpatterns = [
     path('academia/evaluacion/<int:evaluacion_id>/importar/', lms.importar_excel_balotario, name='importar_excel_balotario'),
     path('academia/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
     path('academia/rendir/<int:matricula_id>/', lms.rendir_evaluacion, name='rendir_evaluacion'),
+    path('academia/evaluacion/<int:evaluacion_id>/importar/', lms.importar_excel_balotario, name='importar_excel_balotario'),
+    path('academia/evaluacion/mapear/', lms.procesar_mapeo_balotario, name='procesar_mapeo_balotario'),
+    path('academia/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
 ]
