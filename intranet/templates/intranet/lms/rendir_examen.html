@@ -1,0 +1,59 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 900px; margin: 0 auto;">
+    
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'academia' %}" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i> Volver</a>
+        <h3 class="fw-bold mb-0 text-dark">Evaluación: {{ evaluacion.titulo }}</h3>
+    </div>
+
+    <div class="alert alert-info border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center">
+        <i class="bi bi-info-circle-fill fs-4 text-info me-3"></i>
+        <div>
+            <strong>Instrucciones:</strong> {{ evaluacion.instrucciones|default:"Lee atentamente cada pregunta antes de marcar tu respuesta. Al finalizar, revisa bien y presiona 'Enviar Examen'." }}
+            <br>
+            <small>Nota aprobatoria requerida: <strong>{{ evaluacion.puntaje_aprobatorio }}</strong> | Puntaje máximo posible: <strong>{{ evaluacion.puntaje_maximo }}</strong></small>
+        </div>
+    </div>
+
+    <!-- Formulario Oficial del Examen -->
+    <form method="POST" action="{% url 'rendir_evaluacion' matricula.id %}" id="form-examen">
+        {% csrf_token %}
+        
+        {% for pregunta in preguntas %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <span class="badge bg-primary me-2">Pregunta {{ forloop.counter }}</span>
+                    {{ pregunta.enunciado }}
+                </h6>
+                
+                <!-- Este input oculto le dice a Python exactamente qué preguntas le tocaron al usuario -->
+                <input type="hidden" name="preguntas_mostradas" value="{{ pregunta.id }}">
+                
+                <div class="ps-3 mt-3 border-start border-3 border-light">
+                    {% for opcion in pregunta.alternativas.all %}
+                    <div class="form-check mb-2 custom-radio py-1">
+                        <input class="form-check-input" type="radio" name="pregunta_{{ pregunta.id }}" id="opcion_{{ opcion.id }}" value="{{ opcion.id }}" required>
+                        <label class="form-check-label text-secondary w-100" for="opcion_{{ opcion.id }}" style="cursor: pointer;">
+                            {{ opcion.texto }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="text-end mb-5">
+            <button type="submit" class="btn btn-success btn-lg px-5 fw-bold rounded-pill shadow-sm" onclick="return confirm('¿Estás seguro de enviar tus respuestas? El sistema calificará tu examen inmediatamente.');">
+                <i class="bi bi-send-fill me-2"></i> Enviar Examen
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .custom-radio:hover { background-color: #f8f9fa; border-radius: 5px; transition: background-color 0.2s; }
+</style>
+{% endblock %}
