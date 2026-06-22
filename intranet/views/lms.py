@@ -153,78 +153,18 @@ def mapear_excel(request):
         return render(request, 'intranet/mapear_excel.html', {'cabeceras': cabeceras_excel})
     return redirect('colaboradores')
 
+import sys
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+
 @login_required(login_url='login')
-@solo_directivos
 def procesar_mapeo_balotario(request):
-    if request.method == 'POST':
-        try:
-            ruta_archivo = request.session.get('ruta_excel_balotario')
-            eval_id = request.session.get('evaluacion_id_temporal')
-            
-            if not ruta_archivo or not default_storage.exists(ruta_archivo):
-                messages.error(request, "El archivo expiró. Vuelve a subirlo.")
-                return redirect('gestor_lms')
-
-            evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
-            puntos_automaticos = round(evaluacion.puntaje_maximo / evaluacion.preguntas_a_mostrar, 2) if evaluacion.preguntas_a_mostrar > 0 else 0.00
-
-            idx_pregunta = int(request.POST.get('prop_pregunta', -1))
-            idx_correcta = int(request.POST.get('prop_correcta', -1))
-            idx_alt1 = int(request.POST.get('prop_alt1', -1))
-            idx_alt2 = int(request.POST.get('prop_alt2', -1))
-            idx_alt3 = int(request.POST.get('prop_alt3', -1))
-            idx_alt4 = int(request.POST.get('prop_alt4', -1))
-
-            archivo_excel = default_storage.open(ruta_archivo)
-            wb = openpyxl.load_workbook(archivo_excel, data_only=True, read_only=True)
-            
-            preguntas_temporales = []
-            for i, fila in enumerate(wb.active.iter_rows(min_row=2, values_only=True)):
-                def get_val(idx):
-                    if idx >= 0 and idx < len(fila):
-                        val = fila[idx]
-                        return str(val).strip() if val is not None else ""
-                    return ""
-
-                enunciado = get_val(idx_pregunta)
-                correcta = get_val(idx_correcta)
-                alt1 = get_val(idx_alt1)
-                alt2 = get_val(idx_alt2)
-                alt3 = get_val(idx_alt3)
-                alt4 = get_val(idx_alt4)
-
-                if enunciado and correcta and alt1: 
-                    preguntas_temporales.append({
-                        'id_temp': i,
-                        'enunciado': enunciado,
-                        'correcta': correcta,
-                        'alt1': alt1, 'alt2': alt2, 'alt3': alt3, 'alt4': alt4,
-                        'puntos': puntos_automaticos
-                    })
-
-            wb.close()
-            archivo_excel.close()
-            default_storage.delete(ruta_archivo)
-            
-            if 'ruta_excel_balotario' in request.session:
-                del request.session['ruta_excel_balotario']
-
-            request.session['balotario_temporal'] = preguntas_temporales
-            return redirect('previsualizar_balotario')
-            
-        except Exception as e:
-            # ENGAÑAMOS AL NAVEGADOR: Enviamos el error pero con status 200 (Éxito)
-            # Así Render y Chrome están obligados a mostrarte este texto
-            error_texto = traceback.format_exc()
-            return HttpResponse(
-                f"<div style='padding: 20px; font-family: monospace; background: #ffe6e6; color: red; border: 2px solid red;'>"
-                f"<h2>¡ENCONTRAMOS EL ERROR! Copia esto:</h2>"
-                f"<pre>{error_texto}</pre>"
-                f"</div>", 
-                status=200
-            )
-            
-    return redirect('gestor_lms')
+    # Esto va a forzar un mensaje rojo en la consola de Render
+    print("=========================================", file=sys.stderr, flush=True)
+    print("¡LA PETICIÓN LLEGÓ A LA VISTA CON ÉXITO!", file=sys.stderr, flush=True)
+    print("=========================================", file=sys.stderr, flush=True)
+    
+    return HttpResponse("<h1>¡LA VISTA FUNCIONA Y NO HAY ERROR 500!</h1>", status=200)
 
 # ==========================================
 # ONBOARDING CORPORATIVO
