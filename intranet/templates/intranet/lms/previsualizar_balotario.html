@@ -13,12 +13,11 @@
         </div>
     </div>
 
-    <!-- EL TRUCO AQUÍ: autocomplete="off" evita que Chrome bloquee los circulitos -->
     <form method="POST" action="{% url 'previsualizar_balotario' %}" id="form-balotario" autocomplete="off">
         {% csrf_token %}
         
         {% for p in preguntas %}
-        <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div class="pregunta-block" data-correcta="{{ p.correcta }}" style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
             
             <div style="margin-bottom: 15px;">
                 <label style="font-weight: bold; color: #333;">Pregunta {{ forloop.counter }}</label>
@@ -27,33 +26,25 @@
 
             <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #bbb;">
                 <p style="margin-top: 0; margin-bottom: 10px; font-size: 13px; font-weight: bold;">
-                    Alternativas <span style="background-color: #e6f2ff; color: #004085; padding: 3px 6px; border-radius: 4px; margin-left: 5px;">(Excel marcó: "{{ p.correcta }}")</span>
+                    Alternativas (Selecciona la correcta):
                 </p>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <!-- ALTERNATIVA 1 -->
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="1" 
-                            {% if p.correcta == 1 or p.correcta == '1' or p.correcta == '1.0' or p.correcta == 'a' or p.correcta == 'A' or p.correcta == p.alt1 %}checked{% endif %} required>
-                        <input type="text" name="alt1_{{ p.id_temp }}" value="{{ p.alt1 }}" style="width: 100%; padding: 5px;" required>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="1" required>
+                        <input type="text" name="alt1_{{ p.id_temp }}" value="{{ p.alt1 }}" class="input-alt" style="width: 100%; padding: 5px;" required>
                     </div>
-                    <!-- ALTERNATIVA 2 -->
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="2" 
-                            {% if p.correcta == 2 or p.correcta == '2' or p.correcta == '2.0' or p.correcta == 'b' or p.correcta == 'B' or p.correcta == p.alt2 %}checked{% endif %} required>
-                        <input type="text" name="alt2_{{ p.id_temp }}" value="{{ p.alt2 }}" style="width: 100%; padding: 5px;" required>
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="2" required>
+                        <input type="text" name="alt2_{{ p.id_temp }}" value="{{ p.alt2 }}" class="input-alt" style="width: 100%; padding: 5px;" required>
                     </div>
-                    <!-- ALTERNATIVA 3 -->
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="3" 
-                            {% if p.correcta == 3 or p.correcta == '3' or p.correcta == '3.0' or p.correcta == 'c' or p.correcta == 'C' or p.correcta == p.alt3 %}checked{% endif %}>
-                        <input type="text" name="alt3_{{ p.id_temp }}" value="{{ p.alt3 }}" style="width: 100%; padding: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="3">
+                        <input type="text" name="alt3_{{ p.id_temp }}" value="{{ p.alt3 }}" class="input-alt" style="width: 100%; padding: 5px;">
                     </div>
-                    <!-- ALTERNATIVA 4 -->
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="radio" name="correcta_{{ p.id_temp }}" value="4" 
-                            {% if p.correcta == 4 or p.correcta == '4' or p.correcta == '4.0' or p.correcta == 'd' or p.correcta == 'D' or p.correcta == p.alt4 %}checked{% endif %}>
-                        <input type="text" name="alt4_{{ p.id_temp }}" value="{{ p.alt4 }}" style="width: 100%; padding: 5px;">
+                        <input type="radio" name="correcta_{{ p.id_temp }}" value="4">
+                        <input type="text" name="alt4_{{ p.id_temp }}" value="{{ p.alt4 }}" class="input-alt" style="width: 100%; padding: 5px;">
                     </div>
                 </div>
             </div>
@@ -69,4 +60,51 @@
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const preguntas = document.querySelectorAll('.pregunta-block');
+    
+    preguntas.forEach(bloque => {
+        // Leemos la respuesta original que vino del Excel (oculta en el div)
+        const correctaExcelOriginal = bloque.getAttribute('data-correcta').trim();
+        const correctaExcelLower = correctaExcelOriginal.toLowerCase();
+        
+        const radios = bloque.querySelectorAll('input[type="radio"]');
+        const textosAlt = bloque.querySelectorAll('.input-alt');
+        
+        let fueMarcado = false;
+
+        // CASO 1: Si en Excel pusieron números o letras directas (Ej: 1, 1.0, A)
+        if (['1', '1.0', 'a'].includes(correctaExcelLower)) { radios[0].checked = true; fueMarcado = true; }
+        else if (['2', '2.0', 'b'].includes(correctaExcelLower)) { radios[1].checked = true; fueMarcado = true; }
+        else if (['3', '3.0', 'c'].includes(correctaExcelLower)) { radios[2].checked = true; fueMarcado = true; }
+        else if (['4', '4.0', 'd'].includes(correctaExcelLower)) { radios[3].checked = true; fueMarcado = true; }
+
+        // CASO 2: Si el texto del Excel ya existe en alguna de las 4 cajas
+        if (!fueMarcado && correctaExcelOriginal !== '') {
+            for (let i = 0; i < textosAlt.length; i++) {
+                if (textosAlt[i].value.trim().toLowerCase() === correctaExcelLower) {
+                    radios[i].checked = true;
+                    fueMarcado = true;
+                    break;
+                }
+            }
+        }
+
+        // CASO 3 (LA SOLUCION A TU IMAGEN): 
+        // Si no se marcó nada, buscamos la primera caja vacía, le inyectamos el texto y la marcamos
+        if (!fueMarcado && correctaExcelOriginal !== '') {
+            for (let i = 0; i < textosAlt.length; i++) {
+                if (textosAlt[i].value.trim() === '') {
+                    textosAlt[i].value = correctaExcelOriginal; // Rellena la caja vacía (ej. la 4ta)
+                    radios[i].checked = true; // Marca el circulito de esa caja
+                    fueMarcado = true;
+                    break;
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
