@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{% url 'procesar_excel_mapeado' %}" id="formMapeo" onsubmit="iniciarCarga()">
+    <form method="POST" action="{% url 'procesar_mapeo_balotario' %}" id="formMapeo" onsubmit="iniciarCarga()">
         {% csrf_token %}
         
         <div class="row g-4">
