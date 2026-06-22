@@ -536,7 +536,7 @@ def gestor_lms(request):
     cursos_disponibles = CursoInduccion.objects.filter(activo=True)
     evaluaciones = EvaluacionCurso.objects.all().select_related('curso').prefetch_related('preguntas_balotario')
 
-    return render(request, 'intranet/gestion_lms.html', {
+    return render(request, 'intranet/gestor_lms.html', {
         'cursos': cursos_disponibles,
         'evaluaciones': evaluaciones
     })
