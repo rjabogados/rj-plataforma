@@ -48,28 +48,30 @@
                 
                 {% if leccion.archivo_pdf %}
                     <!-- Visor de PDF Nativo a pantalla completa -->
-                    <iframe src="{{ leccion.archivo_pdf.url }}#toolbar=0&navpanes=0&scrollbar=0"
+                    <iframe src="{{ leccion.archivo_pdf.url }}#view=FitH&toolbar=0&navpanes=0"
                             class="w-100 h-100 border-0" 
+                            style="border: none; min-height: 600px;"
                             title="Documento de Estudio">
                     </iframe>
 
                 {% elif leccion.url_video %}
-                    <!-- Visor de YouTube -->
-                    <iframe src="{{ leccion.url_video }}" 
-                            class="w-100 h-100 border-0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowfullscreen 
-                            title="Reproductor de Video">
-                    </iframe>
-
+                    <div class="ratio ratio-16x9 h-100">
+                         <iframe 
+                            src="{{ leccion.url_video }}"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                          </iframe>
+                    </div>
                 {% elif leccion.url_presentacion_canva %}
+                    <div class="ratio ratio-16x9 h-100"></div>
                     <!-- Si alguna vez usan el embed real de Canva/Genially -->
-                    <iframe src="{{ leccion.url_presentacion_canva }}" 
-                            class="w-100 h-100 border-0" 
-                            allowfullscreen 
-                            title="Presentación Interactiva">
-                    </iframe>
-
+                         <iframe 
+                         src="{{ leccion.url_presentacion_canva }}"
+                            allowfullscreen="true"
+                            allow="fullscreen" 
+                            style="border: none; width: 100%; height: 100%;">
+                         </iframe>
+                     </div>
                 {% else %}
                     <!-- Pantalla vacía si no hay material -->
                     <div class="d-flex flex-column justify-content-center align-items-center h-100 text-muted">
