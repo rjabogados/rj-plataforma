@@ -496,6 +496,35 @@ def gestor_lms(request):
     })
 
 @login_required(login_url='login')
+@solo_directivos
+def editar_curso_lms(request, curso_id):
+    curso = get_object_or_404(CursoInduccion, id=curso_id)
+    
+    if request.method == 'POST':
+        curso.titulo = request.POST.get('titulo')
+        curso.descripcion = request.POST.get('descripcion')
+        curso.publico_general = request.POST.get('publico_general') == 'on'
+        curso.rol_permitido = request.POST.get('rol_permitido') or None
+        
+        cartera_id = request.POST.get('cartera_vinculada')
+        curso.cartera_vinculada_id = cartera_id if cartera_id else None
+        
+        curso.save()
+        messages.success(request, f"¡Curso '{curso.titulo}' actualizado correctamente!")
+        
+    return redirect('gestor_lms')
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_curso_lms(request, curso_id):
+    curso = get_object_or_404(CursoInduccion, id=curso_id)
+    titulo = curso.titulo
+    # Al eliminar el curso, Django borrará automáticamente sus clases, exámenes y progreso (Cascade)
+    curso.delete()
+    messages.success(request, f"El curso '{titulo}' y todo su contenido ha sido eliminado.")
+    return redirect('gestor_lms')
+
+@login_required(login_url='login')
 def academia(request):
     try:
         colaborador = request.user.perfil

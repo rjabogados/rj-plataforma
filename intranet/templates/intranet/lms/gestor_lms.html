@@ -27,7 +27,6 @@
     {% endif %}
 
     <div class="row">
-        <!-- COLUMNA IZQUIERDA: CONFIGURAR EXAMEN -->
         <div class="col-md-4 mb-4">
             <div class="card border-0 shadow-sm rounded-4 h-100 border-top border-primary border-4">
                 <div class="card-header bg-white border-0 pt-4 pb-0">
@@ -95,7 +94,6 @@
             </div>
         </div>
 
-        <!-- COLUMNA DERECHA: LISTADO DE CURSOS Y SUS CLASES -->
         <div class="col-md-8 mb-4">
             <h5 class="fw-bold text-dark mb-3"><i class="bi bi-collection-fill me-2"></i>Cursos y Módulos Activos</h5>
             {% if cursos %}
@@ -104,17 +102,14 @@
                     <div class="card border-0 shadow-sm rounded-4 border-start border-primary border-5">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
+                                <div class="w-75">
                                     <h5 class="fw-bold mb-1" style="color: var(--rj-azul);">{{ curso.titulo }}</h5>
                                     <p class="text-muted small mb-2">{{ curso.descripcion }}</p>
                                     
                                     <div class="d-flex flex-wrap gap-2 mt-2">
-                                        <!-- Etiqueta de Clases -->
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
                                             <i class="bi bi-play-btn-fill me-1"></i> {{ curso.lecciones.count }} Clases
                                         </span>
-                                        
-                                        <!-- Etiqueta de Examen -->
                                         {% if curso.evaluacion %}
                                             <span class="badge bg-success-subtle text-success border border-success-subtle">
                                                 <i class="bi bi-check-circle-fill me-1"></i> Examen Configurado
@@ -127,7 +122,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Botones de Gestión del Curso -->
                                 {% if curso.evaluacion %}
                                 <div class="text-end d-flex flex-column gap-2 ms-3">
                                     <a href="{% url 'resultados_evaluacion' curso.evaluacion.id %}" class="btn btn-sm btn-info text-white fw-bold shadow-sm">
@@ -138,6 +132,72 @@
                                     </a>
                                 </div>
                                 {% endif %}
+                            </div>
+
+                            <div class="mt-3 pt-3 border-top d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalEditarCurso{{ curso.id }}">
+                                    <i class="bi bi-pencil-square"></i> Editar Curso
+                                </button>
+                                <a href="{% url 'eliminar_curso_lms' curso.id %}" class="btn btn-sm btn-outline-danger fw-bold" onclick="return confirm('¿Estás SEGURO de eliminar este curso? Se borrarán todas sus clases, exámenes y el progreso de los colaboradores. Esta acción no se puede deshacer.');">
+                                    <i class="bi bi-trash-fill"></i> Eliminar
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="modalEditarCurso{{ curso.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Editar Curso</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{% url 'editar_curso_lms' curso.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body p-4">
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label fw-bold small">Título del Curso</label>
+                                                <input type="text" class="form-control" name="titulo" value="{{ curso.titulo }}" required>
+                                            </div>
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label fw-bold small">Descripción</label>
+                                                <textarea class="form-control" name="descripcion" rows="2">{{ curso.descripcion }}</textarea>
+                                            </div>
+                                            <hr>
+                                            <div class="col-md-12 mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" name="publico_general" id="checkPublico{{ curso.id }}" {% if curso.publico_general %}checked{% endif %} onchange="toggleFiltros('{{ curso.id }}')">
+                                                    <label class="form-check-label fw-bold" for="checkPublico{{ curso.id }}">Visible para toda la empresa</label>
+                                                </div>
+                                            </div>
+                                            <div class="row" id="filtrosSegmentacion{{ curso.id }}" style="{% if curso.publico_general %}display: none;{% else %}display: flex;{% endif %}">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-bold small text-warning">Filtrar por Rol</label>
+                                                    <select class="form-select border-warning" name="rol_permitido">
+                                                        <option value="">-- Todos los Roles --</option>
+                                                        {% for valor, etiqueta in roles %}
+                                                            <option value="{{ valor }}" {% if curso.rol_permitido == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-bold small text-info">Filtrar por Cartera</label>
+                                                    <select class="form-select border-info" name="cartera_vinculada">
+                                                        <option value="">-- Todas las Carteras --</option>
+                                                        {% for n in negocios %}
+                                                            <option value="{{ n.id }}" {% if curso.cartera_vinculada_id == n.id %}selected{% endif %}>{{ n.nombre }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer bg-light">
+                                        <button type="submit" class="btn btn-primary fw-bold">Actualizar Curso</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -154,7 +214,6 @@
     </div>
 </div>
 
-<!-- MODAL: CREAR CURSO -->
 <div class="modal fade" id="modalCrearCurso" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -162,7 +221,7 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus me-2"></i> Crear Nuevo Curso</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST">
+            <form method="POST" action="{% url 'gestor_lms' %}">
                 {% csrf_token %}
                 <div class="modal-body p-4">
                     <div class="row">
@@ -177,11 +236,11 @@
                         <hr>
                         <div class="col-md-12 mb-3">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="publico_general" id="checkPublico" checked onchange="toggleFiltros()">
-                                <label class="form-check-label fw-bold" for="checkPublico">Visible para toda la empresa</label>
+                                <input class="form-check-input" type="checkbox" name="publico_general" id="checkPublicoNuevo" checked onchange="toggleFiltros('Nuevo')">
+                                <label class="form-check-label fw-bold" for="checkPublicoNuevo">Visible para toda la empresa</label>
                             </div>
                         </div>
-                        <div class="row" id="filtrosSegmentacion" style="display: none;">
+                        <div class="row" id="filtrosSegmentacionNuevo" style="display: none;">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold small text-warning">Filtrar por Rol</label>
                                 <select class="form-select border-warning" name="rol_permitido">
@@ -207,7 +266,6 @@
     </div>
 </div>
 
-<!-- MODAL: AGREGAR CLASE (LECCIÓN) -->
 <div class="modal fade" id="modalCrearLeccion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -215,8 +273,7 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-play-btn-fill me-2"></i> Agregar Clase a un Curso</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <!-- IMPORTANTE: enctype="multipart/form-data" para permitir subida de PDFs -->
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" action="{% url 'gestor_lms' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="crear_leccion" value="1">
                 <div class="modal-body p-4">
@@ -270,9 +327,12 @@
 </div>
 
 <script>
-    function toggleFiltros() {
-        const check = document.getElementById('checkPublico');
-        document.getElementById('filtrosSegmentacion').style.display = check.checked ? 'none' : 'flex';
+    function toggleFiltros(id) {
+        const check = document.getElementById('checkPublico' + id);
+        const filtros = document.getElementById('filtrosSegmentacion' + id);
+        if (check && filtros) {
+            filtros.style.display = check.checked ? 'none' : 'flex';
+        }
     }
 </script>
 {% endblock %}
