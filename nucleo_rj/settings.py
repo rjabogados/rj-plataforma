@@ -143,3 +143,6 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = f"RJ Talent <{os.environ.get('EMAIL_HOST_USER')}>"
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Permitir iframes del mismo dominio (Para el visor de PDFs de la Academia LMS)
+X_FRAME_OPTIONS = 'SAMEORIGIN'
