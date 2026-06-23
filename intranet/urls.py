@@ -1,7 +1,9 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 from .views.reclutamiento import actualizar_estado_ajax, obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
 from .views import lms
+from django.views.static import serve
+from django.conf import settings
 
 urlpatterns = [
     # ==========================================
@@ -119,4 +121,9 @@ urlpatterns = [
     path('api/actualizar-candidato/', actualizar_candidato_ajax, name='api_actualizar_candidato'),
     path('api/descartar-candidato/', descartar_candidato_ajax, name='api_descartar_candidato'),
     path('api/metricas-dashboard/', views.metricas_dashboard_ajax, name='api_metricas_dashboard'),
+]
+
+# --- HACK PARA MOSTRAR PDFs y FOTOS SUBIDAS EN PRODUCCIÓN ---
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
