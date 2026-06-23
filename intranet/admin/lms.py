@@ -30,7 +30,7 @@ class PreguntaEvaluacionAdmin(admin.ModelAdmin):
     search_fields = ['enunciado']
 
 class EvaluacionCursoAdmin(admin.ModelAdmin):
-    list_display = ['titulo', 'curso', 'duracion_minutos', 'puntaje_aprobatorio', 'activa']
+    list_display = ['titulo', 'curso', 'tiempo_limite_minutos', 'puntaje_aprobatorio', 'activa']
     list_filter = ['activa']
 
 class MatriculaCursoAdmin(admin.ModelAdmin):
