@@ -226,13 +226,68 @@ def gestionar_onboarding(request): return redirect('onboarding_admin')
 @login_required(login_url='login')
 @solo_directivos
 def onboarding_admin(request):
+    from intranet.models.rrhh_core import Negocio, Colaborador
+    from intranet.models.lms import CursoInduccion, EvaluacionCurso, LeccionCurso, CandidatoOnboarding
+    
     if request.method == 'POST':
+        # 1. CREAR MÓDULO DE INDUCCIÓN
         if 'crear_modulo' in request.POST:
             titulo = request.POST.get('titulo')
             descripcion = request.POST.get('descripcion')
-            CursoInduccion.objects.create(titulo=titulo, descripcion=descripcion, tipo='INDUCCION')
+            
+            # --- Smart Targeting (Segmentación) ---
+            publico_general = request.POST.get('publico_general') == 'on'
+            rol_permitido = request.POST.get('rol_permitido') or None
+            cartera_id = request.POST.get('cartera_vinculada')
+            subcartera = request.POST.get('subcartera_vinculada') or None
+            
+            cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
+
+            CursoInduccion.objects.create(
+                titulo=titulo, descripcion=descripcion, tipo='INDUCCION',
+                publico_general=publico_general, rol_permitido=rol_permitido,
+                cartera_vinculada=cartera_obj, subcartera_vinculada=subcartera
+            )
             messages.success(request, f"Módulo de Inducción '{titulo}' creado exitosamente.")
-        else:
+            
+        # 2. AGREGAR LECCIÓN (SOPORTE CANVA / PPT)
+        elif 'crear_leccion' in request.POST:
+            curso_id = request.POST.get('curso_id')
+            curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='INDUCCION')
+            
+            LeccionCurso.objects.create(
+                curso=curso,
+                titulo=request.POST.get('titulo'),
+                descripcion=request.POST.get('descripcion'),
+                url_video=request.POST.get('url_video'),
+                url_presentacion_canva=request.POST.get('url_presentacion_canva'), # <--- Link de Canva
+                archivo_pdf=request.FILES.get('archivo_pdf'),
+                orden=request.POST.get('orden', 1)
+            )
+            messages.success(request, "¡Material interactivo agregado correctamente a la inducción!")
+
+        # 3. CREAR PRUEBA RÁPIDA (EXAMEN)
+        elif 'crear_evaluacion' in request.POST:
+            curso_id = request.POST.get('curso_id')
+            curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='INDUCCION')
+            
+            if hasattr(curso, 'evaluacion'):
+                messages.error(request, "Este módulo ya tiene una prueba configurada.")
+            else:
+                EvaluacionCurso.objects.create(
+                    curso=curso,
+                    titulo=request.POST.get('titulo', 'Prueba Rápida de Inducción'),
+                    puntaje_maximo=request.POST.get('puntaje_maximo', 20),
+                    puntaje_aprobatorio=request.POST.get('puntaje_aprobatorio', 14),
+                    preguntas_a_mostrar=request.POST.get('preguntas_a_mostrar', 5),
+                    orden_aleatorio=request.POST.get('orden_aleatorio') == 'on',
+                    tiempo_limite_minutos=request.POST.get('tiempo_limite_minutos', 10),
+                    puntos_premio=10
+                )
+                messages.success(request, "¡Prueba rápida creada! Ya puedes subir tu balotario en formato Excel.")
+                
+        # 4. REGISTRAR CANDIDATO NUEVO
+        elif 'registrar_candidato' in request.POST:
             nombres_val = request.POST.get('nombres')
             apellidos_val = request.POST.get('apellidos')
             dni_val = request.POST.get('dni')
@@ -247,6 +302,7 @@ def onboarding_admin(request):
                 messages.success(request, "Postulante registrado correctamente.")
         return redirect('onboarding_admin')
 
+    # --- DATOS PARA EL DASHBOARD DE RRHH ---
     onboardings_activos = CandidatoOnboarding.objects.all().select_related('colaborador__user', 'campaña_destino')
     lista_candidatos_progreso = []
     for item in onboardings_activos:
@@ -261,13 +317,43 @@ def onboarding_admin(request):
             ratio = "Expediente"
         lista_candidatos_progreso.append({'onboarding': item, 'porcentaje': porcentaje, 'ratio': ratio})
 
-    cursos_biblioteca = CursoInduccion.objects.filter(activo=True, tipo='INDUCCION').order_by('-fecha_creacion')
+    # Extraemos SOLO los de inducción (y sus clases/exámenes precargados)
+    cursos_biblioteca = CursoInduccion.objects.filter(activo=True, tipo='INDUCCION').select_related('evaluacion').prefetch_related('lecciones').order_by('-fecha_creacion')
     negocios = Negocio.objects.all()
 
     return render(request, 'intranet/onboarding_lista.html', {
         'candidatos_progreso': lista_candidatos_progreso, 'candidatos': onboardings_activos, 
-        'modulos_biblioteca': cursos_biblioteca, 'negocios': negocios
+        'modulos_biblioteca': cursos_biblioteca, 'negocios': negocios, 'roles': Colaborador.ROLES
     })
+
+@login_required(login_url='login')
+@solo_directivos
+def editar_curso_induccion(request, curso_id):
+    from intranet.models.lms import CursoInduccion
+    curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='INDUCCION')
+    
+    if request.method == 'POST':
+        curso.titulo = request.POST.get('titulo')
+        curso.descripcion = request.POST.get('descripcion')
+        curso.publico_general = request.POST.get('publico_general') == 'on'
+        curso.rol_permitido = request.POST.get('rol_permitido') or None
+        curso.subcartera_vinculada = request.POST.get('subcartera_vinculada') or None
+        cartera_id = request.POST.get('cartera_vinculada')
+        curso.cartera_vinculada_id = cartera_id if cartera_id else None
+        
+        curso.save()
+        messages.success(request, f"¡Módulo '{curso.titulo}' actualizado!")
+    return redirect('onboarding_admin')
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_curso_induccion(request, curso_id):
+    from intranet.models.lms import CursoInduccion
+    curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='INDUCCION')
+    titulo = curso.titulo
+    curso.delete()
+    messages.success(request, f"El módulo '{titulo}' ha sido eliminado.")
+    return redirect('onboarding_admin')
 
 @login_required(login_url='login')
 @solo_directivos

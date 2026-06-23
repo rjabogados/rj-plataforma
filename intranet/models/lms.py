@@ -2,13 +2,14 @@ from django.db import models
 from .rrhh_core import Colaborador, Negocio
 
 # ==========================================
-# 1. ACADEMIA Y CURSOS
+# 1. ACADEMIA Y CURSOS (AHORA CON SMART TARGETING)
 # ==========================================
 class CursoInduccion(models.Model):
     TIPOS_CURSO = [
         ('GENERAL', 'Cultura General RJ (Para todos)'),
         ('CARTERA', 'Específico por Cartera / Negocio'),
         ('HABILIDADES', 'Desarrollo de Habilidades (Opcional/Secundario)'),
+        ('INDUCCION', 'Módulo de Onboarding / Inducción'), # <-- Añadido explícitamente
     ]
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(help_text="Resumen de lo que el asesor aprenderá aquí.")
@@ -19,12 +20,18 @@ class CursoInduccion(models.Model):
     
     rol_permitido = models.CharField(
         max_length=50, choices=Colaborador.ROLES, null=True, blank=True, 
-        help_text="Mostrar SOLO a este Rol (Déjalo en blanco para no filtrar por rol)."
+        help_text="Mostrar SOLO a este Rol (Ej: Solo Supervisores)."
     )
     
     cartera_vinculada = models.ForeignKey(
         Negocio, on_delete=models.CASCADE, null=True, blank=True, 
         help_text="Mostrar SOLO a esta Cartera/Campaña."
+    )
+    
+    # NUEVO: Filtro quirúrgico para sub-equipos
+    subcartera_vinculada = models.CharField(
+        max_length=100, null=True, blank=True, 
+        help_text="Ej: 'Mora Temprana' o 'Castigada'. Déjalo en blanco si es para toda la cartera."
     )
     # ==========================================================
 
@@ -35,13 +42,22 @@ class CursoInduccion(models.Model):
     def __str__(self):
         return f"[{self.get_tipo_display()}] {self.titulo}"
 
-# --- NUEVOS MODELOS PARA CLASES INTERACTIVAS ---
+# --- MODELOS PARA CLASES Y PRESENTACIONES INTERACTIVAS ---
 class LeccionCurso(models.Model):
     curso = models.ForeignKey(CursoInduccion, on_delete=models.CASCADE, related_name='lecciones')
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True, null=True)
+    
+    # Soportes Multimedia
     url_video = models.URLField(blank=True, null=True, help_text="URL del video (Ej: YouTube embed)")
     archivo_pdf = models.FileField(upload_to='lms_materiales/', blank=True, null=True)
+    
+    # NUEVO: Soporte nativo para presentaciones inmersivas
+    url_presentacion_canva = models.URLField(
+        blank=True, null=True, 
+        help_text="Pega aquí el enlace de 'Ver públicamente' o 'Insertar' de Canva, Genially o Google Slides."
+    )
+    
     orden = models.IntegerField(default=1, help_text="Orden en el que aparece la lección")
 
     def __str__(self):
@@ -76,7 +92,7 @@ class MaterialFormativo(models.Model):
         return f"{self.orden}. {self.titulo}"
 
 # ==========================================
-# 2. MOTOR DE EXÁMENES (FUSIONADO Y MEJORADO)
+# 2. MOTOR DE EXÁMENES
 # ==========================================
 class EvaluacionCurso(models.Model):
     curso = models.OneToOneField(CursoInduccion, on_delete=models.CASCADE, related_name='evaluacion')
@@ -152,7 +168,6 @@ class RespuestaColaborador(models.Model):
     es_correcta = models.BooleanField(default=False)
     puntos_obtenidos = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     fecha_respuesta = models.DateTimeField(auto_now_add=True)
-
 
 # ==========================================
 # 4. ENCUESTAS (MANTENIDO INTACTO)

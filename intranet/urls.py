@@ -32,6 +32,8 @@ urlpatterns = [
     path('onboarding/', views.induccion, name='induccion'),
     path('onboarding-admin/', views.induccion_admin, name='induccion_admin'),
     path('candidato/eliminar/<int:pk>/', views.eliminar_candidato, name='eliminar_candidato'),
+    path('admin-onboarding/curso/<int:curso_id>/editar/', lms.editar_curso_induccion, name='editar_curso_induccion'),
+    path('admin-onboarding/curso/<int:curso_id>/eliminar/', lms.eliminar_curso_induccion, name='eliminar_curso_induccion'),
 
     # ==========================================
     # ACADEMIA LMS (CAPACITACIÓN CONTINUA)

@@ -1,54 +1,129 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid" style="max-width: 900px; margin: 0 auto;">
+
+<!-- Ajustamos el contenedor para que ocupe toda la pantalla disponible (Estilo Canvas LMS) -->
+<div class="container-fluid p-0" style="height: calc(100vh - 70px); overflow: hidden; display: flex; flex-direction: column;">
     
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'detalle_curso' curso.id %}" class="btn btn-outline-secondary fw-bold shadow-sm">
-            <i class="bi bi-arrow-left"></i> Volver al Temario
-        </a>
+    <!-- Barra superior de navegación y progreso -->
+    <div class="bg-white border-bottom shadow-sm px-4 py-3 d-flex justify-content-between align-items-center" style="z-index: 10;">
+        <div class="d-flex align-items-center">
+            <a href="{% url 'detalle_curso' curso.id %}" class="btn btn-sm btn-outline-secondary fw-bold me-3">
+                <i class="bi bi-arrow-left"></i> Volver al Índice
+            </a>
+            <h5 class="fw-bold text-dark mb-0 m-0">{{ curso.titulo }}</h5>
+        </div>
         
-        {% if not ya_completada %}
-        <!-- Botón para marcar progreso -->
-        <form method="POST" action="{% url 'completar_leccion' leccion.id %}" class="m-0">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success fw-bold shadow-sm">
-                <i class="bi bi-check-circle-fill me-1"></i> Marcar Clase como Completada
-            </button>
-        </form>
-        {% else %}
-        <span class="badge bg-success border border-success px-3 py-2 fs-6 shadow-sm"><i class="bi bi-check-all me-1"></i> Ya completaste esta clase</span>
-        {% endif %}
+        <div>
+            {% if not ya_completada %}
+            <form method="POST" action="{% url 'completar_leccion' leccion.id %}" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success fw-bold shadow-sm px-4 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-2"></i> Marcar como Completado
+                </button>
+            </form>
+            {% else %}
+            <span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6 rounded-pill shadow-sm">
+                <i class="bi bi-check-all me-1"></i> Módulo Completado
+            </span>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4 p-md-5">
-            <span class="text-primary fw-bold text-uppercase small">Clase {{ leccion.orden }}</span>
-            <h2 class="fw-bold text-dark mb-4">{{ leccion.titulo }}</h2>
+    <!-- Área principal inmersiva -->
+    <div class="row g-0 flex-grow-1 h-100">
+        
+        <!-- VISOR CENTRAL (Estilo Canvas) -->
+        <div class="col-lg-9 h-100 bg-light position-relative d-flex flex-column">
             
-            {% if leccion.descripcion %}
-                <p class="text-secondary mb-4 fs-5">{{ leccion.descripcion }}</p>
-            {% endif %}
-
-            <!-- VISOR DE MULTIMEDIA (Se adapta a Video o a PDF automáticamente) -->
-            <div class="bg-dark rounded-4 overflow-hidden shadow">
-                {% if leccion.url_video %}
-                    <!-- Soporte para videos (YouTube/Vimeo) -->
-                    <div class="ratio ratio-16x9">
-                        <iframe src="{{ leccion.url_video }}" title="Reproductor de Video" allowfullscreen></iframe>
-                    </div>
-                {% elif leccion.archivo_pdf %}
-                    <!-- Soporte para visualización de PDF incrustado -->
-                    <div class="ratio ratio-16x9">
-                        <iframe src="{{ leccion.archivo_pdf.url }}" title="Documento PDF"></iframe>
-                    </div>
-                {% else %}
-                    <!-- Sin multimedia -->
-                    <div class="p-5 text-center text-white opacity-50">
-                        <i class="bi bi-book fs-1"></i>
-                        <p class="mt-3 mb-0">Esta lección es solo teórica y no contiene material multimedia adicional.</p>
-                    </div>
+            <div class="p-3 bg-white border-bottom">
+                <span class="text-primary fw-bold small text-uppercase">Clase {{ leccion.orden }}</span>
+                <h3 class="fw-bold text-dark mb-1">{{ leccion.titulo }}</h3>
+                {% if leccion.descripcion %}
+                    <p class="text-muted small mb-0">{{ leccion.descripcion }}</p>
                 {% endif %}
             </div>
+
+            <!-- El reproductor ocupa el resto del alto -->
+            <div class="flex-grow-1 w-100" style="overflow: hidden;">
+                
+                {% if leccion.archivo_pdf %}
+                    <!-- Visor de PDF Nativo a pantalla completa -->
+                    <iframe src="{{ leccion.archivo_pdf.url }}#toolbar=0&navpanes=0&scrollbar=0" 
+                            class="w-100 h-100 border-0" 
+                            title="Documento de Estudio">
+                    </iframe>
+
+                {% elif leccion.url_video %}
+                    <!-- Visor de YouTube -->
+                    <iframe src="{{ leccion.url_video }}" 
+                            class="w-100 h-100 border-0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen 
+                            title="Reproductor de Video">
+                    </iframe>
+
+                {% elif leccion.url_presentacion_canva %}
+                    <!-- Si alguna vez usan el embed real de Canva/Genially -->
+                    <iframe src="{{ leccion.url_presentacion_canva }}" 
+                            class="w-100 h-100 border-0" 
+                            allowfullscreen 
+                            title="Presentación Interactiva">
+                    </iframe>
+
+                {% else %}
+                    <!-- Pantalla vacía si no hay material -->
+                    <div class="d-flex flex-column justify-content-center align-items-center h-100 text-muted">
+                        <i class="bi bi-journal-x" style="font-size: 5rem; opacity: 0.2;"></i>
+                        <h4 class="mt-3 fw-bold">Material no disponible</h4>
+                        <p>El administrador aún no ha subido el archivo para esta clase.</p>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <!-- BARRA LATERAL DERECHA (TEMARIO) -->
+        <div class="col-lg-3 h-100 bg-white border-start" style="overflow-y: auto;">
+            <div class="p-4 bg-light border-bottom">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-list-nested text-primary me-2"></i>Contenido del Curso</h6>
+            </div>
+            
+            <div class="list-group list-group-flush">
+                {% for item in curso.lecciones.all|dictsort:"orden" %}
+                    <a href="{% url 'ver_leccion' item.id %}" 
+                       class="list-group-item list-group-item-action py-3 px-4 border-bottom {% if item.id == leccion.id %}bg-primary-subtle border-start border-5 border-primary{% endif %}">
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <!-- Ícono dinámico según el tipo de archivo -->
+                                {% if item.archivo_pdf %}
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
+                                {% elif item.url_video %}
+                                    <i class="bi bi-youtube text-danger fs-4 me-3"></i>
+                                {% else %}
+                                    <i class="bi bi-easel2-fill text-info fs-4 me-3"></i>
+                                {% endif %}
+                                
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Clase {{ item.orden }}</small>
+                                    <span class="fw-bold {% if item.id == leccion.id %}text-primary{% else %}text-dark{% endif %}" style="font-size: 0.9rem;">
+                                        {{ item.titulo }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+            
+            <!-- Botón del Examen Final al fondo del temario -->
+            <div class="p-4 mt-auto border-top bg-light">
+                <h6 class="fw-bold text-dark small mb-3">Evaluación de Conocimiento</h6>
+                <a href="{% url 'detalle_curso' curso.id %}" class="btn btn-outline-dark w-100 fw-bold shadow-sm">
+                    <i class="bi bi-ui-checks me-2"></i> Ir al Examen Final
+                </a>
+            </div>
+
         </div>
     </div>
 </div>

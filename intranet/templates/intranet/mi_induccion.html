@@ -1,125 +1,224 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid" style="max-width: 850px;">
+
+<!-- ESTILOS MÁGICOS PARA EL CAMINO ANIMADO -->
+<style>
+    .induccion-bg { background-color: #f0f4f8; min-height: 80vh; border-radius: 20px; overflow: hidden; padding-bottom: 80px; }
     
-    <div class="mb-4 text-center">
-        <h3 class="fw-bold text-dark"><i class="bi bi-rocket-takeoff-fill text-primary"></i> Mi Ruta de Inducción y Capacitación</h3>
-        <p class="text-muted">Completa los cursos asignados y rinde tus evaluaciones para finalizar tu proceso en RJ Abogados.</p>
-    </div>
+    /* El contenedor del mapa */
+    .roadmap-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 0;
+        position: relative;
+    }
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    /* La línea del camino */
+    .roadmap-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+        background-color: #dde3ec;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 10px;
+        z-index: 1;
+    }
 
-    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white border-top border-primary border-4">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="fw-bold text-secondary mb-0">Tu Avance Actual</h6>
-                <span class="badge bg-primary rounded-pill fs-6">{{ completados }} de {{ total }} Cursos Completados</span>
-            </div>
-            <div class="progress rounded-pill shadow-sm" style="height: 15px;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated {% if porcentaje == 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ porcentaje }}%;"></div>
-            </div>
-            {% if porcentaje == 100 %}
-            <div class="mt-3 text-success fw-bold text-center fs-5"><i class="bi bi-trophy-fill text-warning me-2"></i> ¡Felicidades! Has completado tu malla formativa exitosamente.</div>
-            {% endif %}
-        </div>
-    </div>
+    /* La línea de progreso (lo que ya avanzó) */
+    .roadmap-progress-line {
+        position: absolute;
+        top: 0;
+        width: 8px;
+        background: linear-gradient(to bottom, #28a745, #ffc107);
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 10px;
+        z-index: 2;
+        transition: height 1s ease-in-out;
+    }
 
-    {% if total == 0 %}
-    <div class="text-center p-5 bg-white rounded-4 shadow-sm border-0">
-        <i class="bi bi-inbox fs-1 text-muted"></i>
-        <h6 class="fw-bold text-dark mt-3">No tienes cursos asignados</h6>
-        <p class="text-muted small">Tu supervisor o RRHH aún no te ha habilitado la malla formativa. Vuelve más tarde.</p>
-    </div>
-    {% else %}
+    /* Cada parada en el camino */
+    .path-step {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin: 40px 0;
+        position: relative;
+        z-index: 3;
+    }
+
+    /* El nodo central (El Círculo) */
+    .step-node {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        cursor: pointer;
+        text-decoration: none !important;
+    }
+
+    .step-node:hover { transform: scale(1.15); }
+
+    /* ESTADOS VISUALES DEL NODO */
+    .node-completed { background: linear-gradient(135deg, #ffc107, #ff9800); }
     
-    <div class="accordion shadow-sm" id="accordionInduccion">
-        {% for item in mis_modulos %}
-        <div class="accordion-item border-0 mb-3 rounded-4 bg-white overflow-hidden shadow-sm">
-            <h2 class="accordion-header" id="heading{{ item.id }}">
-                <button class="accordion-button {% if item.estado == 'COMPLETADO' %}bg-success text-white bg-opacity-75{% elif item.estado == 'REPROBADO' %}bg-danger text-white bg-opacity-75{% else %}collapsed{% endif %} fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ item.id }}">
-                    <div class="d-flex align-items-center w-100 me-3">
-                        <span class="me-3 fs-4">
-                            {% if item.estado == 'COMPLETADO' %}
-                                <i class="bi bi-check-circle-fill text-white"></i>
-                            {% elif item.estado == 'REPROBADO' %}
-                                <i class="bi bi-x-circle-fill text-white"></i>
-                            {% else %}
-                                <i class="bi bi-book-half text-primary"></i>
-                            {% endif %}
-                        </span>
-                        <div>
-                            {{ item.curso.titulo }}
-                            
-                            {% if item.estado == 'COMPLETADO' %}
-                                <div class="small fw-normal text-white-50 mt-1" style="font-size: 0.8rem;">
-                                    Aprobado el {{ item.fecha_finalizacion|date:"d M Y" }} con <strong>{{ item.nota_obtenida }} pts</strong>
-                                </div>
-                            {% elif item.estado == 'REPROBADO' %}
-                                <div class="small fw-normal text-white-50 mt-1" style="font-size: 0.8rem;">
-                                    Reprobado con <strong>{{ item.nota_obtenida }} pts</strong>. Requiere reintento.
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </button>
-            </h2>
+    .node-active { 
+        background: linear-gradient(135deg, #183D74, #2a63b8); 
+        animation: pulse-blue 2s infinite;
+    }
+    
+    .node-pending { background: #e9ecef; color: #adb5bd; border: 5px solid #ced4da; box-shadow: none; }
+
+    /* La Tarjeta de Información flotante */
+    .step-info {
+        position: absolute;
+        width: 320px;
+        background: white;
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease;
+    }
+    
+    .path-step:hover .step-info { transform: translateY(-5px); }
+
+    /* Alternancia Izquierda/Derecha para escritorio */
+    .path-step:nth-child(odd) .step-info { left: calc(50% + 70px); text-align: left; }
+    .path-step:nth-child(even) .step-info { right: calc(50% + 70px); text-align: right; }
+    .path-step:nth-child(even) .step-info .d-flex { justify-content: flex-end; }
+
+    /* Animaciones */
+    @keyframes pulse-blue {
+        0% { box-shadow: 0 0 0 0 rgba(24, 61, 116, 0.7); }
+        70% { box-shadow: 0 0 0 20px rgba(24, 61, 116, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(24, 61, 116, 0); }
+    }
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+    .floating-element { animation: float 4s ease-in-out infinite; }
+
+    /* Adaptación a celulares (Se vuelve una lista recta) */
+    @media (max-width: 768px) {
+        .roadmap-line, .roadmap-progress-line { left: 40px; }
+        .path-step { justify-content: flex-start; padding-left: 0px; margin: 30px 0; }
+        .path-step:nth-child(odd) .step-info, .path-step:nth-child(even) .step-info {
+            position: relative; left: 20px; right: auto; width: calc(100% - 100px); text-align: left;
+        }
+        .path-step:nth-child(even) .step-info .d-flex { justify-content: flex-start; }
+    }
+</style>
+
+<div class="container-fluid p-0 mb-5">
+    
+    <!-- ENCABEZADO CELEBRATORIO -->
+    <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm mb-4 text-center position-relative overflow-hidden">
+        <div class="position-relative z-index-2">
+            <h1 class="fw-bold text-dark mb-2" style="font-size: 2.5rem;">¡Hola, {{ request.user.first_name }}! 👋</h1>
+            <p class="text-secondary fs-5 mb-4">Bienvenido(a) a la familia RJ Abogados. Esta es tu ruta de despegue.</p>
             
-            <div id="collapse{{ item.id }}" class="accordion-collapse collapse {% if forloop.first and item.estado != 'COMPLETADO' %}show{% endif %}" data-bs-parent="#accordionInduccion">
-                <div class="accordion-body p-4 bg-light">
-                    <div class="mb-4 text-dark" style="white-space: pre-wrap;">{{ item.curso.descripcion }}</div>
-                    
-                    <div class="border-top pt-4">
-                        {% if item.curso.evaluacion %}
-                            <div class="card bg-white border-0 shadow-sm rounded-3 border-start border-primary border-4">
-                                <div class="card-body d-flex justify-content-between align-items-center p-3">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-journal-text text-primary me-2"></i>{{ item.curso.evaluacion.titulo }}</h6>
-                                        <small class="text-muted">
-                                            <i class="bi bi-clock me-1"></i> {{ item.curso.evaluacion.duracion_minutos }} min | 
-                                            <i class="bi bi-bullseye ms-2 me-1"></i> Mínimo para aprobar: {{ item.curso.evaluacion.puntaje_aprobatorio }} pts
-                                        </small>
-                                    </div>
-                                    
-                                    {% if item.estado == 'COMPLETADO' %}
-                                        <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-lg me-1"></i> Nota: {{ item.nota_obtenida }}</span>
-                                    {% elif item.estado == 'REPROBADO' %}
-                                        <span class="badge bg-danger fs-6 px-3 py-2"><i class="bi bi-x-lg me-1"></i> Nota: {{ item.nota_obtenida }}</span>
-                                    {% else %}
-                                        <a href="{% url 'rendir_evaluacion' item.id %}" class="btn btn-primary fw-bold shadow-sm px-4 rounded-pill">
-                                            <i class="bi bi-pencil-square me-2"></i> Rendir Examen
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        
-                        {% else %}
-                            {% if item.estado != 'COMPLETADO' %}
-                            <form method="POST" action="{% url 'mi_induccion' %}" class="text-end">
-                                {% csrf_token %}
-                                <input type="hidden" name="progreso_id" value="{{ item.id }}">
-                                <button type="submit" name="marcar_completado" class="btn btn-success fw-bold rounded-pill shadow-sm px-4" onclick="return confirm('¿Confirmas que leíste y entendiste todo el material de este módulo?');">
-                                    <i class="bi bi-check-lg me-1"></i> Marcar como Completado
-                                </button>
-                            </form>
-                            {% else %}
-                                <div class="text-end"><span class="badge bg-success fs-6"><i class="bi bi-check-lg me-1"></i> Completado Manualmente</span></div>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                    
+            <div class="mx-auto" style="max-width: 600px;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-bold text-primary">Progreso de tu Inducción</span>
+                    <span class="fw-bold text-success">{{ porcentaje }}% Completado</span>
+                </div>
+                <div class="progress bg-light shadow-inner" style="height: 25px; border-radius: 50px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: {{ porcentaje }}%;"></div>
                 </div>
             </div>
         </div>
-        {% endfor %}
+        <!-- Decoraciones de fondo -->
+        <i class="bi bi-rocket-takeoff-fill text-primary opacity-10 floating-element" style="font-size: 15rem; position: absolute; right: -20px; top: -30px;"></i>
     </div>
-    
-    {% endif %}
+
+    <!-- EL CAMINO ANIMADO -->
+    <div class="induccion-bg shadow-sm border">
+        
+        {% if total == 0 %}
+        <div class="text-center py-5 mt-5">
+            <div class="floating-element d-inline-block bg-white p-4 rounded-circle shadow mb-4">
+                <i class="bi bi-cup-hot-fill text-warning" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold text-dark">Todo está listo</h3>
+            <p class="text-muted">No tienes módulos pendientes. ¡Acomódate y disfruta tu primer día!</p>
+        </div>
+        {% else %}
+        
+        <div class="roadmap-container">
+            <!-- Las Líneas del camino -->
+            <div class="roadmap-line"></div>
+            <div class="roadmap-progress-line" style="height: {{ porcentaje }}%;"></div>
+
+            <!-- Recorremos los módulos -->
+            {% for matricula in mis_modulos %}
+            <div class="path-step">
+                
+                <!-- EL NODO (CÍRCULO CENTRAL) -->
+                {% if matricula.estado == 'COMPLETADO' %}
+                    <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-completed text-white">
+                        <i class="bi bi-star-fill"></i>
+                    </a>
+                {% elif matricula.estado == 'PENDIENTE' or matricula.estado == 'EN_CURSO' or matricula.estado == 'EVALUANDO' %}
+                    <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-active text-white">
+                        <i class="bi bi-play-fill" style="margin-left: 5px;"></i>
+                    </a>
+                {% else %}
+                    <div class="step-node node-pending">
+                        <i class="bi bi-lock-fill"></i>
+                    </div>
+                {% endif %}
+
+                <!-- LA TARJETA DE INFORMACIÓN -->
+                <div class="step-info">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold small">Parada {{ forloop.counter }}</span>
+                        {% if matricula.estado == 'COMPLETADO' %}
+                            <span class="ms-2 badge bg-success-subtle text-success"><i class="bi bi-check2-all"></i> Listo</span>
+                        {% endif %}
+                    </div>
+                    
+                    <h5 class="fw-bold text-dark mb-2">{{ matricula.curso.titulo }}</h5>
+                    <p class="text-muted small mb-3">{{ matricula.curso.descripcion|truncatechars:80 }}</p>
+                    
+                    <div class="d-flex">
+                        {% if matricula.estado == 'COMPLETADO' %}
+                            <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-light text-success fw-bold border-success w-100 rounded-pill">
+                                <i class="bi bi-arrow-repeat me-1"></i> Repasar
+                            </a>
+                        {% else %}
+                            <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-primary fw-bold w-100 rounded-pill shadow-sm" style="background-color: #183D74; border: none;">
+                                <i class="bi bi-door-open-fill me-1"></i> Entrar al Módulo
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+            
+            <!-- META FINAL (Bandera de llegada) -->
+            <div class="path-step" style="margin-top: 60px;">
+                <div class="step-node {% if porcentaje == 100 %}bg-success{% else %}node-pending{% endif %}" style="width: 100px; height: 100px; font-size: 3rem;">
+                    <i class="bi bi-flag-fill {% if porcentaje == 100 %}text-white floating-element{% endif %}"></i>
+                </div>
+            </div>
+
+        </div>
+        {% endif %}
+
+    </div>
 </div>
 {% endblock %}

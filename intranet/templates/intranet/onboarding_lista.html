@@ -1,71 +1,98 @@
 {% extends 'intranet/base.html' %}
+
 {% block content %}
-<div class="container-fluid">
-    
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="fw-bold text-dark mb-0"><i class="bi bi-mortarboard-fill text-primary"></i> Academia de Onboarding Corporativo</h4>
-            <p class="text-muted small mb-0">Asignación de mallas formativas, capacitación por carteras y auditoría de lecturas.</p>
-        </div>
-        <button class="btn btn-success btn-sm fw-bold rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearModulo">
-            <i class="bi bi-journal-plus"></i> Crear Curso / Módulo Base
-        </button>
+<div class="container-fluid p-4">
+    <div class="mb-4">
+        <h2 class="navbar-main-title fw-bold mb-1" style="color: var(--rj-azul);">Centro de Onboarding e Inducción</h2>
+        <p class="text-muted">Gestiona el ingreso de candidatos y diseña la malla formativa inicial.</p>
     </div>
 
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 rounded-4 h-100">
-                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-people text-secondary"></i> Colaboradores en Proceso de Inducción</h6>
+    <!-- NAVEGADOR DE PESTAÑAS -->
+    <ul class="nav nav-tabs fw-bold mb-4" id="onboardingTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-secondary active" id="candidatos-tab" data-bs-toggle="tab" data-bs-target="#candidatos" type="button" role="tab">
+                <i class="bi bi-people-fill me-2"></i> Postulantes y Expedientes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-secondary" id="modulos-tab" data-bs-toggle="tab" data-bs-target="#modulos" type="button" role="tab">
+                <i class="bi bi-easel2-fill me-2"></i> Módulos de Capacitación
+            </button>
+        </li>
+    </ul>
+
+    <!-- CONTENIDO DE LAS PESTAÑAS -->
+    <div class="tab-content" id="onboardingTabsContent">
+        
+        <!-- ========================================== -->
+        <!-- PESTAÑA 1: GESTIÓN DE CANDIDATOS           -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade show active" id="candidatos" role="tabpanel">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark">Candidatos en Proceso</h5>
+                    <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevoCandidato">
+                        <i class="bi bi-person-plus-fill me-2"></i> Nuevo Postulante
+                    </button>
                 </div>
-                <div class="card-body p-0 pt-3">
+                <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+                            <thead class="bg-light text-secondary">
                                 <tr>
-                                    <th class="ps-4 small text-muted">Colaborador</th>
-                                    <th class="small text-muted">Campaña / Rol</th>
-                                    <th class="small text-muted">Avance Formativo</th>
-                                    <th class="text-center small text-muted">Asignar Cursos</th>
+                                    <th class="ps-4">Candidato</th>
+                                    <th>Campaña/Puesto</th>
+                                    <th>Progreso</th>
+                                    <th>Estado Actual</th>
+                                    <th class="text-end pe-4">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in candidatos_progreso %}
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="fw-bold text-dark">{{ item.onboarding.colaborador.user.first_name }} {{ item.onboarding.colaborador.user.last_name }}</div>
-                                        <div class="text-muted small" style="font-size: 0.75rem;">DNI: {{ item.onboarding.dni }}</div>
+                                        <div class="fw-bold text-dark">{{ item.onboarding.nombres }} {{ item.onboarding.apellidos }}</div>
+                                        <div class="small text-muted"><i class="bi bi-card-text"></i> {{ item.onboarding.dni }}</div>
                                     </td>
                                     <td>
-                                        <div class="fw-medium text-secondary" style="font-size: 0.85rem;">{{ item.onboarding.colaborador.get_rol_display }}</div>
-                                        <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">{{ item.onboarding.colaborador.negocio.nombre|default:"Central" }}</span>
+                                        <span class="badge bg-secondary">{{ item.onboarding.puesto_esperado }}</span>
+                                        {% if item.onboarding.campaña_destino %}<span class="badge bg-info text-dark">{{ item.onboarding.campaña_destino.nombre }}</span>{% endif %}
                                     </td>
-                                    <td style="width: 30%;">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="small fw-bold text-primary" style="font-size: 0.8rem;">{{ item.porcentaje }}% completado</span>
-                                            <span class="small text-muted" style="font-size: 0.75rem;">({{ item.ratio }} Temas)</span>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar {% if item.porcentaje == 100 %}bg-success{% else %}bg-primary{% endif %}" style="width: {{ item.porcentaje }}%;"></div>
+                                            </div>
+                                            <span class="small fw-bold">{{ item.porcentaje }}%</span>
                                         </div>
-                                        <div class="progress" style="height: 6px;">
-                                            <div class="progress-bar {% if item.porcentaje == 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ item.porcentaje }}%;"></div>
-                                        </div>
+                                        <div class="small text-muted text-center mt-1">{{ item.ratio }} completado</div>
                                     </td>
-                                    <td class="text-center">
-                                        <a href="{% url 'asignar_modulos_induccion' item.onboarding.colaborador.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
-                                            <i class="bi bi-gear-fill"></i> Gestionar Malla
-                                        </a>
+                                    <td>
+                                        {% if item.onboarding.estado == 'COMPLETADO' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">En Planilla</span>
+                                        {% else %}
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">En Proceso</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        {% if not item.onboarding.colaborador %}
+                                            <button class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalExpediente{{ item.onboarding.id }}">Ver Expediente</button>
+                                        {% else %}
+                                            <a href="{% url 'asignar_modulos_induccion' item.onboarding.colaborador.id %}" class="btn btn-sm btn-primary fw-bold">Asignar Módulos</a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="4" class="text-center py-5 text-muted">No hay personal activo llevando la ruta de onboarding actualmente.</td></tr>
+                                <tr><td colspan="5" class="text-center py-5 text-muted">No hay candidatos en proceso.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -74,60 +101,350 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 rounded-4 h-100">
-                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-collection-play text-secondary"></i> Biblioteca de Cursos Base</h6>
-                </div>
-                <div class="card-body px-4 pt-3">
-                    <div class="list-group list-group-flush">
-                        {% for mod in modulos_biblioteca %}
-                        <div class="list-group-item px-0 py-3">
-                            <div class="d-flex w-100 justify-content-between align-items-start">
-                                <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.9rem;">{{ mod.orden }}. {{ mod.titulo }}</h6>
-                                <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.65rem;">Activo</span>
+        <!-- ========================================== -->
+        <!-- PESTAÑA 2: GESTOR DE MÓDULOS (LMS STYLE)   -->
+        <!-- ========================================== -->
+        <div class="tab-pane fade" id="modulos" role="tabpanel">
+            <div class="d-flex gap-2 mb-4 justify-content-end">
+                <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearModulo">
+                    <i class="bi bi-folder-plus me-2"></i> Crear Módulo
+                </button>
+                <button class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearClaseInduccion">
+                    <i class="bi bi-easel2-fill me-2"></i> Agregar Presentación (Canva/PPT)
+                </button>
+                <button class="btn btn-warning fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearPrueba">
+                    <i class="bi bi-ui-checks me-2"></i> Crear Prueba Rápida
+                </button>
+            </div>
+
+            <div class="row g-4">
+                {% for curso in modulos_biblioteca %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 border-top border-primary border-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold text-dark mb-2">{{ curso.titulo }}</h5>
+                            <p class="text-muted small mb-3">{{ curso.descripcion }}</p>
+                            
+                            <div class="mb-3">
+                                {% if curso.publico_general %}
+                                    <span class="badge bg-light text-dark border"><i class="bi bi-globe me-1"></i>Para Todos</span>
+                                {% else %}
+                                    {% if curso.rol_permitido %}<span class="badge bg-info-subtle text-info-emphasis border"><i class="bi bi-person-badge me-1"></i>{{ curso.rol_permitido }}</span>{% endif %}
+                                    {% if curso.cartera_vinculada %}<span class="badge bg-warning-subtle text-warning-emphasis border"><i class="bi bi-building me-1"></i>{{ curso.cartera_vinculada.nombre }}</span>{% endif %}
+                                    {% if curso.subcartera_vinculada %}<span class="badge bg-danger-subtle text-danger-emphasis border"><i class="bi bi-diagram-2 me-1"></i>{{ curso.subcartera_vinculada }}</span>{% endif %}
+                                {% endif %}
                             </div>
-                            <p class="mb-1 text-muted small text-truncate" style="max-width: 250px;">{{ mod.descripcion }}</p>
+
+                            <ul class="list-group list-group-flush small mb-3 border-top border-bottom">
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-play-btn text-primary me-2"></i>Presentaciones</span>
+                                    <span class="badge bg-primary rounded-pill">{{ curso.lecciones.count }}</span>
+                                </li>
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-ui-checks text-success me-2"></i>Prueba Rápida</span>
+                                    {% if curso.evaluacion %}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <span class="text-muted small">No configurada</span>
+                                    {% endif %}
+                                </li>
+                            </ul>
+                            
+                            <!-- Botones de Acción -->
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-sm btn-outline-primary fw-bold w-100" data-bs-toggle="modal" data-bs-target="#modalEditarModulo{{ curso.id }}">
+                                    <i class="bi bi-pencil-square"></i> Editar Módulo
+                                </button>
+                                {% if curso.evaluacion %}
+                                <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-success fw-bold flex-grow-1">
+                                    <i class="bi bi-file-earmark-excel"></i> Subir Balotario
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'eliminar_curso_induccion' curso.id %}" class="btn btn-sm btn-outline-danger fw-bold" onclick="return confirm('¿Seguro de eliminar este módulo?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
                         </div>
-                        {% empty %}
-                        <p class="text-muted small text-center py-4">Aún no has creado ningún módulo educativo para tu personal.</p>
-                        {% endfor %}
                     </div>
                 </div>
+
+                <!-- MODAL: EDITAR MÓDULO DE INDUCCIÓN -->
+                <div class="modal fade" id="modalEditarModulo{{ curso.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title fw-bold">Editar Módulo de Inducción</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="POST" action="{% url 'editar_curso_induccion' curso.id %}">
+                                {% csrf_token %}
+                                <div class="modal-body p-4">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small">Título del Módulo</label>
+                                        <input type="text" class="form-control" name="titulo" value="{{ curso.titulo }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small">Descripción</label>
+                                        <textarea class="form-control" name="descripcion" rows="2">{{ curso.descripcion }}</textarea>
+                                    </div>
+                                    <hr>
+                                    <div class="mb-3 form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="publico_general" id="editPub{{ curso.id }}" {% if curso.publico_general %}checked{% endif %} onchange="toggleFiltros('Edit{{ curso.id }}')">
+                                        <label class="form-check-label fw-bold" for="editPub{{ curso.id }}">Asignación Universal (Todos los ingresos)</label>
+                                    </div>
+                                    <div class="row" id="filtrosEdit{{ curso.id }}" style="{% if curso.publico_general %}display: none;{% endif %}">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-bold small text-info">Filtrar por Cargo</label>
+                                            <select class="form-select border-info" name="rol_permitido">
+                                                <option value="">-- Todos --</option>
+                                                {% for valor, etiqueta in roles %}<option value="{{ valor }}" {% if curso.rol_permitido == valor %}selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-bold small text-warning">Filtrar por Cartera</label>
+                                            <select class="form-select border-warning" name="cartera_vinculada">
+                                                <option value="">-- Todas --</option>
+                                                {% for n in negocios %}<option value="{{ n.id }}" {% if curso.cartera_vinculada_id == n.id %}selected{% endif %}>{{ n.nombre }}</option>{% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-bold small text-danger">Sub-Cartera / Equipo</label>
+                                            <input type="text" class="form-control border-danger" name="subcartera_vinculada" value="{{ curso.subcartera_vinculada|default:'' }}" placeholder="Ej: Mora Temprana">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light">
+                                    <button type="submit" class="btn btn-primary fw-bold">Actualizar Módulo</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">Aún no has creado ningún módulo de inducción.</p>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalCrearModulo" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold text-dark"><i class="bi bi-journal-plus text-success"></i> Nuevo Contenido de Inducción</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- ========================================== -->
+<!-- MODALES PARA CREAR MÓDULOS, CLASES Y PRUEBAS -->
+<!-- ========================================== -->
+
+<!-- MODAL: CREAR MÓDULO -->
+<div class="modal fade" id="modalCrearModulo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-folder-plus me-2"></i> Crear Módulo de Inducción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST">
+            <form method="POST" action="{% url 'onboarding_admin' %}">
                 {% csrf_token %}
-                <div class="modal-body pt-4">
+                <input type="hidden" name="crear_modulo" value="1">
+                <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Título del Curso</label>
-                        <input type="text" class="form-control" name="titulo" placeholder="Ej: Protocolo de Objeciones Eficaces" required>
+                        <label class="form-label fw-bold small">Título del Módulo</label>
+                        <input type="text" class="form-control" name="titulo" placeholder="Ej: Políticas de Seguridad de la Información" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Orden Visual</label>
-                        <input type="number" class="form-control" name="orden" value="1" required>
+                        <label class="form-label fw-bold small">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="2"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Contenido de Capacitación / Directriz / Links</label>
-                        <textarea class="form-control" name="descripcion" rows="5" placeholder="Escribe el speech corporativo, las pautas, o pega los links de los videos de YouTube/Drive para que el asesor estudie." required></textarea>
+                    <hr>
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="publico_general" id="crearPub" checked onchange="toggleFiltros('Crear')">
+                        <label class="form-check-label fw-bold" for="crearPub">Asignación Universal (Todos los nuevos ingresos lo verán)</label>
+                    </div>
+                    <div class="row" id="filtrosCrear" style="display: none;">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small text-info">Filtrar por Cargo</label>
+                            <select class="form-select border-info" name="rol_permitido">
+                                <option value="">-- Todos --</option>
+                                {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small text-warning">Filtrar por Cartera</label>
+                            <select class="form-select border-warning" name="cartera_vinculada">
+                                <option value="">-- Todas --</option>
+                                {% for n in negocios %}<option value="{{ n.id }}">{{ n.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small text-danger">Sub-Cartera Específica</label>
+                            <input type="text" class="form-control border-danger" name="subcartera_vinculada" placeholder="Ej: Especiales BBVA">
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill fw-bold" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" name="crear_modulo" class="btn btn-success rounded-pill fw-bold px-4">Publicar Módulo</button>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-primary fw-bold">Guardar Módulo</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- MODAL: AGREGAR CLASE / CANVA -->
+<div class="modal fade" id="modalCrearClaseInduccion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-easel2-fill me-2"></i> Subir Material a la Inducción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'onboarding_admin' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="crear_leccion" value="1">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Módulo de destino:</label>
+                        <select class="form-select" name="curso_id" required>
+                            <option value="">-- Selecciona el módulo --</option>
+                            {% for c in modulos_biblioteca %}<option value="{{ c.id }}">{{ c.titulo }}</option>{% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-9 mb-3">
+                            <label class="form-label fw-bold small">Título del Material:</label>
+                            <input type="text" class="form-control" name="titulo" placeholder="Ej: Presentación de Bienvenida" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold small">Orden (N°):</label>
+                            <input type="number" class="form-control" name="orden" value="1" required>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-link-45deg"></i> Tipo de Material (Elige uno)</h6>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold small" style="color: #00c4cc;"><i class="bi bi-magic"></i> Enlace Incrustado de Canva / Google Slides</label>
+                            <input type="url" class="form-control" name="url_presentacion_canva" placeholder="Pega el enlace de incrustación aquí...">
+                            <small class="text-muted">En Canva: Compartir -> Más -> Insertar -> Copia el enlace de inserción inteligente.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-danger"><i class="bi bi-youtube"></i> Video de YouTube</label>
+                            <input type="url" class="form-control border-danger" name="url_video">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-primary"><i class="bi bi-file-pdf"></i> Archivo PDF Local</label>
+                            <input type="file" class="form-control border-primary" name="archivo_pdf" accept=".pdf">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-success fw-bold">Guardar Material</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CREAR PRUEBA RÁPIDA -->
+<div class="modal fade" id="modalCrearPrueba" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="bi bi-ui-checks me-2"></i> Crear Prueba Rápida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'onboarding_admin' %}">
+                {% csrf_token %}
+                <input type="hidden" name="crear_evaluacion" value="1">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Vincular al Módulo:</label>
+                        <select class="form-select" name="curso_id" required>
+                            <option value="">-- Selecciona el módulo --</option>
+                            {% for c in modulos_biblioteca %}
+                                {% if not c.evaluacion %}<option value="{{ c.id }}">{{ c.titulo }}</option>{% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Preguntas a mostrar al azar:</label>
+                        <input type="number" class="form-control" name="preguntas_a_mostrar" value="5" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold small">Nota Mínima:</label>
+                            <input type="number" class="form-control" name="puntaje_aprobatorio" value="14" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold small text-danger">Tiempo (min):</label>
+                            <input type="number" class="form-control" name="tiempo_limite_minutos" value="10" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-warning fw-bold text-dark w-100">Crear y Subir Balotario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: NUEVO CANDIDATO (Original) -->
+<div class="modal fade" id="modalNuevoCandidato" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i> Registrar Postulante</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'onboarding_admin' %}">
+                {% csrf_token %}
+                <input type="hidden" name="registrar_candidato" value="1">
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">Nombres</label>
+                            <input type="text" class="form-control" name="nombres" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">Apellidos</label>
+                            <input type="text" class="form-control" name="apellidos" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">DNI</label>
+                            <input type="text" class="form-control" name="dni" maxlength="8" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">Puesto Esperado</label>
+                            <select class="form-select" name="puesto_esperado">
+                                {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small">Campaña de Destino (Opcional)</label>
+                            <select class="form-select" name="campaña_destino">
+                                <option value="">-- Sin campaña asignada aún --</option>
+                                {% for negocio in negocios %}<option value="{{ negocio.id }}">{{ negocio.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-primary fw-bold w-100">Registrar y Crear Expediente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleFiltros(id) {
+        const check = document.getElementById('editPub' + id) || document.getElementById('crearPub');
+        const filtros = document.getElementById('filtros' + id);
+        if (check && filtros) {
+            filtros.style.display = check.checked ? 'none' : 'flex';
+        }
+    }
+</script>
 {% endblock %}
