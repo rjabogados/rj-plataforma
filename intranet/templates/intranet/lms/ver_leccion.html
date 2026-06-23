@@ -48,7 +48,7 @@
                 
                 {% if leccion.archivo_pdf %}
                     <!-- Visor de PDF Nativo a pantalla completa -->
-                    <iframe src="https://docs.google.com/viewer?url={{ request.scheme }}://{{ request.get_host }}{{ leccion.archivo_pdf.url }}&embedded=true"
+                    <iframe src="{{ leccion.archivo_pdf.url }}#toolbar=0&navpanes=0&scrollbar=0"
                             class="w-100 h-100 border-0" 
                             title="Documento de Estudio">
                     </iframe>
