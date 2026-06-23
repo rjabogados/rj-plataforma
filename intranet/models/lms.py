@@ -34,6 +34,25 @@ class CursoInduccion(models.Model):
 
     def __str__(self):
         return f"[{self.get_tipo_display()}] {self.titulo}"
+
+# --- NUEVOS MODELOS PARA CLASES INTERACTIVAS ---
+class LeccionCurso(models.Model):
+    curso = models.ForeignKey(CursoInduccion, on_delete=models.CASCADE, related_name='lecciones')
+    titulo = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True, null=True)
+    url_video = models.URLField(blank=True, null=True, help_text="URL del video (Ej: YouTube embed)")
+    archivo_pdf = models.FileField(upload_to='lms_materiales/', blank=True, null=True)
+    orden = models.IntegerField(default=1, help_text="Orden en el que aparece la lección")
+
+    def __str__(self):
+        return f"{self.orden}. {self.titulo}"
+
+class ProgresoLeccion(models.Model):
+    colaborador = models.ForeignKey(Colaborador, on_delete=models.CASCADE)
+    leccion = models.ForeignKey(LeccionCurso, on_delete=models.CASCADE)
+    completada = models.BooleanField(default=False)
+    fecha_completada = models.DateTimeField(auto_now_add=True)
+# -----------------------------------------------
     
 class MaterialFormativo(models.Model):
     TIPOS_MATERIAL = [
@@ -64,8 +83,6 @@ class EvaluacionCurso(models.Model):
     titulo = models.CharField(max_length=200, default="Examen de Conocimientos")
     instrucciones = models.TextField(blank=True)
     
-    # --- Agregados de la nueva arquitectura ---
-    duracion_minutos = models.PositiveIntegerField(default=30, help_text="Tiempo límite en minutos")
     activa = models.BooleanField(default=True, help_text="Permite ocultar el examen temporalmente")
     
     # Configuraciones Dinámicas para el Balotario
@@ -74,6 +91,10 @@ class EvaluacionCurso(models.Model):
     
     preguntas_a_mostrar = models.PositiveIntegerField(default=10, help_text="Ej: Mostrar solo 10 al azar de un Excel de 100")
     orden_aleatorio = models.BooleanField(default=True, help_text="Mezclar las preguntas y alternativas")
+
+    # GAMIFICACIÓN Y LÍMITE DE TIEMPO
+    tiempo_limite_minutos = models.IntegerField(default=0, help_text="0 significa sin límite de tiempo")
+    puntos_premio = models.IntegerField(default=50, help_text="Puntos que gana el asesor al aprobar")
     
     def __str__(self):
         return f"Evaluación: {self.curso.titulo}"

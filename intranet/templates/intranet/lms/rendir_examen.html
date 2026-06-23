@@ -16,7 +16,56 @@
         </div>
     </div>
 
-    <!-- Formulario Oficial del Examen -->
+    {% if evaluacion.tiempo_limite_minutos > 0 %}
+    <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4 d-flex justify-content-between align-items-center">
+        <div><i class="bi bi-stopwatch fs-4 text-warning me-2"></i> <strong class="text-dark">Tiempo Restante:</strong></div>
+        <h3 class="mb-0 fw-bold text-danger" id="reloj-examen">--:--</h3>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const minutos = {{ evaluacion.tiempo_limite_minutos }};
+            const matriculaId = {{ matricula.id }};
+            const storageKey = `examen_end_time_${matriculaId}`;
+            
+            let endTime = localStorage.getItem(storageKey);
+            
+            if (!endTime) {
+                // Si es la primera vez que entra, calculamos la hora de fin
+                endTime = new Date().getTime() + (minutos * 60 * 1000);
+                localStorage.setItem(storageKey, endTime);
+            }
+
+            const relojEl = document.getElementById('reloj-examen');
+            const formExamen = document.getElementById('form-examen');
+
+            const intervalo = setInterval(function() {
+                const ahora = new Date().getTime();
+                const distancia = endTime - ahora;
+
+                if (distancia <= 0) {
+                    clearInterval(intervalo);
+                    relojEl.innerHTML = "00:00";
+                    localStorage.removeItem(storageKey); // Limpiamos la memoria
+                    alert("¡El tiempo se ha agotado! El examen se enviará automáticamente.");
+                    formExamen.submit(); // Disparo automático
+                } else {
+                    const m = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((distancia % (1000 * 60)) / 1000);
+                    relojEl.innerHTML = (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+                }
+            }, 1000);
+            
+            // Si envía el examen por su cuenta, limpiamos la memoria
+            if (formExamen) {
+                formExamen.addEventListener('submit', function() {
+                    localStorage.removeItem(storageKey);
+                });
+            }
+        });
+    </script>
+    {% endif %}
+
     <form method="POST" action="{% url 'rendir_evaluacion' matricula.id %}" id="form-examen">
         {% csrf_token %}
         
@@ -28,7 +77,6 @@
                     {{ pregunta.enunciado }}
                 </h6>
                 
-                <!-- Este input oculto le dice a Python exactamente qué preguntas le tocaron al usuario -->
                 <input type="hidden" name="preguntas_mostradas" value="{{ pregunta.id }}">
                 
                 <div class="ps-3 mt-3 border-start border-3 border-light">

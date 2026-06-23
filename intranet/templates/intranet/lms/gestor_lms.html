@@ -4,12 +4,15 @@
 <div class="container-fluid p-4">
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
-            <h2 class="navbar-main-title fw-bold mb-1" style="color: var(--rj-azul);">Gestor de Evaluaciones LMS</h2>
-            <p class="text-muted">Configura reglas, segmenta cursos y gestiona balotarios masivos.</p>
+            <h2 class="navbar-main-title fw-bold mb-1" style="color: var(--rj-azul);">Gestor de la Academia LMS</h2>
+            <p class="text-muted">Crea cursos, sube clases (Videos/PDFs) y configura exámenes con gamificación.</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
             <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearCurso">
-                <i class="bi bi-book me-2"></i> Crear Nuevo Curso
+                <i class="bi bi-journal-plus me-2"></i> Crear Curso
+            </button>
+            <button class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearLeccion">
+                <i class="bi bi-play-btn-fill me-2"></i> Agregar Clase
             </button>
         </div>
     </div>
@@ -24,10 +27,11 @@
     {% endif %}
 
     <div class="row">
+        <!-- COLUMNA IZQUIERDA: CONFIGURAR EXAMEN -->
         <div class="col-md-4 mb-4">
             <div class="card border-0 shadow-sm rounded-4 h-100 border-top border-primary border-4">
                 <div class="card-header bg-white border-0 pt-4 pb-0">
-                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-gear-fill text-primary me-2"></i>1. Crear Nuevo Examen</h5>
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-gear-fill text-primary me-2"></i>Configurar Examen Final</h5>
                 </div>
                 <div class="card-body p-4">
                     <form method="POST" action="{% url 'gestor_lms' %}">
@@ -39,7 +43,9 @@
                             <select class="form-select" name="curso_id" required>
                                 <option value="">-- Selecciona un curso --</option>
                                 {% for c in cursos %}
+                                    {% if not c.evaluacion %}
                                     <option value="{{ c.id }}">{{ c.titulo }}</option>
+                                    {% endif %}
                                 {% endfor %}
                             </select>
                         </div>
@@ -60,15 +66,26 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-danger"><i class="bi bi-stopwatch"></i> Tiempo (min):</label>
+                                <input type="number" class="form-control border-danger" name="tiempo_limite_minutos" value="15" required help-text="0 para sin límite">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-warning"><i class="bi bi-star-fill"></i> Puntos Premio:</label>
+                                <input type="number" class="form-control border-warning" name="puntos_premio" value="50" required>
+                            </div>
+                        </div>
+
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-primary">Preguntas a Mostrar:</label>
+                            <label class="form-label small fw-bold text-primary">Preguntas a Mostrar al Azar:</label>
                             <input type="number" class="form-control border-primary" name="preguntas_a_mostrar" value="10" required>
                         </div>
 
                         <div class="form-check form-switch mb-4 bg-light p-3 rounded-3">
                             <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="orden_aleatorio" id="orden_aleatorio" checked>
                             <label class="form-check-label small fw-bold text-dark" style="cursor: pointer;" for="orden_aleatorio">
-                                Mezclar preguntas (Chocolatear)
+                                Mezclar alternativas (Anti-Copia)
                             </label>
                         </div>
 
@@ -78,29 +95,49 @@
             </div>
         </div>
 
+        <!-- COLUMNA DERECHA: LISTADO DE CURSOS Y SUS CLASES -->
         <div class="col-md-8 mb-4">
-            <h5 class="fw-bold text-dark mb-3">2. Exámenes Configurados</h5>
-            {% if evaluaciones %}
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-collection-fill me-2"></i>Cursos y Módulos Activos</h5>
+            {% if cursos %}
                 <div class="d-flex flex-column gap-3">
-                    {% for eval in evaluaciones %}
-                    <div class="card border-0 shadow-sm rounded-4 border-start border-success border-5">
-                        <div class="card-body d-flex justify-content-between align-items-center p-4">
-                            <div>
-                                <h5 class="fw-bold mb-1" style="color: var(--rj-azul);">{{ eval.titulo }}</h5>
-                                <p class="text-muted small mb-2"><i class="bi bi-book-half me-1"></i> Curso: {{ eval.curso.titulo }}</p>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <span class="badge bg-light text-dark border">Max: {{ eval.puntaje_maximo }} pts</span>
-                                    <span class="badge bg-success-subtle text-success border">En BD: {{ eval.preguntas_balotario.count }} preg.</span>
+                    {% for curso in cursos %}
+                    <div class="card border-0 shadow-sm rounded-4 border-start border-primary border-5">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="fw-bold mb-1" style="color: var(--rj-azul);">{{ curso.titulo }}</h5>
+                                    <p class="text-muted small mb-2">{{ curso.descripcion }}</p>
+                                    
+                                    <div class="d-flex flex-wrap gap-2 mt-2">
+                                        <!-- Etiqueta de Clases -->
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                            <i class="bi bi-play-btn-fill me-1"></i> {{ curso.lecciones.count }} Clases
+                                        </span>
+                                        
+                                        <!-- Etiqueta de Examen -->
+                                        {% if curso.evaluacion %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Examen Configurado
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i> Sin Examen
+                                            </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- BOTONES DE GESTIÓN Y ANALÍTICA -->
-                            <div class="text-end ms-3 d-flex flex-column gap-2 justify-content-center">
-                                <a href="{% url 'resultados_evaluacion' eval.id %}" class="btn btn-info text-white fw-bold shadow-sm">
-                                    <i class="bi bi-pie-chart-fill me-1"></i> Ver Resultados
-                                </a>
-                                <a href="{% url 'importar_excel_balotario' eval.id %}" class="btn btn-success fw-bold shadow-sm">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> Subir Balotario
-                                </a>
+                                
+                                <!-- Botones de Gestión del Curso -->
+                                {% if curso.evaluacion %}
+                                <div class="text-end d-flex flex-column gap-2 ms-3">
+                                    <a href="{% url 'resultados_evaluacion' curso.evaluacion.id %}" class="btn btn-sm btn-info text-white fw-bold shadow-sm">
+                                        <i class="bi bi-pie-chart-fill me-1"></i> Ver Analítica
+                                    </a>
+                                    <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-success fw-bold shadow-sm">
+                                        <i class="bi bi-file-earmark-excel me-1"></i> Balotario
+                                    </a>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -109,18 +146,20 @@
             {% else %}
                 <div class="card border-0 shadow-sm rounded-4 bg-light p-5 text-center text-muted">
                     <i class="bi bi-inbox fs-1 mb-3"></i>
-                    <h5>No hay evaluaciones</h5>
+                    <h5>No hay cursos creados</h5>
+                    <p>Crea tu primer curso para empezar a subir clases y exámenes.</p>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
+<!-- MODAL: CREAR CURSO -->
 <div class="modal fade" id="modalCrearCurso" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="bi bi-book me-2"></i> Crear Nuevo Curso</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus me-2"></i> Crear Nuevo Curso</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST">
@@ -162,6 +201,68 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="submit" name="crear_curso" class="btn btn-primary fw-bold">Guardar Curso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: AGREGAR CLASE (LECCIÓN) -->
+<div class="modal fade" id="modalCrearLeccion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-play-btn-fill me-2"></i> Agregar Clase a un Curso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <!-- IMPORTANTE: enctype="multipart/form-data" para permitir subida de PDFs -->
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="crear_leccion" value="1">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Curso al que pertenece:</label>
+                        <select class="form-select" name="curso_id" required>
+                            <option value="">-- Selecciona el curso --</option>
+                            {% for c in cursos %}
+                                <option value="{{ c.id }}">{{ c.titulo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-9 mb-3">
+                            <label class="form-label fw-bold small">Título de la Clase:</label>
+                            <input type="text" class="form-control" name="titulo" placeholder="Ej: Clase 1: Conceptos Básicos" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold small">Orden (N°):</label>
+                            <input type="number" class="form-control" name="orden" value="1" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Breve Descripción (Opcional):</label>
+                        <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                    </div>
+
+                    <hr>
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-paperclip"></i> Material Multimedia (Elige una opción)</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-danger"><i class="bi bi-youtube"></i> Enlace de Video (YouTube/Vimeo)</label>
+                            <input type="url" class="form-control border-danger" name="url_video" placeholder="Ej: https://www.youtube.com/embed/...">
+                            <small class="text-muted" style="font-size: 0.75rem;">Usa el enlace "Embed" (Incrustar) de YouTube.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> O subir archivo PDF</label>
+                            <input type="file" class="form-control border-primary" name="archivo_pdf" accept=".pdf">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="submit" class="btn btn-success fw-bold">Guardar Clase</button>
                 </div>
             </form>
         </div>

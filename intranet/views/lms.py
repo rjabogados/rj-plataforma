@@ -23,7 +23,10 @@ from intranet.models import (
 )
 
 from .utils import solo_directivos, solo_calidad, generar_username_unico
-from intranet.models.lms import EvaluacionCurso, CursoInduccion
+
+# ¡AQUÍ ESTÁ LA CORRECCIÓN! Agregamos LeccionCurso y ProgresoLeccion
+from intranet.models.lms import EvaluacionCurso, CursoInduccion, LeccionCurso, ProgresoLeccion
+
 
 # ==========================================
 # DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
@@ -414,6 +417,7 @@ def beneficios(request): return render(request, 'intranet/beneficios.html')
 @solo_directivos
 def gestor_lms(request):
     from intranet.models.rrhh_core import Negocio, Colaborador
+    from intranet.models.lms import CursoInduccion, EvaluacionCurso, LeccionCurso
 
     if request.method == 'POST':
         if 'crear_curso' in request.POST:
@@ -435,6 +439,26 @@ def gestor_lms(request):
             messages.success(request, f"¡Curso '{titulo}' creado exitosamente en la Academia LMS!")
             return redirect('gestor_lms')
 
+        elif 'crear_leccion' in request.POST:
+            curso_id = request.POST.get('curso_id')
+            titulo = request.POST.get('titulo')
+            descripcion = request.POST.get('descripcion')
+            url_video = request.POST.get('url_video')
+            orden = request.POST.get('orden', 1)
+            archivo_pdf = request.FILES.get('archivo_pdf') # Capacidad de recibir PDFs
+
+            curso = get_object_or_404(CursoInduccion, id=curso_id)
+            LeccionCurso.objects.create(
+                curso=curso,
+                titulo=titulo,
+                descripcion=descripcion,
+                url_video=url_video,
+                archivo_pdf=archivo_pdf,
+                orden=orden
+            )
+            messages.success(request, f"¡Clase '{titulo}' agregada correctamente al curso!")
+            return redirect('gestor_lms')
+
         elif 'crear_evaluacion' in request.POST:
             curso_id = request.POST.get('curso_id')
             titulo = request.POST.get('titulo')
@@ -443,6 +467,10 @@ def gestor_lms(request):
             p_aprobatorio = request.POST.get('puntaje_aprobatorio', 14.00)
             p_mostrar = request.POST.get('preguntas_a_mostrar', 10)
             aleatorio = request.POST.get('orden_aleatorio') == 'on'
+            
+            # Nuevos campos de gamificación
+            tiempo_limite = request.POST.get('tiempo_limite_minutos', 0)
+            puntos_premio = request.POST.get('puntos_premio', 50)
 
             curso = get_object_or_404(CursoInduccion, id=curso_id)
 
@@ -452,17 +480,17 @@ def gestor_lms(request):
                 EvaluacionCurso.objects.create(
                     curso=curso, titulo=titulo, instrucciones=instrucciones,
                     puntaje_maximo=p_maximo, puntaje_aprobatorio=p_aprobatorio,
-                    preguntas_a_mostrar=p_mostrar, orden_aleatorio=aleatorio
+                    preguntas_a_mostrar=p_mostrar, orden_aleatorio=aleatorio,
+                    tiempo_limite_minutos=tiempo_limite, puntos_premio=puntos_premio
                 )
                 messages.success(request, "¡Examen creado! Ahora puedes subir el balotario de preguntas.")
             return redirect('gestor_lms')
 
-    cursos_disponibles = CursoInduccion.objects.filter(activo=True, tipo='ACADEMIA')
-    evaluaciones = EvaluacionCurso.objects.filter(curso__tipo='ACADEMIA').select_related('curso').prefetch_related('preguntas_balotario')
+    # Traemos los cursos con sus lecciones y exámenes enganchados para optimizar la carga
+    cursos_disponibles = CursoInduccion.objects.filter(activo=True, tipo='ACADEMIA').select_related('evaluacion').prefetch_related('lecciones')
     
     return render(request, 'intranet/lms/gestor_lms.html', {
         'cursos': cursos_disponibles,
-        'evaluaciones': evaluaciones,
         'negocios': Negocio.objects.all(),
         'roles': Colaborador.ROLES
     })
@@ -634,9 +662,14 @@ def rendir_evaluacion(request, matricula_id):
             matricula.nota_obtenida = nota_final
             matricula.fecha_finalizacion = timezone.now()
             
+            # --- EVALUACIÓN DE APROBACIÓN Y ASIGNACIÓN DE PUNTOS ---
             if nota_final >= float(evaluacion.puntaje_aprobatorio):
                 matricula.estado = 'COMPLETADO'
                 messages.success(request, f"¡Felicidades! Has aprobado el examen con {nota_final} puntos.")
+                
+                # ¡MAGIA DE GAMIFICACIÓN! Sumamos los puntos del examen al perfil del usuario
+                perfil.puntos_lms = getattr(perfil, 'puntos_lms', 0) + evaluacion.puntos_premio
+                perfil.save()
             else:
                 matricula.estado = 'REPROBADO'
                 messages.error(request, f"No alcanzaste la nota mínima. Obtuviste {nota_final} puntos. Deberás repasar los materiales.")
@@ -769,3 +802,80 @@ def exportar_resultados_lms(request, evaluacion_id):
     response['Content-Disposition'] = f'attachment; filename="Resultados_{evaluacion.titulo}.xlsx"'
     wb.save(response)
     return response
+
+@login_required(login_url='login')
+def generar_certificado(request, matricula_id):
+    perfil = request.user.perfil
+    matricula = get_object_or_404(MatriculaCurso, id=matricula_id, colaborador=perfil, estado='COMPLETADO')
+    
+    return render(request, 'intranet/lms/certificado.html', {
+        'matricula': matricula,
+        'fecha_emision': date.today()
+    })
+
+# ==========================================
+# RUTAS DE APRENDIZAJE: CLASES Y VIDEOS
+# ==========================================
+@login_required(login_url='login')
+def detalle_curso(request, curso_id):
+    perfil = request.user.perfil
+    curso = get_object_or_404(CursoInduccion, id=curso_id)
+    matricula = get_object_or_404(MatriculaCurso, curso=curso, colaborador=perfil)
+    
+    # Extraemos todas las lecciones ordenadas
+    lecciones = curso.lecciones.all().order_by('orden')
+    
+    # Revisamos cuáles lecciones ya aprobó este asesor
+    lecciones_completadas = ProgresoLeccion.objects.filter(
+        colaborador=perfil, completada=True
+    ).values_list('leccion_id', flat=True)
+    
+    # Calculamos el % de progreso interno del curso
+    porcentaje_progreso = 0
+    if lecciones.count() > 0:
+        porcentaje_progreso = int((len(lecciones_completadas) / lecciones.count()) * 100)
+        
+    # EL CANDADO INFALIBLE: El examen se desbloquea SOLO si vio todas las clases
+    examen_desbloqueado = (lecciones.count() == len(lecciones_completadas))
+    
+    # Si el curso no tiene clases (solo examen), lo dejamos libre
+    if lecciones.count() == 0:
+        examen_desbloqueado = True
+
+    return render(request, 'intranet/lms/detalle_curso.html', {
+        'curso': curso,
+        'matricula': matricula,
+        'lecciones': lecciones,
+        'completadas': lecciones_completadas,
+        'progreso_lecciones': porcentaje_progreso,
+        'examen_desbloqueado': examen_desbloqueado
+    })
+
+@login_required(login_url='login')
+def ver_leccion(request, leccion_id):
+    perfil = request.user.perfil
+    leccion = get_object_or_404(LeccionCurso, id=leccion_id)
+    
+    # Verificamos si ya la había marcado como completada antes
+    ya_completada = ProgresoLeccion.objects.filter(colaborador=perfil, leccion=leccion, completada=True).exists()
+    
+    return render(request, 'intranet/lms/ver_leccion.html', {
+        'leccion': leccion,
+        'curso': leccion.curso,
+        'ya_completada': ya_completada
+    })
+
+@login_required(login_url='login')
+def completar_leccion(request, leccion_id):
+    perfil = request.user.perfil
+    leccion = get_object_or_404(LeccionCurso, id=leccion_id)
+    
+    # Registramos que vio el video/PDF de forma indestructible
+    ProgresoLeccion.objects.get_or_create(
+        colaborador=perfil, 
+        leccion=leccion, 
+        defaults={'completada': True}
+    )
+    
+    messages.success(request, f"¡Excelente! Has completado la clase: '{leccion.titulo}'")
+    return redirect('detalle_curso', curso_id=leccion.curso.id)

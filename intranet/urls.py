@@ -42,10 +42,16 @@ urlpatterns = [
     path('academia/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
     path('academia/rendir/<int:matricula_id>/', lms.rendir_evaluacion, name='rendir_evaluacion'),
     
-    # --- LAS 3 RUTAS NUEVAS PARA EL DASHBOARD DE RESULTADOS ---
+    # --- RUTAS DE APRENDIZAJE: CLASES Y VIDEOS (NUEVAS) ---
+    path('academia/curso/<int:curso_id>/', lms.detalle_curso, name='detalle_curso'),
+    path('academia/leccion/<int:leccion_id>/', lms.ver_leccion, name='ver_leccion'),
+    path('academia/leccion/<int:leccion_id>/completar/', lms.completar_leccion, name='completar_leccion'),
+
+    # --- RUTAS DE GAMIFICACIÓN Y ANALÍTICA ---
     path('academia/evaluacion/<int:evaluacion_id>/resultados/', lms.resultados_evaluacion, name='resultados_evaluacion'),
     path('academia/matricula/<int:matricula_id>/reabrir/', lms.reabrir_examen, name='reabrir_examen'),
     path('academia/evaluacion/<int:evaluacion_id>/exportar/', lms.exportar_resultados_lms, name='exportar_resultados_lms'),
+    path('academia/certificado/<int:matricula_id>/', lms.generar_certificado, name='generar_certificado'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS
