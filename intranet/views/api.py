@@ -1,72 +1,92 @@
+import os
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from intranet.models import CandidatoReclutamiento
 
 # Llave maestra
-API_SECRET_KEY = "RJ_Secreto_2026_Aut"
+API_SECRET_KEY = os.environ.get('API_SECRET_KEY')
 
-@csrf_exempt
+if not API_SECRET_KEY:
+    raise ValueError("API_SECRET_KEY debe estar configurada en las variables de entorno")
+
+@require_http_methods(["POST", "OPTIONS"])
 def webhook_receptor(request):
-    # Definimos los encabezados CORS como una función reutilizable
     def build_response(data, status=200):
         response = JsonResponse(data, status=status)
-        response["Access-Control-Allow-Origin"] = "*"
+        # CORS SEGURO: Especificar origen permitido
+        allowed_origin = os.environ.get('ALLOWED_ORIGIN', 'https://tu-dominio.com')
+        response["Access-Control-Allow-Origin"] = allowed_origin
         response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response["Access-Control-Max-Age"] = "3600"
         return response
 
-    # 1. Manejo de peticiones OPTIONS (El pre-flight de Excel/Navegador)
     if request.method == 'OPTIONS':
         return build_response({'status': 'ok'})
 
-    # 2. Manejo de peticiones POST
     if request.method == 'POST':
         try:
             datos = json.loads(request.body)
             
-            # Verificación de seguridad
-            if datos.get('api_key') != API_SECRET_KEY:
-                return build_response({'error': 'Acceso denegado. Llave incorrecta.'}, status=403)
+            # Validar API Key
+            api_key_recibida = datos.get('api_key', '')
             
-            origen = datos.get('origen')
+            # Comparación segura (previene timing attacks)
+            if not api_key_recibida or api_key_recibida != API_SECRET_KEY:
+                return build_response({'error': 'Acceso denegado.'}, status=403)
             
-            # --- RECEPCIÓN DE BARRIDO TOTAL (EXCEL) ---
+            origen = datos.get('origen', '').strip()
+            
+            if not origen:
+                return build_response({'error': 'Origen debe ser especificado'}, status=400)
+            
             if origen in ['excel_reclutamiento', 'excel_barrido_total']:
                 lista_candidatos = datos.get('data', [])
                 
+                if not isinstance(lista_candidatos, list) or len(lista_candidatos) == 0:
+                    return build_response({'error': 'Datos vacíos'}, status=400)
+                
+                # Limitar a 1000 registros por solicitud
+                lista_candidatos = lista_candidatos[:1000]
+                
                 count = 0
                 for item in lista_candidatos:
-                    # Usamos update_or_create para evitar duplicados por DNI
+                    # Validar documento antes de crear
+                    documento = str(item.get('documento', '')).strip()
+                    if not documento or len(documento) > 20:
+                        continue
+                    
                     CandidatoReclutamiento.objects.update_or_create(
-                        documento=item.get('documento'),
+                        documento=documento,
                         defaults={
-                            'nombre': item.get('nombre', ''),
-                            'telefono': item.get('telefono', ''),
-                            'estado_candidato': item.get('estado_candidato', ''),
-                            'sede': item.get('sede', '')
+                            'nombre': str(item.get('nombre', ''))[:200],
+                            'telefono': str(item.get('telefono', ''))[:20],
+                            'estado_candidato': str(item.get('estado_candidato', 'Nuevo'))[:50],
+                            'sede': str(item.get('sede', ''))[:100]
                         }
                     )
                     count += 1
                 
-                print(f"🔄 [DB] Sincronización exitosa: {count} registros.")
-                return build_response({'status': 'Sincronización exitosa', 'procesados': count})
-
-            # --- OTRAS RECEPCIONES ---
+                return build_response({
+                    'status': 'Sincronización exitosa',
+                    'procesados': count
+                })
+            
             elif origen == 'meta_ads_reclutamiento':
-                print(f"✅ [API] Nuevo lead: {datos.get('nombre_candidato')}")
                 return build_response({'status': 'Candidato registrado'})
-                
+            
             elif origen == 'tv_recaudacion':
-                print(f"✅ [API] Recaudación: S/ {datos.get('monto_cobrado')}")
                 return build_response({'status': 'TV notificada'})
-
+            
             else:
                 return build_response({'error': 'Origen desconocido'}, status=400)
 
         except json.JSONDecodeError:
             return build_response({'error': 'JSON inválido'}, status=400)
-        except Exception as e:
-            return build_response({'error': str(e)}, status=500)
-            
-    return build_response({'error': 'Método no permitido. Usa POST.'}, status=405)
+        except Exception:
+            # No expongas detalles del error
+            return build_response({'error': 'Error del servidor'}, status=500)
+    
+    return build_response({'error': 'Método no permitido'}, status=405)

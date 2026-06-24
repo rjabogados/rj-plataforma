@@ -4,6 +4,7 @@ from .views.reclutamiento import actualizar_estado_ajax, obtener_candidato_ajax,
 from .views import lms
 from django.views.static import serve
 from django.conf import settings
+from .views import lms_views, ia_views
 
 urlpatterns = [
     # ==========================================
@@ -121,6 +122,10 @@ urlpatterns = [
     path('api/actualizar-candidato/', actualizar_candidato_ajax, name='api_actualizar_candidato'),
     path('api/descartar-candidato/', descartar_candidato_ajax, name='api_descartar_candidato'),
     path('api/metricas-dashboard/', views.metricas_dashboard_ajax, name='api_metricas_dashboard'),
+
+    # ==========================================
+    # MÓDULO DE INTELIGENCIA ARTIFICIAL (IA)
+    path('curso/<int:curso_id>/generar-examen/', ia_views.generar_examen_ia, name='generar_examen_ia'),
 ]
 
 # --- HACK PARA MOSTRAR PDFs y FOTOS SUBIDAS EN PRODUCCIÓN ---

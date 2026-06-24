@@ -1,85 +1,137 @@
 import os
+import mimetypes
 from datetime import date
 from django.conf import settings
 from docxtpl import DocxTemplate
+from django.core.files import File
 from docx2pdf import convert
 from django.core.files import File
 from intranet.models import DocumentoGenerado
 
 def generar_documento_para_colaborador(plantilla_obj, colaborador):
     """
-    Toma un archivo Word, inyecta las variables del usuario, lo convierte a PDF
-    y lo deposita en la Bóveda Virtual (DocumentoGenerado).
+    Genera documento de forma segura, validando rutas y tipos de archivo.
     """
-    # 1. Cargamos el archivo Word de la plantilla
+    
+    # 1. Validación de seguridad: Verificar que la plantilla existe
     ruta_plantilla = plantilla_obj.archivo_word.path
-    doc = DocxTemplate(ruta_plantilla)
+    
+    # ✅ Validar que la ruta está dentro de MEDIA_ROOT
+    ruta_plantilla = os.path.abspath(ruta_plantilla)
+    media_root = os.path.abspath(settings.MEDIA_ROOT)
+    
+    if not ruta_plantilla.startswith(media_root):
+        raise ValueError("Ruta de plantilla inválida")
+    
+    # ✅ Validar que el archivo existe y es accesible
+    if not os.path.isfile(ruta_plantilla):
+        raise FileNotFoundError(f"Plantilla no encontrada: {ruta_plantilla}")
+    
+    # ✅ Validar tipo MIME
+    mime_type, _ = mimetypes.guess_type(ruta_plantilla)
+    allowed_mimes = [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword'
+    ]
+    if mime_type not in allowed_mimes:
+        raise ValueError("Tipo de archivo no permitido")
+    
+    try:
+        doc = DocxTemplate(ruta_plantilla)
+    except Exception as e:
+        raise ValueError(f"Error al leer plantilla: {str(e)}")
 
-    # 2. Obtenemos el perfil laboral para acceder al DNI real y demás datos
+    # 2. Obtener datos del colaborador de forma segura
     perfil = getattr(colaborador, 'perfil', None)
-
+    
     dni_real = perfil.dni if perfil else colaborador.username
     rol_real = perfil.rol if perfil else 'No asignado'
     horario_real = perfil.tipo_horario if perfil else 'No asignado'
     negocio_real = perfil.negocio.nombre if perfil and perfil.negocio else 'No asignado'
     
-    # Formatear la fecha de ingreso si existe
     if perfil and perfil.fecha_ingreso:
         fecha_ing_str = perfil.fecha_ingreso.strftime("%d/%m/%Y")
     else:
         fecha_ing_str = 'No registrada'
 
-    # 3. Definimos las Variables (Lo que reemplazará a los {{ }} en el Word)
+    # 3. Contexto seguro con límites de tamaño
     contexto = {
-        'nombre_completo': f"{colaborador.first_name} {colaborador.last_name}",
-        'nombres': colaborador.first_name,
-        'apellidos': colaborador.last_name,
-        'dni': dni_real,
-        'correo': colaborador.email,
-        'rol': rol_real,
-        'horario': horario_real,
-        'negocio': negocio_real,
+        'nombre_completo': f"{colaborador.first_name} {colaborador.last_name}"[:200],
+        'nombres': colaborador.first_name[:100],
+        'apellidos': colaborador.last_name[:100],
+        'dni': dni_real[:20],
+        'correo': colaborador.email[:200],
+        'rol': rol_real[:100],
+        'horario': horario_real[:50],
+        'negocio': negocio_real[:150],
         'fecha_ingreso': fecha_ing_str,
         'fecha_hoy': date.today().strftime("%d/%m/%Y"),
-        'fecha_actual': date.today().strftime("%d/%m/%Y"), # Alias adicional
+        'fecha_actual': date.today().strftime("%d/%m/%Y"),
         'empresa': 'RJ Abogados',
     }
 
-    # 4. Inyectamos los datos en la plantilla
     doc.render(contexto)
 
-    # 5. Guardamos el Word temporalmente
+    # 4. Crear nombres seguros sin caracteres especiales
+    import re
+    nombre_plantilla_limpio = re.sub(r'[^a-zA-Z0-9_-]', '_', plantilla_obj.nombre)
+    usuario_limpio = re.sub(r'[^a-zA-Z0-9_-]', '_', colaborador.username)
+    nombre_base = f"{nombre_plantilla_limpio}_{usuario_limpio}_{date.today().strftime('%Y%m%d')}"
+    
+    # 5. Carpeta temporal segura
     carpeta_temp = os.path.join(settings.MEDIA_ROOT, 'temp')
     os.makedirs(carpeta_temp, exist_ok=True)
     
-    nombre_base = f"{plantilla_obj.nombre.replace(' ', '_')}_{colaborador.username}"
+    # Validar que carpeta_temp está dentro de MEDIA_ROOT
+    carpeta_temp = os.path.abspath(carpeta_temp)
+    if not carpeta_temp.startswith(media_root):
+        raise ValueError("Ruta temporal inválida")
+    
     ruta_docx_temp = os.path.join(carpeta_temp, f"{nombre_base}.docx")
     ruta_pdf_temp = os.path.join(carpeta_temp, f"{nombre_base}.pdf")
     
+    # Protección contra sobrescritura
+    contador = 1
+    while os.path.exists(ruta_docx_temp):
+        nombre_base = f"{nombre_plantilla_limpio}_{usuario_limpio}_{date.today().strftime('%Y%m%d')}_{contador}"
+        ruta_docx_temp = os.path.join(carpeta_temp, f"{nombre_base}.docx")
+        ruta_pdf_temp = os.path.join(carpeta_temp, f"{nombre_base}.pdf")
+        contador += 1
+    
     doc.save(ruta_docx_temp)
 
-    # 6. Convertimos el Word modificado a PDF inalterable
+    # 6. Convertir a PDF
     try:
         convert(ruta_docx_temp, ruta_pdf_temp)
     except Exception as e:
-        print(f"Error al convertir a PDF: {e}")
-        return None
+        # Limpiar temporales
+        if os.path.exists(ruta_docx_temp):
+            os.remove(ruta_docx_temp)
+        raise ValueError(f"Error al convertir PDF: {str(e)}")
 
-    # 7. Lo registramos en la Bóveda Virtual de RJ Talent
+    # 7. Registrar en base de datos
     nuevo_doc = DocumentoGenerado.objects.create(
         colaborador=colaborador,
         plantilla_origen=plantilla_obj,
         titulo=f"{plantilla_obj.nombre} - {colaborador.first_name}",
-        estado='PENDIENTE', 
-        visible_para_empleado=True # ¡CORREGIDO! Ahora sí aparece de inmediato en su bóveda
+        estado='PENDIENTE',
+        visible_para_empleado=True
     )
 
-    # Guardamos el archivo físico PDF en el registro de la base de datos
-    with open(ruta_pdf_temp, 'rb') as f:
-        nuevo_doc.archivo_pdf.save(f"{nombre_base}.pdf", File(f))
-
-    # Limpieza: Borramos los archivos temporales para no saturar tu disco
-    os.remove(ruta_docx_temp)
-    os.remove(ruta_pdf_temp)
+    # 8. Guardar archivo
+    try:
+        with open(ruta_pdf_temp, 'rb') as f:
+            nuevo_doc.archivo_pdf.save(f"{nombre_base}.pdf", File(f))
+    except Exception as e:
+        nuevo_doc.delete()
+        raise ValueError(f"Error al guardar PDF: {str(e)}")
+    finally:
+        # Limpiar archivos temporales
+        for ruta in [ruta_docx_temp, ruta_pdf_temp]:
+            if os.path.exists(ruta):
+                try:
+                    os.remove(ruta)
+                except:
+                    pass
 
     return nuevo_doc

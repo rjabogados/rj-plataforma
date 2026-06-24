@@ -1,10 +1,12 @@
 import json
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.db.models import Count
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from intranet.models import CandidatoReclutamiento , HistorialEstado, RegistroContacto
+from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
 
 @login_required
@@ -34,98 +36,144 @@ def lista_candidatos(request):
     }
     return render(request, 'intranet/lista_candidatos.html', context)
 
-@csrf_exempt 
+@login_required(login_url='login')
+@require_http_methods(["POST"])
 def actualizar_estado_ajax(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            candidato_id = data.get('id')
-            nuevo_estado = data.get('estado')
-            
-            # Buscamos al candidato y actualizamos
-            candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
-            candidato.estado_candidato = nuevo_estado
-            candidato.save()
-            
-            return JsonResponse({'success': True, 'mensaje': 'Estado actualizado'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+    try:
+        data = json.loads(request.body)
+        candidato_id = data.get('id')
+        nuevo_estado = data.get('estado')
         
+        # Validación de datos
+        if not candidato_id or not nuevo_estado:
+            return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
+        
+        # Validar que el usuario es directivo
+        perfil = getattr(request.user, 'perfil', None)
+        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
+            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+        
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        candidato.estado_candidato = nuevo_estado
+        candidato.save()
+        
+        return JsonResponse({'success': True, 'mensaje': 'Estado actualizado'}, status=200)
+    except CandidatoReclutamiento.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Candidato no encontrado'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        # ✅ No expongas detalles del error
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+        
+@login_required(login_url='login')
+@require_http_methods(["GET"])
 def obtener_candidato_ajax(request, candidato_id):
     try:
-        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        # Verificar permisos
+        perfil = getattr(request.user, 'perfil', None)
+        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
+            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
         
-        # Usamos getattr para evitar el error si la columna no existe en tu base de datos
-        sede_segura = getattr(candidato, 'sede', 'No Asignado')
-        canal_seguro = getattr(candidato, 'canal', 'No Asignado')
+        # Validar ID
+        try:
+            candidato_id = int(candidato_id)
+        except (ValueError, TypeError):
+            return JsonResponse({'success': False, 'error': 'ID inválido'}, status=400)
+        
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
         
         data = {
             'success': True,
             'id': candidato.id,
-            'nombre': candidato.nombre,
-            'documento': candidato.documento if candidato.documento else '',
-            'telefono': candidato.telefono,
-            'estado': candidato.estado_candidato,
-            'sede': sede_segura,
-            'canal': canal_seguro
+            'nombre': candidato.nombre or '',
+            'documento': candidato.documento or '',
+            'telefono': candidato.telefono or '',
+            'estado': candidato.estado_candidato or '',
+            'sede': getattr(candidato, 'sede', 'No Asignado'),
+            'canal': getattr(candidato, 'canal', 'No Asignado')
         }
         return JsonResponse(data)
     except CandidatoReclutamiento.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Candidato no encontrado'})
+        return JsonResponse({'success': False, 'error': 'Candidato no encontrado'}, status=404)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
 
-@csrf_exempt
+@login_required(login_url='login')
+@require_http_methods(["POST"])
 def actualizar_candidato_ajax(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            candidato = CandidatoReclutamiento.objects.get(id=data.get('id'))
-            
-            # 1. CAPTURAMOS EL ESTADO ANTERIOR
-            estado_viejo = candidato.estado_candidato
-            
-            # --- ESCUDO ANTI-VACÍOS PARA EL ESTADO ---
-            # Si el frontend manda un estado vacío por error, mantenemos el que ya tenía.
-            estado_nuevo = data.get('estado')
-            if not estado_nuevo:
-                estado_nuevo = estado_viejo if estado_viejo else 'Nuevo'
-            
-            # 2. ACTUALIZAMOS LOS DATOS BÁSICOS
-            candidato.nombre = data.get('nombre', candidato.nombre)
-            candidato.documento = data.get('documento', candidato.documento)
-            candidato.telefono = data.get('telefono', candidato.telefono)
-            candidato.estado_candidato = estado_nuevo
-            
-            # --- BARRERA DE SEGURIDAD PARA SEDE Y CANAL ---
-            sede_recibida = data.get('sede')
-            candidato.sede = sede_recibida if sede_recibida else "No Asignado"
-            
-            canal_recibido = data.get('canal')
-            candidato.canal = canal_recibido if canal_recibido else "Meta Ads"
-            
-            candidato.save()
-            
-            # 3. CREAMOS EL HISTORIAL AUTOMÁTICAMENTE
-            if estado_viejo != estado_nuevo:
-                HistorialEstado.objects.create(
-                    candidato=candidato,
-                    estado_anterior=estado_viejo,
-                    estado_nuevo=estado_nuevo
-                )
-                
-            return JsonResponse({'success': True, 'mensaje': 'Actualizado correctamente'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+    try:
+        data = json.loads(request.body)
         
+        # Validar permiso
+        perfil = getattr(request.user, 'perfil', None)
+        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
+            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+        
+        candidato_id = data.get('id')
+        if not candidato_id:
+            return JsonResponse({'success': False, 'error': 'ID requerido'}, status=400)
+        
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        
+        # Capturar estado anterior
+        estado_viejo = candidato.estado_candidato
+        
+        # Actualizar con validación
+        candidato.nombre = data.get('nombre', candidato.nombre)
+        candidato.documento = data.get('documento', candidato.documento)
+        candidato.telefono = data.get('telefono', candidato.telefono)
+        
+        estado_nuevo = data.get('estado', estado_viejo)
+        if estado_nuevo:
+            candidato.estado_candidato = estado_nuevo
+        
+        candidato.sede = data.get('sede', 'No Asignado')
+        candidato.canal = data.get('canal', 'Meta Ads')
+        
+        candidato.save()
+        
+        # Registrar cambio de estado
+        if estado_viejo != candidato.estado_candidato:
+            HistorialEstado.objects.create(
+                candidato=candidato,
+                estado_anterior=estado_viejo,
+                estado_nuevo=candidato.estado_candidato
+            )
+        
+        return JsonResponse({'success': True, 'mensaje': 'Actualizado correctamente'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+        
+@login_required(login_url='login')
+@require_http_methods(["POST"])
 def descartar_candidato_ajax(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            candidato = CandidatoReclutamiento.objects.get(id=data.get('id'))
-            candidato.estado_candidato = 'No interesados'
-            candidato.save()
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+    try:
+        perfil = getattr(request.user, 'perfil', None)
+        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
+            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+        
+        data = json.loads(request.body)
+        candidato_id = data.get('id')
+        
+        if not candidato_id:
+            return JsonResponse({'success': False, 'error': 'ID requerido'}, status=400)
+        
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        estado_viejo = candidato.estado_candidato
+        
+        candidato.estado_candidato = 'No interesados'
+        candidato.save()
+        
+        HistorialEstado.objects.create(
+            candidato=candidato,
+            estado_anterior=estado_viejo,
+            estado_nuevo='No interesados'
+        )
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
         
 def metricas_dashboard_ajax(request):
     """Devuelve los datos procesados para los gráficos del dashboard"""

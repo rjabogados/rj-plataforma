@@ -18,10 +18,18 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 
 ALLOWED_HOSTS = [
     'localhost',
-    '*'
     '127.0.0.1',
-    'rj-plataforma.onrender.com',  # Tu enlace oficial de Render
+    'rj-plataforma.onrender.com',
 ]
+
+# Agregar hosts personalizados desde entorno
+custom_hosts = os.environ.get('ALLOWED_HOSTS', '')
+if custom_hosts:
+    ALLOWED_HOSTS.extend(custom_hosts.split(','))
+
+# En desarrollo local
+if os.environ.get('DEBUG') == 'True':
+    ALLOWED_HOSTS.append('*')  # Solo en desarrollo
 
 # Aquí agregamos la dirección que te dio Ngrok:
 CSRF_TRUSTED_ORIGINS = [
@@ -142,7 +150,45 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') 
 DEFAULT_FROM_EMAIL = f"RJ Talent <{os.environ.get('EMAIL_HOST_USER')}>"
 
-CORS_ALLOW_ALL_ORIGINS = True
+# Orígenes CORS permitidos (NO todos)
+CORS_ALLOWED_ORIGINS = [
+    "https://rj-plataforma.onrender.com",
+    "https://www.rj-plataforma.onrender.com",
+]
+
+# En desarrollo, agregar desde entorno
+if os.environ.get('DEBUG') == 'True':
+    CORS_ALLOWED_ORIGINS.extend([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ])
+
+# NUNCA usar CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+# Headers CORS seguros
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # Permitir iframes del mismo dominio (Para el visor de PDFs de la Academia LMS)
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
