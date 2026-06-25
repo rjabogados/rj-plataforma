@@ -2,17 +2,6 @@ from django.db import models
 from .rrhh_core import Colaborador, Negocio
 
 # ==========================================
-# 0. CATEGORÍAS DEL LMS (NUEVO)
-# ==========================================
-class CategoriaLMS(models.Model):
-    nombre = models.CharField(max_length=100, unique=True)
-    descripcion = models.TextField(blank=True, null=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.nombre
-
-# ==========================================
 # 1. ACADEMIA Y CURSOS (AHORA CON SMART TARGETING)
 # ==========================================
 class CursoInduccion(models.Model):
@@ -39,15 +28,31 @@ class CursoInduccion(models.Model):
         help_text="Mostrar SOLO a esta Cartera/Campaña."
     )
     
-    # NUEVO: Filtro quirúrgico para sub-equipos
+    # NUEVO: Filtro quirúrgico para sub-equipos o categoría textual del curso
     subcartera_vinculada = models.CharField(
-        max_length=100, null=True, blank=True, 
-        help_text="Ej: 'Mora Temprana' o 'Castigada'. Déjalo en blanco si es para toda la cartera."
+        max_length=100, null=True, blank=True,
+        help_text="Para Academia: aquí se guarda la categoría del curso. Para Inducción: aquí se guarda la subcartera." 
     )
+
+    CATEGORIAS_LMS = [
+        ('Operaciones', 'Operaciones'),
+        ('Ventas', 'Ventas'),
+        ('Cultura RJ', 'Cultura RJ'),
+        ('Servicio al Cliente', 'Servicio al Cliente'),
+        ('Cumplimiento', 'Cumplimiento'),
+    ]
+
+    @property
+    def categoria(self):
+        return self.subcartera_vinculada
+
+    @categoria.setter
+    def categoria(self, value):
+        self.subcartera_vinculada = value
+
     # ==========================================================
 
     # === CONFIGURACIÓN AVANZADA Y GAMIFICACIÓN ===
-    categoria = models.ForeignKey(CategoriaLMS, on_delete=models.SET_NULL, null=True, blank=True, related_name='cursos')
     portada = models.ImageField(upload_to='lms_portadas/', null=True, blank=True)
     puntos_recompensa = models.IntegerField(default=20, help_text="Puntos base por hacer el curso")
     nivel_dificultad = models.CharField(max_length=20, choices=[

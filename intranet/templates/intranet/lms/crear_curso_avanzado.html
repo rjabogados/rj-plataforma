@@ -36,10 +36,10 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold small text-secondary">Categoría del Módulo</label>
-                                <select class="form-select border-primary" name="categoria_id" required>
+                                <select class="form-select border-primary" name="categoria" required>
                                     <option value="">-- Selecciona una Categoría --</option>
                                     {% for cat in categorias %}
-                                        <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                                        <option value="{{ cat }}">{{ cat }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

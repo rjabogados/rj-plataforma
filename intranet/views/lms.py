@@ -26,7 +26,7 @@ from intranet.models import (
 
 from .utils import solo_directivos, solo_calidad, generar_username_unico
 
-from intranet.models.lms import EvaluacionCurso, CursoInduccion, LeccionCurso, ProgresoLeccion, CategoriaLMS
+from intranet.models.lms import EvaluacionCurso, CursoInduccion, LeccionCurso, ProgresoLeccion
 
 # ==========================================
 # DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
@@ -568,24 +568,17 @@ def beneficios(request): return render(request, 'intranet/beneficios.html')
 @solo_directivos
 def gestor_lms(request):
     from intranet.models.rrhh_core import Negocio, Colaborador
-    from intranet.models.lms import CursoInduccion, EvaluacionCurso, LeccionCurso, CategoriaLMS
+    from intranet.models.lms import CursoInduccion, EvaluacionCurso, LeccionCurso
 
     if request.method == 'POST':
-        # --- NUEVO: CREAR CATEGORÍA ---
-        if 'crear_categoria' in request.POST:
-            nombre = request.POST.get('nombre_categoria')
-            descripcion = request.POST.get('desc_categoria', '')
-            CategoriaLMS.objects.create(nombre=nombre, descripcion=descripcion)
-            messages.success(request, f"¡Categoría '{nombre}' creada exitosamente!")
-            return redirect('gestor_lms')
-
-        elif 'crear_curso' in request.POST:
+        if 'crear_curso' in request.POST:
             titulo = request.POST.get('titulo')
             descripcion = request.POST.get('descripcion')
             publico_general = request.POST.get('publico_general') == 'on'
             rol_permitido = request.POST.get('rol_permitido') or None
             cartera_id = request.POST.get('cartera_vinculada')
             cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
+            categoria_text = request.POST.get('categoria') or None
 
             CursoInduccion.objects.create(
                 titulo=titulo,
@@ -593,7 +586,8 @@ def gestor_lms(request):
                 tipo='ACADEMIA', 
                 publico_general=publico_general,
                 rol_permitido=rol_permitido,
-                cartera_vinculada=cartera_obj
+                cartera_vinculada=cartera_obj,
+                subcartera_vinculada=categoria_text
             )
             messages.success(request, f"¡Curso '{titulo}' creado exitosamente en la Academia LMS!")
             return redirect('gestor_lms')
@@ -646,12 +640,23 @@ def gestor_lms(request):
             return redirect('gestor_lms')
 
     # Traemos las categorías y cursos segmentados
-    categorias = CategoriaLMS.objects.prefetch_related('cursos', 'cursos__evaluacion', 'cursos__lecciones').all()
-    cursos_sin_categoria = CursoInduccion.objects.filter(categoria__isnull=True, tipo='ACADEMIA').prefetch_related('lecciones', 'evaluacion')
-    cursos_disponibles = CursoInduccion.objects.filter(activo=True, tipo='ACADEMIA').select_related('evaluacion').prefetch_related('lecciones')
-    
+    categoria_filtro = request.GET.get('categoria', '')
+    categorias = [c[0] for c in CursoInduccion.CATEGORIAS_LMS]
+    cursos_sin_categoria = CursoInduccion.objects.filter(
+        tipo='ACADEMIA'
+    ).filter(
+        Q(subcartera_vinculada__isnull=True) | Q(subcartera_vinculada='')
+    ).prefetch_related('lecciones', 'evaluacion')
+
+    cursos_qs = CursoInduccion.objects.filter(activo=True, tipo='ACADEMIA')
+    if categoria_filtro:
+        cursos_qs = cursos_qs.filter(subcartera_vinculada=categoria_filtro)
+
+    cursos_disponibles = cursos_qs.select_related('evaluacion').prefetch_related('lecciones')
+
     return render(request, 'intranet/lms/gestor_lms.html', {
         'categorias': categorias,
+        'categoria_filtro': categoria_filtro,
         'cursos_sin_categoria': cursos_sin_categoria,
         'cursos': cursos_disponibles,
         'negocios': Negocio.objects.all(),
@@ -1108,15 +1113,14 @@ def dashboard_resultados(request):
 @solo_directivos
 def crear_curso_avanzado(request):
     from intranet.models.rrhh_core import Negocio, Colaborador
-    from intranet.models.lms import CursoInduccion, CategoriaLMS
+    from intranet.models.lms import CursoInduccion
     
     if request.method == 'POST':
         titulo = request.POST.get('titulo')
         descripcion = request.POST.get('descripcion')
         portada = request.FILES.get('portada')
         
-        categoria_id = request.POST.get('categoria_id')
-        categoria_obj = CategoriaLMS.objects.filter(id=categoria_id).first() if categoria_id else None
+        categoria_text = request.POST.get('categoria') or None
         
         puntos_recompensa = request.POST.get('puntos_recompensa', 20)
         nivel_dificultad = request.POST.get('nivel_dificultad', 'Introductorio')
@@ -1133,7 +1137,7 @@ def crear_curso_avanzado(request):
             descripcion=descripcion,
             tipo='ACADEMIA', 
             portada=portada,
-            categoria=categoria_obj,
+            subcartera_vinculada=categoria_text,
             puntos_recompensa=puntos_recompensa,
             nivel_dificultad=nivel_dificultad,
             publico_general=publico_general,
@@ -1144,7 +1148,7 @@ def crear_curso_avanzado(request):
         return redirect('gestor_lms')
 
     return render(request, 'intranet/lms/crear_curso_avanzado.html', {
-        'categorias': CategoriaLMS.objects.all(),
+        'categorias': [c[0] for c in CursoInduccion.CATEGORIAS_LMS],
         'negocios': Negocio.objects.all(),
         'roles': Colaborador.ROLES
     })
