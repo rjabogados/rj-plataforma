@@ -2,6 +2,17 @@ from django.db import models
 from .rrhh_core import Colaborador, Negocio
 
 # ==========================================
+# 0. CATEGORÍAS DEL LMS (NUEVO)
+# ==========================================
+class CategoriaLMS(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.nombre
+
+# ==========================================
 # 1. ACADEMIA Y CURSOS (AHORA CON SMART TARGETING)
 # ==========================================
 class CursoInduccion(models.Model):
@@ -9,7 +20,7 @@ class CursoInduccion(models.Model):
         ('GENERAL', 'Cultura General RJ (Para todos)'),
         ('CARTERA', 'Específico por Cartera / Negocio'),
         ('HABILIDADES', 'Desarrollo de Habilidades (Opcional/Secundario)'),
-        ('INDUCCION', 'Módulo de Onboarding / Inducción'), # <-- Añadido explícitamente
+        ('INDUCCION', 'Módulo de Onboarding / Inducción'),
     ]
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(help_text="Resumen de lo que el asesor aprenderá aquí.")
@@ -35,7 +46,17 @@ class CursoInduccion(models.Model):
     )
     # ==========================================================
 
+    # === CONFIGURACIÓN AVANZADA Y GAMIFICACIÓN ===
+    categoria = models.ForeignKey(CategoriaLMS, on_delete=models.SET_NULL, null=True, blank=True, related_name='cursos')
     portada = models.ImageField(upload_to='lms_portadas/', null=True, blank=True)
+    puntos_recompensa = models.IntegerField(default=20, help_text="Puntos base por hacer el curso")
+    nivel_dificultad = models.CharField(max_length=20, choices=[
+        ('Introductorio', 'Introductorio'),
+        ('Intermedio', 'Intermedio'),
+        ('Avanzado', 'Avanzado')
+    ], default='Introductorio')
+    # ==========================================================
+
     activo = models.BooleanField(default=True, db_index=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -52,7 +73,7 @@ class LeccionCurso(models.Model):
     url_video = models.URLField(blank=True, null=True, help_text="URL del video (Ej: YouTube embed)")
     archivo_pdf = models.FileField(upload_to='lms_materiales/', blank=True, null=True)
     
-    # NUEVO: Soporte nativo para presentaciones inmersivas
+    # Soporte nativo para presentaciones inmersivas
     url_presentacion_canva = models.URLField(
         blank=True, null=True, 
         help_text="Pega aquí el enlace de 'Ver públicamente' o 'Insertar' de Canva, Genially o Google Slides."
@@ -170,7 +191,7 @@ class RespuestaColaborador(models.Model):
     fecha_respuesta = models.DateTimeField(auto_now_add=True)
 
 # ==========================================
-# 4. ENCUESTAS (MANTENIDO INTACTO)
+# 4. ENCUESTAS
 # ==========================================
 class Encuesta(models.Model):
     titulo = models.CharField(max_length=200)
@@ -202,7 +223,7 @@ class RespuestaEncuesta(models.Model):
     fecha_respuesta = models.DateTimeField(auto_now_add=True)
 
 # ==========================================
-# 5. ONBOARDING Y RECLUTAMIENTO (MANTENIDO INTACTO)
+# 5. ONBOARDING Y RECLUTAMIENTO
 # ==========================================
 class CandidatoOnboarding(models.Model):
     ESTADOS = (
@@ -236,18 +257,3 @@ class CandidatoOnboarding(models.Model):
         docs = [self.doc_cv, self.doc_dni, self.doc_antecedentes, self.doc_recibo_servicios]
         if not docs: return 0
         return int((sum(docs) / len(docs)) * 100)
-    
-    portada = models.ImageField(upload_to='lms/portadas/', null=True, blank=True)
-    categoria = models.CharField(max_length=50, choices=[
-        ('OPERACIONES', 'Operaciones & Procesos'),
-        ('HABILIDADES', 'Habilidades Blandas'),
-        ('TECNICO', 'Conocimiento Técnico'),
-        ('LIDERAZGO', 'Liderazgo & Gestión'),
-        ('BIENESTAR', 'Cultura y Bienestar')
-    ], default='TECNICO')
-    puntos_recompensa = models.IntegerField(default=20, help_text="Puntos base por hacer el curso")
-    nivel_dificultad = models.CharField(max_length=20, choices=[
-        ('Introductorio', 'Introductorio'),
-        ('Intermedio', 'Intermedio'),
-        ('Avanzado', 'Avanzado')
-    ], default='Introductorio')

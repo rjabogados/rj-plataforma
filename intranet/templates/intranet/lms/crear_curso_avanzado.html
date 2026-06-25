@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold" style="color: var(--rj-azul);">
-                <i class="bi bi-rocket-takeoff-fill me-2 text-primary"></i>Crear Nuevo Curso
+                <i class="bi bi-rocket-takeoff-fill me-2 text-primary"></i>Crear Nuevo Módulo
             </h2>
             <p class="text-muted">Diseña un nuevo módulo de aprendizaje con gamificación y segmentación avanzada.</p>
         </div>
@@ -25,23 +25,22 @@
                     </div>
                     <div class="card-body p-4">
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-secondary">Título del Curso</label>
+                            <label class="form-label fw-bold small text-secondary">Título del Módulo</label>
                             <input type="text" class="form-control form-control-lg" name="titulo" placeholder="Ej: Técnicas de Cobranza Telefónica" required>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-bold small text-secondary">Descripción</label>
-                            <textarea class="form-control" name="descripcion" rows="3" placeholder="¿Qué aprenderán los asesores en este curso?"></textarea>
+                            <textarea class="form-control" name="descripcion" rows="3" placeholder="¿Qué aprenderán los asesores en este módulo?"></textarea>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold small text-secondary">Categoría de Contenido</label>
-                                <select class="form-select" name="categoria">
-                                    <option value="OPERACIONES">Operaciones & Procesos</option>
-                                    <option value="HABILIDADES">Habilidades Blandas</option>
-                                    <option value="TECNICO" selected>Conocimiento Técnico</option>
-                                    <option value="LIDERAZGO">Liderazgo & Gestión</option>
-                                    <option value="BIENESTAR">Cultura y Bienestar</option>
+                                <label class="form-label fw-bold small text-secondary">Categoría del Módulo</label>
+                                <select class="form-select border-primary" name="categoria_id" required>
+                                    <option value="">-- Selecciona una Categoría --</option>
+                                    {% for cat in categorias %}
+                                        <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -116,7 +115,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm rounded-4 py-3">
-                    <i class="bi bi-send-check-fill me-2"></i> Publicar Curso
+                    <i class="bi bi-send-check-fill me-2"></i> Publicar Módulo
                 </button>
             </div>
         </div>
@@ -128,7 +127,6 @@
         const check = document.getElementById('checkPublicoNuevo');
         const filtros = document.getElementById('filtrosSegmentacionNuevo');
         
-        // Efecto suave de despliegue
         if (check.checked) {
             filtros.style.display = 'none';
         } else {
