@@ -236,3 +236,18 @@ class CandidatoOnboarding(models.Model):
         docs = [self.doc_cv, self.doc_dni, self.doc_antecedentes, self.doc_recibo_servicios]
         if not docs: return 0
         return int((sum(docs) / len(docs)) * 100)
+    
+    portada = models.ImageField(upload_to='lms/portadas/', null=True, blank=True)
+    categoria = models.CharField(max_length=50, choices=[
+        ('OPERACIONES', 'Operaciones & Procesos'),
+        ('HABILIDADES', 'Habilidades Blandas'),
+        ('TECNICO', 'Conocimiento Técnico'),
+        ('LIDERAZGO', 'Liderazgo & Gestión'),
+        ('BIENESTAR', 'Cultura y Bienestar')
+    ], default='TECNICO')
+    puntos_recompensa = models.IntegerField(default=20, help_text="Puntos base por hacer el curso")
+    nivel_dificultad = models.CharField(max_length=20, choices=[
+        ('Introductorio', 'Introductorio'),
+        ('Intermedio', 'Intermedio'),
+        ('Avanzado', 'Avanzado')
+    ], default='Introductorio')

@@ -1091,3 +1091,44 @@ def dashboard_resultados(request):
     }
     
     return render(request, 'intranet/lms/dashboard_resultados.html', context)
+
+@login_required(login_url='login')
+@solo_directivos
+def crear_curso_avanzado(request):
+    from intranet.models.rrhh_core import Negocio, Colaborador
+    from intranet.models.lms import CursoInduccion
+    
+    if request.method == 'POST':
+        titulo = request.POST.get('titulo')
+        descripcion = request.POST.get('descripcion')
+        portada = request.FILES.get('portada')
+        categoria = request.POST.get('categoria', 'TECNICO')
+        puntos_recompensa = request.POST.get('puntos_recompensa', 20)
+        nivel_dificultad = request.POST.get('nivel_dificultad', 'Introductorio')
+        
+        # Segmentación
+        publico_general = request.POST.get('publico_general') == 'on'
+        rol_permitido = request.POST.get('rol_permitido') or None
+        cartera_id = request.POST.get('cartera_vinculada')
+        cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
+
+        # Guardar en base de datos
+        CursoInduccion.objects.create(
+            titulo=titulo,
+            descripcion=descripcion,
+            tipo='ACADEMIA', 
+            portada=portada,
+            categoria=categoria,
+            puntos_recompensa=puntos_recompensa,
+            nivel_dificultad=nivel_dificultad,
+            publico_general=publico_general,
+            rol_permitido=rol_permitido,
+            cartera_vinculada=cartera_obj
+        )
+        messages.success(request, f"¡Curso '{titulo}' creado exitosamente con portada y configuración avanzada!")
+        return redirect('gestor_lms')
+
+    return render(request, 'intranet/lms/crear_curso_avanzado.html', {
+        'negocios': Negocio.objects.all(),
+        'roles': Colaborador.ROLES
+    })
