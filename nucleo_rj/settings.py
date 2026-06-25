@@ -9,29 +9,18 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+# ¡CORRECCIÓN CRÍTICA! Le ponemos un "salvavidas" por si Render no encuentra la llave
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-salvavidas-temporal-12345')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == 'True'
+# FORZAMOS EL DEBUG A TRUE PARA VER EL ERROR
+DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'rj-plataforma.onrender.com',
-]
+# ABRIMOS LAS PUERTAS A CUALQUIER DOMINIO TEMPORALMENTE
+ALLOWED_HOSTS = ['*']
 
-# Agregar hosts personalizados desde entorno
-custom_hosts = os.environ.get('ALLOWED_HOSTS', '')
-if custom_hosts:
-    ALLOWED_HOSTS.extend(custom_hosts.split(','))
-
-# En desarrollo local
-if os.environ.get('DEBUG') == 'True':
-    ALLOWED_HOSTS.append('*')  # Solo en desarrollo
-
-# Aquí agregamos la dirección que te dio Ngrok:
+# Aquí agregamos la dirección que te dio Ngrok y Render:
 CSRF_TRUSTED_ORIGINS = [
     'https://why-unknown-wildfire.ngrok-free.dev', 
     'https://*.ngrok-free.app',
@@ -155,13 +144,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://rj-plataforma.onrender.com",
     "https://www.rj-plataforma.onrender.com",
 ]
-
-# En desarrollo, agregar desde entorno
-if os.environ.get('DEBUG') == 'True':
-    CORS_ALLOWED_ORIGINS.extend([
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ])
 
 # NUNCA usar CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_ALL_ORIGINS = False
