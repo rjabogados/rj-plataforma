@@ -10,7 +10,6 @@ from .views import lms, ia_views
 # ==========================================
 # ESPACIO DE NOMBRES (CRÍTICO PARA REDIRECCIONES)
 # ==========================================
-app_name = 'intranet'
 
 urlpatterns = [
     # ==========================================

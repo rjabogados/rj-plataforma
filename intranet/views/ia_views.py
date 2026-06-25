@@ -24,7 +24,8 @@ def generar_examen_ia(request, curso_id):
 
         if not archivo_pdf:
             messages.error(request, "Por favor, sube un archivo PDF.")
-            return redirect('intranet:detalle_curso', curso_id=curso.id)
+            # CORRECCIÓN: Quitamos 'intranet:' del redirect
+            return redirect('detalle_curso', curso_id=curso.id)
 
         try:
             # 1. LEER EL PDF
@@ -35,7 +36,8 @@ def generar_examen_ia(request, curso_id):
 
             if not texto_extraido.strip():
                 messages.error(request, "No se pudo extraer texto del PDF (podría ser una imagen escaneada).")
-                return redirect('intranet:detalle_curso', curso_id=curso.id)
+                # CORRECCIÓN: Quitamos 'intranet:' del redirect
+                return redirect('detalle_curso', curso_id=curso.id)
 
             # 2. EL SÚPER PROMPT PARA GEMINI
             prompt = f"""
@@ -92,10 +94,12 @@ def generar_examen_ia(request, curso_id):
                     )
 
             messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas y se añadieron a la evaluación de {curso.titulo}.")
-            return redirect('intranet:detalle_curso', curso_id=curso.id)
+            # CORRECCIÓN: Quitamos 'intranet:' del redirect
+            return redirect('detalle_curso', curso_id=curso.id)
 
         except Exception as e:
             messages.error(request, f"Hubo un error con la IA: {str(e)}")
-            return redirect('intranet:detalle_curso', curso_id=curso.id)
+            # CORRECCIÓN: Quitamos 'intranet:' del redirect
+            return redirect('detalle_curso', curso_id=curso.id)
 
     return render(request, 'intranet/lms/generador_ia.html', {'curso': curso})
