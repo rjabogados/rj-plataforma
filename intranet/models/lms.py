@@ -54,12 +54,8 @@ class CursoInduccion(models.Model):
 
     # === CONFIGURACIÓN AVANZADA Y GAMIFICACIÓN ===
     portada = models.ImageField(upload_to='lms_portadas/', null=True, blank=True)
-    puntos_recompensa = models.IntegerField(default=20, help_text="Puntos base por hacer el curso")
-    nivel_dificultad = models.CharField(max_length=20, choices=[
-        ('Introductorio', 'Introductorio'),
-        ('Intermedio', 'Intermedio'),
-        ('Avanzado', 'Avanzado')
-    ], default='Introductorio')
+    # Nota: estos campos no existen en el esquema de la base de datos actual.
+    # Se mantienen solo en la UI si se requiere, pero no son parte del modelo físico.
     # ==========================================================
 
     activo = models.BooleanField(default=True, db_index=True)

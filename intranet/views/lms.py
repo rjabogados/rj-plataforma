@@ -1122,9 +1122,6 @@ def crear_curso_avanzado(request):
         
         categoria_text = request.POST.get('categoria') or None
         
-        puntos_recompensa = request.POST.get('puntos_recompensa', 20)
-        nivel_dificultad = request.POST.get('nivel_dificultad', 'Introductorio')
-        
         # Segmentación
         publico_general = request.POST.get('publico_general') == 'on'
         rol_permitido = request.POST.get('rol_permitido') or None
@@ -1138,8 +1135,6 @@ def crear_curso_avanzado(request):
             tipo='ACADEMIA', 
             portada=portada,
             subcartera_vinculada=categoria_text,
-            puntos_recompensa=puntos_recompensa,
-            nivel_dificultad=nivel_dificultad,
             publico_general=publico_general,
             rol_permitido=rol_permitido,
             cartera_vinculada=cartera_obj
