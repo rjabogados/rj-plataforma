@@ -8,6 +8,10 @@
             <p class="text-muted">Crea cursos, sube clases (Videos/PDFs) y configura exámenes con gamificación.</p>
         </div>
         <div class="d-flex gap-2">
+            <!-- NUEVO BOTÓN DEL DASHBOARD -->
+            <a href="{% url 'dashboard_resultados' %}" class="btn btn-dark fw-bold shadow-sm">
+                <i class="bi bi-pie-chart-fill me-2"></i> Dashboard Analítico
+            </a>
             <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearCurso">
                 <i class="bi bi-journal-plus me-2"></i> Crear Curso
             </button>
