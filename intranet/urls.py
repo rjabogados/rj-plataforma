@@ -64,6 +64,7 @@ urlpatterns = [
     path('academia/matricula/<int:matricula_id>/reabrir/', lms.reabrir_examen, name='reabrir_examen'),
     path('academia/evaluacion/<int:evaluacion_id>/exportar/', lms.exportar_resultados_lms, name='exportar_resultados_lms'),
     path('academia/certificado/<int:matricula_id>/', lms.generar_certificado, name='generar_certificado'),
+    path('lms/dashboard/', views.dashboard_resultados, name='dashboard_resultados'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS

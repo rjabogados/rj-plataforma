@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Avg
 from django.utils import timezone
 from django.http import HttpResponse
 
@@ -1059,3 +1059,35 @@ def completar_leccion(request, leccion_id):
     
     messages.success(request, f"¡Excelente! Has completado la clase: '{leccion.titulo}'")
     return redirect('detalle_curso', curso_id=leccion.curso.id)
+
+# ==========================================
+# DASHBOARD GENERAL DE RESULTADOS LMS
+# ==========================================
+@login_required(login_url='login')
+@solo_directivos
+def dashboard_resultados(request):
+    # 1. Métricas generales de la plataforma
+    total_cursos = CursoInduccion.objects.count()
+    total_examenes = EvaluacionCurso.objects.count()
+    
+    # 2. Métricas de los usuarios (MatriculaCurso guarda las notas y estados)
+    evaluaciones_rendidas = MatriculaCurso.objects.filter(estado__in=['COMPLETADO', 'REPROBADO'])
+    total_rendidas = evaluaciones_rendidas.count()
+    
+    aprobados = evaluaciones_rendidas.filter(estado='COMPLETADO').count()
+    reprobados = evaluaciones_rendidas.filter(estado='REPROBADO').count()
+    
+    # 3. Promedio global de la empresa
+    promedio_dict = evaluaciones_rendidas.aggregate(promedio=Avg('nota_obtenida'))
+    nota_promedio = promedio_dict['promedio'] or 0.00
+
+    context = {
+        'total_cursos': total_cursos,
+        'total_examenes_creados': total_examenes,
+        'total_rendidas': total_rendidas,
+        'aprobados': aprobados,
+        'reprobados': reprobados,
+        'nota_promedio': round(nota_promedio, 2),
+    }
+    
+    return render(request, 'intranet/lms/dashboard_resultados.html', context)
