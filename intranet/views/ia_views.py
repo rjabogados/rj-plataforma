@@ -6,15 +6,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-# IMPORTACIÓN CORRECTA: Apuntando a tus modelos exactos
 from ..models.lms import CursoInduccion, EvaluacionCurso, PreguntaEvaluacion, OpcionRespuesta 
 
-# Configurar la llave de Gemini
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
 @login_required
 def generar_examen_ia(request, curso_id):
-    # Buscamos tu modelo real
     curso = get_object_or_404(CursoInduccion, id=curso_id)
 
     if request.method == 'POST':
@@ -24,22 +21,18 @@ def generar_examen_ia(request, curso_id):
 
         if not archivo_pdf:
             messages.error(request, "Por favor, sube un archivo PDF.")
-            # CORRECCIÓN: Quitamos 'intranet:' del redirect
-            return redirect('detalle_curso', curso_id=curso.id)
+            return redirect('gestor_lms') # <--- CORREGIDO AQUÍ
 
         try:
-            # 1. LEER EL PDF
             lector_pdf = PyPDF2.PdfReader(archivo_pdf)
             texto_extraido = ""
             for pagina in lector_pdf.pages:
                 texto_extraido += pagina.extract_text() + "\n"
 
             if not texto_extraido.strip():
-                messages.error(request, "No se pudo extraer texto del PDF (podría ser una imagen escaneada).")
-                # CORRECCIÓN: Quitamos 'intranet:' del redirect
-                return redirect('detalle_curso', curso_id=curso.id)
+                messages.error(request, "No se pudo extraer texto del PDF.")
+                return redirect('gestor_lms') # <--- CORREGIDO AQUÍ
 
-            # 2. EL SÚPER PROMPT PARA GEMINI
             prompt = f"""
             Eres un experto en Recursos Humanos y diseño de evaluaciones corporativas.
             Basándote EXCLUSIVAMENTE en el siguiente texto extraído de un manual de la empresa, 
@@ -65,15 +58,12 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. LLAMAR A GEMINI (Versión Clásica y Estable)
             modelo = genai.GenerativeModel('gemini-1.5-flash')
             respuesta = modelo.generate_content(prompt)
             
-            # Limpiar la respuesta JSON
             texto_respuesta = respuesta.text.replace("```json", "").replace("```", "").strip()
             datos_examen = json.loads(texto_respuesta)
 
-            # 4. GUARDAR EN TU BASE DE DATOS REAL
             evaluacion, created = EvaluacionCurso.objects.get_or_create(
                 curso=curso,
                 defaults={'titulo': f'Examen: {curso.titulo}'}
@@ -93,13 +83,11 @@ def generar_examen_ia(request, curso_id):
                         es_correcta=alt['es_correcta']
                     )
 
-            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas y se añadieron a la evaluación de {curso.titulo}.")
-            # CORRECCIÓN: Quitamos 'intranet:' del redirect
-            return redirect('detalle_curso', curso_id=curso.id)
+            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA para el curso {curso.titulo}.")
+            return redirect('gestor_lms') # <--- CORREGIDO AQUÍ
 
         except Exception as e:
             messages.error(request, f"Hubo un error con la IA: {str(e)}")
-            # CORRECCIÓN: Quitamos 'intranet:' del redirect
-            return redirect('detalle_curso', curso_id=curso.id)
+            return redirect('gestor_lms') # <--- CORREGIDO AQUÍ
 
     return render(request, 'intranet/lms/generador_ia.html', {'curso': curso})
