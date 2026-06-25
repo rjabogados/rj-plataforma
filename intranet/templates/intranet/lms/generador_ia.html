@@ -1,0 +1,56 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="container-fluid p-4" style="max-width: 800px; margin: 0 auto;">
+    <div class="card border-0 shadow-sm rounded-4 border-top border-warning border-4">
+        <div class="card-header bg-white border-0 pt-4 pb-0 text-center">
+            <div class="bg-warning text-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 60px; height: 60px;">
+                <i class="bi bi-robot fs-2"></i>
+            </div>
+            <h3 class="fw-bold mb-1 text-dark">Generador IA de Exámenes</h3>
+            <p class="text-muted">Creando evaluación para: <strong class="text-primary">{{ curso.titulo }}</strong></p>
+        </div>
+        
+        <div class="card-body p-4 p-md-5">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>Sube el manual o material de estudio (Solo PDF)</label>
+                    <input type="file" class="form-control form-control-lg bg-light border-0 shadow-sm" name="documento_pdf" accept=".pdf" required>
+                    <small class="text-muted mt-2 d-block">Gemini leerá este documento al instante para extraer el conocimiento y armar el balotario.</small>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-dark"><i class="bi bi-123 text-primary me-2"></i>Cantidad de Preguntas</label>
+                        <input type="number" class="form-control form-control-lg bg-light border-0 shadow-sm" name="cantidad_preguntas" value="5" min="1" max="20" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark"><i class="bi bi-chat-text text-info me-2"></i>Instrucciones para la IA (Opcional)</label>
+                    <textarea class="form-control bg-light border-0 shadow-sm" name="instrucciones" rows="3" placeholder="Ej: Haz que las preguntas sean de un nivel difícil, incluye casos prácticos, enfócate solo en el capítulo 2..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between mt-5">
+                    <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary fw-bold px-4 rounded-pill shadow-sm">Cancelar</a>
+                    
+                    <button type="submit" class="btn btn-warning fw-bold px-4 rounded-pill shadow-sm text-dark" onclick="this.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>Procesando PDF...'; this.classList.add('disabled');">
+                        <i class="bi bi-magic me-2"></i> Generar Examen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
