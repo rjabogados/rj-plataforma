@@ -1,10 +1,16 @@
 from django.urls import path, re_path
-from . import views
-from .views.reclutamiento import actualizar_estado_ajax, obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
-from .views import lms
 from django.views.static import serve
 from django.conf import settings
-from .views import lms_views, ia_views
+
+# Importaciones de vistas
+from . import views
+from .views.reclutamiento import actualizar_estado_ajax, obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
+from .views import lms, ia_views
+
+# ==========================================
+# ESPACIO DE NOMBRES (CRÍTICO PARA REDIRECCIONES)
+# ==========================================
+app_name = 'intranet'
 
 urlpatterns = [
     # ==========================================
@@ -125,6 +131,7 @@ urlpatterns = [
 
     # ==========================================
     # MÓDULO DE INTELIGENCIA ARTIFICIAL (IA)
+    # ==========================================
     path('curso/<int:curso_id>/generar-examen/', ia_views.generar_examen_ia, name='generar_examen_ia'),
 ]
 
