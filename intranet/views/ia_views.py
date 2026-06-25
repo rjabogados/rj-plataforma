@@ -1,6 +1,6 @@
 import json
 import PyPDF2
-import google.generativeai as genai
+import requests
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -8,9 +8,6 @@ from django.contrib.auth.decorators import login_required
 
 # IMPORTACIÓN CORRECTA: Apuntando a tus modelos exactos
 from ..models.lms import CursoInduccion, EvaluacionCurso, PreguntaEvaluacion, OpcionRespuesta 
-
-# Configurar la llave de Gemini
-genai.configure(api_key=settings.GEMINI_API_KEY)
 
 @login_required
 def generar_examen_ia(request, curso_id):
@@ -35,7 +32,7 @@ def generar_examen_ia(request, curso_id):
                 texto_extraido += pagina.extract_text() + "\n"
 
             if not texto_extraido.strip():
-                messages.error(request, "No se pudo extraer texto del PDF (podría ser una imagen escaneada).")
+                messages.error(request, "No se pudo extraer texto del PDF.")
                 return redirect('gestor_lms')
 
             # 2. EL SÚPER PROMPT PARA GEMINI
@@ -64,13 +61,26 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. LLAMADA A GEMINI (Forzando el modelo Flash para evitar límites Pro)
-            modelo_elegido = 'gemini-1.5-flash'
-            modelo = genai.GenerativeModel(modelo_elegido)
-            respuesta = modelo.generate_content(prompt)
+            # 3. CONEXIÓN DIRECTA Y NATIVA A GOOGLE (SIN LIBRERÍAS EXTERNAS)
+            api_key = settings.GEMINI_API_KEY
+            url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){api_key}"
             
+            headers = {'Content-Type': 'application/json'}
+            data = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.2}
+            }
+            
+            respuesta_cruda = requests.post(url, headers=headers, json=data)
+            
+            if respuesta_cruda.status_code != 200:
+                error_msg = respuesta_cruda.json().get('error', {}).get('message', 'Error desconocido de la API')
+                raise Exception(f"Google rechazó la conexión directa: {error_msg}")
+
+            respuesta_json = respuesta_cruda.json()
+            texto_limpio = respuesta_json['candidates'][0]['content']['parts'][0]['text']
+
             # 4. LIMPIEZA EXTREMA DEL JSON
-            texto_limpio = respuesta.text
             if "```json" in texto_limpio:
                 texto_limpio = texto_limpio.split("```json")[1].split("```")[0]
             elif "```" in texto_limpio:
@@ -79,7 +89,7 @@ def generar_examen_ia(request, curso_id):
             texto_json = texto_limpio.strip()
             datos_examen = json.loads(texto_json)
 
-            # 5. GUARDAR EN BASE DE DATOS (CON TODOS LOS CAMPOS OBLIGATORIOS)
+            # 5. GUARDAR EN BASE DE DATOS
             evaluacion, created = EvaluacionCurso.objects.get_or_create(
                 curso=curso,
                 defaults={
@@ -93,7 +103,7 @@ def generar_examen_ia(request, curso_id):
                 }
             )
 
-            # Si el examen ya existía, actualizamos la cantidad de preguntas a mostrar
+            # Si el examen ya existía, actualizamos la cantidad
             if not created:
                 evaluacion.preguntas_a_mostrar = cantidad_int
                 evaluacion.save()
@@ -114,8 +124,7 @@ def generar_examen_ia(request, curso_id):
                         es_correcta=alt['es_correcta']
                     )
 
-            # Notificamos el éxito
-            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA usando el modelo {modelo_elegido}.")
+            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA de forma directa y blindada.")
             return redirect('gestor_lms')
 
         except json.JSONDecodeError:
