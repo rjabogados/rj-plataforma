@@ -87,61 +87,61 @@ def generar_contrasena_segura():
     return contrasena
 
 # En la vista colaboradores
-if request.method == 'POST':
-    nombres = request.POST.get('nombres')
-    apellidos = request.POST.get('apellidos')
-    dni_val = request.POST.get('dni').strip()
-    correo_val = request.POST.get('correo').strip().lower() or None
-    rol_val = request.POST.get('rol')
-    negocio_id = request.POST.get('negocio')
-    tipo_horario = request.POST.get('tipo_horario')
-    
-    username_custom = request.POST.get('username', '').strip()
-    password_custom = request.POST.get('password', '').strip()
+    if request.method == 'POST':
+        nombres = request.POST.get('nombres')
+        apellidos = request.POST.get('apellidos')
+        dni_val = request.POST.get('dni').strip()
+        correo_val = request.POST.get('correo').strip().lower() or None
+        rol_val = request.POST.get('rol')
+        negocio_id = request.POST.get('negocio')
+        tipo_horario = request.POST.get('tipo_horario')
+        
+        username_custom = request.POST.get('username', '').strip()
+        password_custom = request.POST.get('password', '').strip()
 
-    username_final = username_custom if username_custom else generar_username_unico(nombres, apellidos, dni_val)
-    
-    # ✅ SEGURO: Generar contraseña fuerte, NO usar DNI
-    if password_custom and len(password_custom) >= 8:
-        password_final = password_custom
-    else:
-        password_final = generar_contrasena_segura()
+        username_final = username_custom if username_custom else generar_username_unico(nombres, apellidos, dni_val)
+        
+        # ✅ SEGURO: Generar contraseña fuerte, NO usar DNI
+        if password_custom and len(password_custom) >= 8:
+            password_final = password_custom
+        else:
+            password_final = generar_contrasena_segura()
 
-    # Guardar en base de datos
-    nuevo_user = User.objects.create_user(
-        username=username_final,
-        email=correo_val if correo_val else "",
-        password=password_final,
-        first_name=nombres,
-        last_name=apellidos
-    )
-    
-    # ✅ ENVIAR CONTRASEÑA POR EMAIL SEGURO
-    from django.core.mail import send_mail
-    from django.conf import settings
-    
-    mensaje = f"""
-    Bienvenido a RJ Talent, {nombres}!
-    
-    Tu usuario: {username_final}
-    Contraseña temporal: {password_final}
-    
-    Por favor, cámbia tu contraseña en tu primer login.
-    
-    Link: {settings.SITE_URL}/login
-    """
-    
-    try:
-        send_mail(
-            subject='Credenciales de acceso - RJ Talent',
-            message=mensaje,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[correo_val] if correo_val else [],
-            fail_silently=False,
+        # Guardar en base de datos
+        nuevo_user = User.objects.create_user(
+            username=username_final,
+            email=correo_val if correo_val else "",
+            password=password_final,
+            first_name=nombres,
+            last_name=apellidos
         )
-    except Exception as e:
-        # Log el error pero no falla la creación
-        print(f"Error enviando email: {e}")
+        
+        # ✅ ENVIAR CONTRASEÑA POR EMAIL SEGURO
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        mensaje = f"""
+        Bienvenido a RJ Talent, {nombres}!
+        
+        Tu usuario: {username_final}
+        Contraseña temporal: {password_final}
+        
+        Por favor, cámbia tu contraseña en tu primer login.
+        
+        Link: {settings.SITE_URL}/login
+        """
+        
+        try:
+            send_mail(
+                subject='Credenciales de acceso - RJ Talent',
+                message=mensaje,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[correo_val] if correo_val else [],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Log el error pero no falla la creación
+            print(f"Error enviando email: {e}")
 
 @login_required(login_url='login')
 @solo_directivos
