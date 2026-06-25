@@ -1,5 +1,4 @@
 import json
-import re
 import PyPDF2
 import google.generativeai as genai
 from django.conf import settings
@@ -22,6 +21,7 @@ def generar_examen_ia(request, curso_id):
         archivo_pdf = request.FILES.get('documento_pdf')
         instrucciones = request.POST.get('instrucciones', '')
         cantidad = request.POST.get('cantidad_preguntas', '5')
+        cantidad_int = int(cantidad)
 
         if not archivo_pdf:
             messages.error(request, "Por favor, sube un archivo PDF.")
@@ -46,7 +46,7 @@ def generar_examen_ia(request, curso_id):
             
             Instrucciones adicionales: {instrucciones}
 
-            REGLA DE ORO: Devuelve ÚNICAMENTE un array JSON válido. NO digas "Aquí tienes", NO uses formato markdown. Solo el array.
+            REGLA DE ORO: Devuelve ÚNICAMENTE un array JSON válido. NO uses formato markdown (sin ```json). Solo el texto del array.
             Usa exactamente esta estructura:
             [
                 {{
@@ -64,29 +64,51 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. LLAMAR A GEMINI
-            modelo = genai.GenerativeModel('gemini-1.5-flash')
+            # 3. LLAMADA A GEMINI (Buscador Automático Inteligente)
+            modelo_elegido = None
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    modelo_elegido = m.name
+                    # Si encuentra el modelo Flash (el más rápido), lo elige y deja de buscar
+                    if '1.5-flash' in m.name:
+                        break 
+            
+            if not modelo_elegido:
+                raise Exception("Tu llave de Google no tiene acceso a modelos de texto. Crea una llave nueva en Google AI Studio.")
+                
+            modelo = genai.GenerativeModel(modelo_elegido)
             respuesta = modelo.generate_content(prompt)
             
-            # 4. EXTRACTOR BLINDADO DE JSON (Ignora texto basura)
+            # 4. LIMPIEZA EXTREMA DEL JSON
             texto_limpio = respuesta.text
-            match = re.search(r'\[\s*\{.*\}\s*\]', texto_limpio, re.DOTALL)
+            if "```json" in texto_limpio:
+                texto_limpio = texto_limpio.split("```json")[1].split("```")[0]
+            elif "```" in texto_limpio:
+                texto_limpio = texto_limpio.split("```")[1].split("```")[0]
             
-            if match:
-                texto_json = match.group(0)
-            else:
-                texto_json = texto_limpio.replace("```json", "").replace("```", "").strip()
-            
+            texto_json = texto_limpio.strip()
             datos_examen = json.loads(texto_json)
 
-            # 5. GUARDAR EN TU BASE DE DATOS REAL
+            # 5. GUARDAR EN BASE DE DATOS (CON TODOS LOS CAMPOS OBLIGATORIOS)
             evaluacion, created = EvaluacionCurso.objects.get_or_create(
                 curso=curso,
-                defaults={'titulo': f'Examen: {curso.titulo}'}
+                defaults={
+                    'titulo': f'Examen: {curso.titulo}',
+                    'puntaje_maximo': 20,
+                    'puntaje_aprobatorio': 14,
+                    'tiempo_limite_minutos': 15,
+                    'puntos_premio': 50,
+                    'preguntas_a_mostrar': cantidad_int,
+                    'orden_aleatorio': True
+                }
             )
 
-            # Cálculo de puntos redondeado a 2 decimales para evitar fallos matemáticos
-            puntos_por_pregunta = round(20.00 / int(cantidad), 2)
+            # Si el examen ya existía, actualizamos la cantidad de preguntas a mostrar
+            if not created:
+                evaluacion.preguntas_a_mostrar = cantidad_int
+                evaluacion.save()
+
+            puntos_por_pregunta = round(20.00 / cantidad_int, 2)
 
             for item in datos_examen:
                 nueva_pregunta = PreguntaEvaluacion.objects.create(
@@ -105,9 +127,11 @@ def generar_examen_ia(request, curso_id):
             messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA para el curso {curso.titulo}.")
             return redirect('gestor_lms')
 
+        except json.JSONDecodeError:
+            messages.error(request, "La IA de Gemini se confundió al estructurar las preguntas. Por favor, intenta generar de nuevo.")
+            return redirect('gestor_lms')
         except Exception as e:
-            # Aquí imprimimos el error EXACTO para saber qué pasa
-            messages.error(request, f"Hubo un error con la IA: {str(e)}")
+            messages.error(request, f"Error al procesar: {str(e)}")
             return redirect('gestor_lms')
 
     return render(request, 'intranet/lms/generador_ia.html', {'curso': curso})
