@@ -65,7 +65,7 @@ def generar_examen_ia(request, curso_id):
             """
 
             # 3. LLAMAR A GEMINI
-            modelo = genai.GenerativeModel('gemini-pro')
+            modelo = genai.GenerativeModel('gemini-1.5-flash')
             respuesta = modelo.generate_content(prompt)
             
             # 4. EXTRACTOR BLINDADO DE JSON (Ignora texto basura)
