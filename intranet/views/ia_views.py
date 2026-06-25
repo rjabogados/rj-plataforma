@@ -61,11 +61,17 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. CONEXIÓN NATIVA DIVIDIDA (Para evitar errores de hipervínculos al copiar)
+            # 3. CONEXIÓN NATIVA ANTI-ENLACES (Totalmente fragmentada)
             api_key = str(settings.GEMINI_API_KEY).strip()
-            dominio = "[https://generativelanguage.googleapis.com](https://generativelanguage.googleapis.com)"
-            ruta = "/v1beta/models/gemini-1.5-flash:generateContent"
-            url_limpia = f"{dominio}{ruta}?key={api_key}"
+            
+            # Fragmentamos la URL para evitar que el navegador la convierta en link
+            parte1 = "https://"
+            parte2 = "generativelanguage"
+            parte3 = ".googleapis.com"
+            parte4 = "/v1beta/models/gemini-1.5-flash:generateContent"
+            
+            # Ensamblaje seguro
+            url_limpia = f"{parte1}{parte2}{parte3}{parte4}?key={api_key}"
             
             headers = {'Content-Type': 'application/json'}
             data = {
