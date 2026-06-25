@@ -61,14 +61,14 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. CONEXIÓN NATIVA ANTI-ENLACES (Totalmente fragmentada)
+            # 3. CONEXIÓN NATIVA AL MODELO UNIVERSAL (gemini-1.0-pro)
             api_key = str(settings.GEMINI_API_KEY).strip()
             
-            # Fragmentamos la URL para evitar que el navegador la convierta en link
+            # Fragmentamos la URL para evitar formato de hipervínculos
             parte1 = "https://"
             parte2 = "generativelanguage"
             parte3 = ".googleapis.com"
-            parte4 = "/v1beta/models/gemini-1.5-flash:generateContent"
+            parte4 = "/v1beta/models/gemini-1.0-pro:generateContent"
             
             # Ensamblaje seguro
             url_limpia = f"{parte1}{parte2}{parte3}{parte4}?key={api_key}"
@@ -132,7 +132,7 @@ def generar_examen_ia(request, curso_id):
                         es_correcta=alt['es_correcta']
                     )
 
-            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA de forma directa y blindada.")
+            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA usando Gemini 1.0 Pro.")
             return redirect('gestor_lms')
 
         except json.JSONDecodeError:
