@@ -1,17 +1,20 @@
 import json
 import PyPDF2
-from google import genai
+import google.generativeai as genai
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-# IMPORTACIÓN CORREGIDA: Apuntando a tus modelos exactos de lms.py
+# IMPORTACIÓN CORRECTA: Apuntando a tus modelos exactos
 from ..models.lms import CursoInduccion, EvaluacionCurso, PreguntaEvaluacion, OpcionRespuesta 
+
+# Configurar la llave de Gemini
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
 @login_required
 def generar_examen_ia(request, curso_id):
-    # 1. Buscamos tu modelo real: CursoInduccion
+    # Buscamos tu modelo real
     curso = get_object_or_404(CursoInduccion, id=curso_id)
 
     if request.method == 'POST':
@@ -24,7 +27,7 @@ def generar_examen_ia(request, curso_id):
             return redirect('intranet:detalle_curso', curso_id=curso.id)
 
         try:
-            # 2. LEER EL PDF
+            # 1. LEER EL PDF
             lector_pdf = PyPDF2.PdfReader(archivo_pdf)
             texto_extraido = ""
             for pagina in lector_pdf.pages:
@@ -34,7 +37,7 @@ def generar_examen_ia(request, curso_id):
                 messages.error(request, "No se pudo extraer texto del PDF (podría ser una imagen escaneada).")
                 return redirect('intranet:detalle_curso', curso_id=curso.id)
 
-            # 3. EL SÚPER PROMPT PARA GEMINI
+            # 2. EL SÚPER PROMPT PARA GEMINI
             prompt = f"""
             Eres un experto en Recursos Humanos y diseño de evaluaciones corporativas.
             Basándote EXCLUSIVAMENTE en el siguiente texto extraído de un manual de la empresa, 
@@ -60,35 +63,27 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 4. LLAMAR A GEMINI (Usando la nueva librería google-genai)
-            client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            respuesta = client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=prompt,
-            )
+            # 3. LLAMAR A GEMINI (Versión Clásica y Estable)
+            modelo = genai.GenerativeModel('gemini-1.5-flash')
+            respuesta = modelo.generate_content(prompt)
             
             # Limpiar la respuesta JSON
             texto_respuesta = respuesta.text.replace("```json", "").replace("```", "").strip()
             datos_examen = json.loads(texto_respuesta)
 
-            # 5. GUARDAR EN TU BASE DE DATOS REAL
-            
-            # A. Nos aseguramos de que el curso tenga una Evaluación creada
+            # 4. GUARDAR EN TU BASE DE DATOS REAL
             evaluacion, created = EvaluacionCurso.objects.get_or_create(
                 curso=curso,
                 defaults={'titulo': f'Examen: {curso.titulo}'}
             )
 
-            # B. Recorremos el JSON y creamos las Preguntas y Opciones
             for item in datos_examen:
-                # Usamos PreguntaEvaluacion ligada a la Evaluación
                 nueva_pregunta = PreguntaEvaluacion.objects.create(
                     evaluacion=evaluacion,
                     enunciado=item['enunciado'],
-                    puntos=20.00 / int(cantidad) # Opcional: divide 20 puntos entre la cantidad de preguntas
+                    puntos=20.00 / int(cantidad)
                 )
                 
-                # Usamos OpcionRespuesta ligada a la Pregunta
                 for alt in item['alternativas']:
                     OpcionRespuesta.objects.create(
                         pregunta=nueva_pregunta,
