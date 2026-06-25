@@ -1,6 +1,7 @@
 📁 Proyecto_Central/
     📄 .env
     📄 .gitignore
+    📄 arbol.py
     📄 db.sqlite3
     📄 ejecutar_servidor.bat
     📄 INICIAR_ROBOT.bat
@@ -36,6 +37,14 @@
             📄 0004_candidatoreclutamiento_canal_and_more.py
             📄 0005_historialestado_registrocontacto.py
             📄 0006_alter_candidatoreclutamiento_canal_and_more.py
+            📄 0007_alter_documentogenerado_archivo_pdf_and_more.py
+            📄 0008_alter_preguntaevaluacion_options_and_more.py
+            📄 0009_examen_intento_preguntaexamen_opcionexamen_and_more.py
+            📄 0010_remove_preguntaexamen_examen_remove_intento_examen_and_more.py
+            📄 0011_cursoinduccion_publico_general_and_more.py
+            📄 0012_evaluacioncurso_puntos_premio_and_more.py
+            📄 0013_remove_evaluacioncurso_duracion_minutos_leccioncurso_and_more.py
+            📄 0014_cursoinduccion_subcartera_vinculada_and_more.py
             📄 __init__.py
         📁 models/
             📄 asistencia.py
@@ -53,7 +62,6 @@
             📄 motor_documentos.py
             📄 __init__.py
         📁 templates/
-            📄 dashboard_reclutamiento.html
             📁 intranet/
                 📄 academia.html
                 📄 activos.html
@@ -67,6 +75,7 @@
                 📄 comunicados.html
                 📄 confirmar_firma.html
                 📄 dashboard.html
+                📄 dashboard_reclutamiento.html
                 📄 despachar_documentos.html
                 📄 documentos_admin.html
                 📄 documentos_personal.html
@@ -76,9 +85,7 @@
                 📄 encuestas_personal.html
                 📄 encuesta_exito.html
                 📄 gestionar_plantillas.html
-                📄 gestion_lms.html
                 📄 gestor_comunicados.html
-                📄 gestor_lms.html
                 📄 induccion_admin.html
                 📄 induccion_personal.html
                 📄 inicio.html
@@ -99,9 +106,24 @@
                 📄 vacaciones_admin.html
                 📄 vacaciones_personal.html
                 📄 visor_asistencia.html
+                📁 base/
+                    📄 footer.html
+                    📄 head.html
+                    📄 scripts.html
                 📁 includes/
                     📄 navbar.html
                     📄 sidebar.html
+                📁 lms/
+                    📄 certificado.html
+                    📄 detalle_curso.html
+                    📄 generador_ia.html
+                    📄 gestor_lms.html
+                    📄 mapear_balotario.html
+                    📄 previsualizar_balotario.html
+                    📄 rendir_examen.html
+                    📄 resultados_evaluacion.html
+                    📄 subir_excel.html
+                    📄 ver_leccion.html
             📁 registration/
                 📄 login.html
         📁 views/
@@ -109,6 +131,7 @@
             📄 asistencia.py
             📄 auth.py
             📄 documentos.py
+            📄 ia_views.py
             📄 lms.py
             📄 reclutamiento.py
             📄 solicitudes.py
@@ -143,6 +166,7 @@
             📄 1_import_1rjDdal.xlsx
             📄 1_import_LqdTJ7t.xlsx
             📄 1_import_nHgy64c.xlsx
+            📄 1_import_os1qjtA.xlsx
             📄 1_import_OzHflfl.xlsx
             📄 1_import_PbZ7HPq.xlsx
             📄 594_import.xlsx
