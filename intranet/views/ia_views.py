@@ -64,17 +64,30 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. LLAMADA A GEMINI (Buscador Automático Inteligente)
+            # 3. LLAMADA A GEMINI (Buscador exclusivo de modelos Gemini)
             modelo_elegido = None
-            for m in genai.list_models():
-                if 'generateContent' in m.supported_generation_methods:
-                    modelo_elegido = m.name
-                    # Si encuentra el modelo Flash (el más rápido), lo elige y deja de buscar
-                    if '1.5-flash' in m.name:
-                        break 
+            modelos_disponibles = []
             
+            for m in genai.list_models():
+                # Filtramos para que SOLO agarre modelos de la familia Gemini
+                if 'generateContent' in m.supported_generation_methods and 'gemini' in m.name.lower():
+                    modelos_disponibles.append(m.name)
+            
+            if not modelos_disponibles:
+                raise Exception("Tu API Key no tiene modelos Gemini activados. Verifica tu cuenta en Google AI Studio.")
+            
+            # Buscamos el mejor modelo compatible con tu llave en este orden
+            for preferido in ['1.5-flash', '1.0-pro', 'gemini-pro']:
+                for m in modelos_disponibles:
+                    if preferido in m.lower():
+                        modelo_elegido = m
+                        break
+                if modelo_elegido:
+                    break
+            
+            # Si no encuentra los preferidos, usa el primer Gemini que encuentre
             if not modelo_elegido:
-                raise Exception("Tu llave de Google no tiene acceso a modelos de texto. Crea una llave nueva en Google AI Studio.")
+                modelo_elegido = modelos_disponibles[0]
                 
             modelo = genai.GenerativeModel(modelo_elegido)
             respuesta = modelo.generate_content(prompt)
@@ -124,7 +137,8 @@ def generar_examen_ia(request, curso_id):
                         es_correcta=alt['es_correcta']
                     )
 
-            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA para el curso {curso.titulo}.")
+            # Notificamos el éxito y qué modelo exacto nos salvó la vida
+            messages.success(request, f"¡Éxito! Se crearon {len(datos_examen)} preguntas con IA usando el modelo {modelo_elegido.replace('models/', '')}.")
             return redirect('gestor_lms')
 
         except json.JSONDecodeError:
