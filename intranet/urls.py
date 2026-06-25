@@ -6,6 +6,7 @@ from django.conf import settings
 from . import views
 from .views.reclutamiento import actualizar_estado_ajax, obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
 from .views import lms, ia_views
+from intranet.views.lms import dashboard_resultados
 
 # ==========================================
 # ESPACIO DE NOMBRES (CRÍTICO PARA REDIRECCIONES)
@@ -64,7 +65,7 @@ urlpatterns = [
     path('academia/matricula/<int:matricula_id>/reabrir/', lms.reabrir_examen, name='reabrir_examen'),
     path('academia/evaluacion/<int:evaluacion_id>/exportar/', lms.exportar_resultados_lms, name='exportar_resultados_lms'),
     path('academia/certificado/<int:matricula_id>/', lms.generar_certificado, name='generar_certificado'),
-    path('lms/dashboard/', views.dashboard_resultados, name='dashboard_resultados'),
+    path('lms/dashboard/', dashboard_resultados, name='dashboard_resultados'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS
