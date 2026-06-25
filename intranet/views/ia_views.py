@@ -61,9 +61,11 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. CONEXIÓN DIRECTA Y NATIVA A GOOGLE (SIN LIBRERÍAS EXTERNAS)
-            api_key = settings.GEMINI_API_KEY
-            url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){api_key}"
+            # 3. CONEXIÓN NATIVA DIVIDIDA (Para evitar errores de hipervínculos al copiar)
+            api_key = str(settings.GEMINI_API_KEY).strip()
+            dominio = "[https://generativelanguage.googleapis.com](https://generativelanguage.googleapis.com)"
+            ruta = "/v1beta/models/gemini-1.5-flash:generateContent"
+            url_limpia = f"{dominio}{ruta}?key={api_key}"
             
             headers = {'Content-Type': 'application/json'}
             data = {
@@ -71,7 +73,7 @@ def generar_examen_ia(request, curso_id):
                 "generationConfig": {"temperature": 0.2}
             }
             
-            respuesta_cruda = requests.post(url, headers=headers, json=data)
+            respuesta_cruda = requests.post(url_limpia, headers=headers, json=data)
             
             if respuesta_cruda.status_code != 200:
                 error_msg = respuesta_cruda.json().get('error', {}).get('message', 'Error desconocido de la API')
