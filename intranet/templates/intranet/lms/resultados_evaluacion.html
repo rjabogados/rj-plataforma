@@ -3,14 +3,14 @@
 <!-- Cargamos Chart.js para los gráficos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div>
-            <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary btn-sm mb-2"><i class="bi bi-arrow-left"></i> Volver al Gestor</a>
-            <h3 class="fw-bold text-dark mb-0">Resultados: {{ evaluacion.titulo }}</h3>
+            <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary btn-sm btn-pill mb-2"><i class="bi bi-arrow-left me-1"></i> Volver al Gestor</a>
+            <h2>Resultados: {{ evaluacion.titulo }}</h2>
         </div>
         <div>
-            <a href="{% url 'exportar_resultados_lms' evaluacion.id %}" class="btn btn-success fw-bold shadow-sm">
+            <a href="{% url 'exportar_resultados_lms' evaluacion.id %}" class="btn btn-success btn-pill fw-semibold shadow-sm">
                 <i class="bi bi-file-earmark-excel-fill me-2"></i> Exportar a Excel
             </a>
         </div>
@@ -19,7 +19,7 @@
     <!-- Mini-Dashboard KPIs -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white border-0 shadow-sm h-100 rounded-4">
+            <div class="page-hero h-100 p-0">
                 <div class="card-body text-center">
                     <h6 class="text-uppercase fw-bold opacity-75">Nota Promedio</h6>
                     <h2 class="fw-bold mb-0">{{ promedio }} pts</h2>
@@ -27,26 +27,26 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white border-0 shadow-sm h-100 rounded-4">
+            <div class="panel-shell h-100">
                 <div class="card-body text-center">
-                    <h6 class="text-uppercase fw-bold opacity-75">Aprobados</h6>
-                    <h2 class="fw-bold mb-0">{{ aprobados }}</h2>
+                    <h6 class="text-uppercase fw-bold text-success opacity-75">Aprobados</h6>
+                    <h2 class="fw-bold mb-0 text-dark">{{ aprobados }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-danger text-white border-0 shadow-sm h-100 rounded-4">
+            <div class="panel-shell h-100">
                 <div class="card-body text-center">
-                    <h6 class="text-uppercase fw-bold opacity-75">Reprobados</h6>
-                    <h2 class="fw-bold mb-0">{{ reprobados }}</h2>
+                    <h6 class="text-uppercase fw-bold text-danger opacity-75">Reprobados</h6>
+                    <h2 class="fw-bold mb-0 text-dark">{{ reprobados }}</h2>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-secondary text-white border-0 shadow-sm h-100 rounded-4">
+            <div class="panel-shell h-100">
                 <div class="card-body text-center">
-                    <h6 class="text-uppercase fw-bold opacity-75">Exámenes Rendidos</h6>
-                    <h2 class="fw-bold mb-0">{{ total_completados }}</h2>
+                    <h6 class="text-uppercase fw-bold text-secondary opacity-75">Exámenes Rendidos</h6>
+                    <h2 class="fw-bold mb-0 text-dark">{{ total_completados }}</h2>
                 </div>
             </div>
         </div>
@@ -82,17 +82,17 @@
                         <tr>
                             <td class="fw-bold text-secondary">{{ m.colaborador.user.get_full_name }}</td>
                             <td>
-                                {% if m.estado == 'COMPLETADO' %}<span class="badge bg-success">Aprobado</span>
-                                {% elif m.estado == 'REPROBADO' %}<span class="badge bg-danger">Reprobado</span>
-                                {% elif m.estado == 'EVALUANDO' %}<span class="badge bg-warning text-dark">Rindiendo Ahora</span>
-                                {% else %}<span class="badge bg-secondary">Pendiente</span>{% endif %}
+                                {% if m.estado == 'COMPLETADO' %}<span class="status-pill success">Aprobado</span>
+                                {% elif m.estado == 'REPROBADO' %}<span class="status-pill danger">Reprobado</span>
+                                {% elif m.estado == 'EVALUANDO' %}<span class="status-pill warning">Rindiendo ahora</span>
+                                {% else %}<span class="status-pill neutral">Pendiente</span>{% endif %}
                             </td>
                             <td class="fw-bold">{{ m.nota_obtenida|default:"-" }}</td>
                             <td class="small">{{ m.fecha_finalizacion|date:"d/m/Y H:i"|default:"-" }}</td>
                             <td>
                                 <!-- BOTÓN MAGICO PARA REABRIR EXAMEN -->
                                 {% if m.estado == 'COMPLETADO' or m.estado == 'REPROBADO' %}
-                                <a href="{% url 'reabrir_examen' m.id %}" class="btn btn-sm btn-outline-primary" onclick="return confirm('¿Estás seguro de reabrir el examen? Esto borrará sus respuestas anteriores.');">
+                                <a href="{% url 'reabrir_examen' m.id %}" class="btn btn-sm btn-outline-primary btn-pill" onclick="return confirm('¿Estás seguro de reabrir el examen? Esto borrará sus respuestas anteriores.');">
                                     <i class="bi bi-arrow-counterclockwise"></i> Reabrir Intento
                                 </a>
                                 {% endif %}
@@ -109,7 +109,7 @@
             <div class="row g-4">
                 {% for grafico in graficos %}
                 <div class="col-md-6">
-                    <div class="card border-0 shadow-sm h-100 bg-light">
+                    <div class="panel-shell-soft h-100 p-0">
                         <div class="card-body">
                             <h6 class="fw-bold text-dark mb-4 text-center">{{ grafico.enunciado }}</h6>
                             <div style="height: 250px; position: relative;">
