@@ -122,12 +122,17 @@
             <div class="collapse submenu" id="menuReclutamiento">
                 <ul class="nav flex-column gap-1 py-1">
                     <li>
+                        <a href="{% url 'dashboard_reclutamiento' %}" class="nav-link submenu-link">
+                            <i class="bi bi-graph-up-arrow me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
                         <a href="{% url 'lista_candidatos' %}" class="nav-link submenu-link">
                             <i class="bi bi-table me-2"></i> Matriz Principal
                         </a>
                     </li>
                     
-                    </ul>
+                </ul>
             </div>
         </li>
         {% endif %}

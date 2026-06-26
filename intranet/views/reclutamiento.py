@@ -37,6 +37,10 @@ def lista_candidatos(request):
     return render(request, 'intranet/reclutamiento/lista_candidatos.html', context)
 
 @login_required(login_url='login')
+def dashboard_reclutamiento(request):
+    return render(request, 'intranet/reclutamiento/dashboard_reclutamiento.html')
+
+@login_required(login_url='login')
 @require_http_methods(["POST"])
 def actualizar_estado_ajax(request):
     try:

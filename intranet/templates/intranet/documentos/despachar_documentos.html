@@ -1,13 +1,13 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div>
-            <h4 class="fw-bold text-dark mb-0"><i class="bi bi-cloud-arrow-up-fill text-primary"></i> Despacho Documental</h4>
-            <p class="text-muted small mb-0">Generación automatizada de PDFs con variables dinámicas.</p>
+            <h2><i class="bi bi-cloud-arrow-up-fill me-2"></i>Despacho Documental</h2>
+            <p class="text-muted mb-0">Generación y seguimiento de documentos automatizados para el equipo.</p>
         </div>
-        <a href="{% url 'gestionar_plantillas' %}" class="btn btn-outline-secondary btn-sm fw-bold rounded-pill">
-            <i class="bi bi-folder-plus"></i> Gestionar Plantillas Word
+        <a href="{% url 'gestionar_plantillas' %}" class="btn btn-outline-secondary btn-pill fw-semibold">
+            <i class="bi bi-folder-plus me-2"></i>Gestionar plantillas Word
         </a>
     </div>
 
@@ -20,48 +20,58 @@
         {% endfor %}
     {% endif %}
 
-    <div class="row g-4">
+    <div class="row g-4 align-items-start">
         <div class="col-lg-4">
-            <div class="card shadow-sm border-0 rounded-4 border-top border-4 border-primary h-100">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-lightning-charge-fill text-warning"></i> Nuevo Documento</h5>
-                    <form method="POST" action="{% url 'documentos_admin' %}">
+            <div class="card card-module card-buk h-100">
+                <div class="card-body p-0">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1 text-dark">Nuevo documento</h5>
+                            <p class="text-muted small mb-0">Genera contratos, reportes o formatos listos para firma.</p>
+                        </div>
+                        <span class="badge-soft"><i class="bi bi-lightning-charge-fill me-1"></i>Automático</span>
+                    </div>
+                    <form method="POST" action="{% url 'documentos_admin' %}" class="lms-input-soft">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">1. Seleccionar Plantilla Base</label>
-                            <select class="form-select border-secondary" name="plantilla_id" required>
+                            <label class="form-label small fw-semibold text-secondary">1. Seleccionar plantilla base</label>
+                            <select class="form-select" name="plantilla_id" required>
                                 <option value="" disabled selected>Elige un formato...</option>
                                 {% for p in plantillas %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">2. Seleccionar Colaborador</label>
-                            <select class="form-select border-secondary" name="colaborador_id" required>
+                            <label class="form-label small fw-semibold text-secondary">2. Seleccionar colaborador</label>
+                            <select class="form-select" name="colaborador_id" required>
                                 <option value="" disabled selected>Busca un asesor...</option>
                                 {% for c in colaboradores %}<option value="{{ c.id }}">{{ c.first_name }} {{ c.last_name }} ({{ c.username }})</option>{% endfor %}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill shadow-sm py-2"><i class="bi bi-magic"></i> Autocompletar y Generar PDF</button>
+                        <button type="submit" class="btn btn-primary btn-pill w-100 fw-semibold py-2"><i class="bi bi-magic me-2"></i>Autocompletar y generar PDF</button>
                     </form>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-8">
-            <div class="card shadow-sm border-0 rounded-4 h-100">
-                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
-                    <h6 class="fw-bold text-dark"><i class="bi bi-clock-history text-secondary"></i> Emisiones Recientes</h6>
+            <div class="card card-buk h-100 overflow-hidden">
+                <div class="card-body p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1"><i class="bi bi-clock-history text-secondary me-2"></i>Emisiones recientes</h5>
+                        <p class="text-muted small mb-0">Revisa el estado de los PDFs generados y abre sus archivos.</p>
+                    </div>
+                    <span class="badge-soft">{{ historial|length }} documento{{ historial|length|pluralize }}</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+                            <thead class="table-light text-secondary small">
                                 <tr>
-                                    <th class="ps-4 small text-muted">Documento</th>
-                                    <th class="small text-muted">Colaborador</th>
-                                    <th class="small text-muted">Estado</th>
-                                    <th class="text-center small text-muted">Archivo</th>
-                                    <th class="text-center small text-muted">Acciones</th>
+                                    <th class="ps-4">Documento</th>
+                                    <th>Colaborador</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Archivo</th>
+                                    <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -70,16 +80,16 @@
                                     <td class="ps-4"><div class="fw-bold text-dark">{{ doc.plantilla_origen.nombre }}</div></td>
                                     <td><span class="text-secondary">{{ doc.colaborador.first_name }} {{ doc.colaborador.last_name }}</span></td>
                                     <td>
-                                        {% if doc.estado == 'PENDIENTE' %}<span class="badge bg-warning text-dark rounded-pill">Pendiente</span>
-                                        {% else %}<span class="badge bg-success rounded-pill">Cerrado</span>{% endif %}
+                                        {% if doc.estado == 'PENDIENTE' %}<span class="badge-status pending">Pendiente</span>
+                                        {% else %}<span class="badge-status approved">Cerrado</span>{% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if doc.archivo_pdf %}<a href="{{ doc.archivo_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-circle"><i class="bi bi-file-pdf"></i></a>{% endif %}
+                                        {% if doc.archivo_pdf %}<a href="{{ doc.archivo_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-danger btn-pill"><i class="bi bi-file-pdf me-1"></i> Ver PDF</a>{% endif %}
                                     </td>
                                     <td class="text-center">
                                         {% if doc.estado == 'PENDIENTE' %}
-                                        <a href="{% url 'eliminar_doc_generado' doc.id %}" class="btn btn-sm btn-outline-danger rounded-circle" onclick="return confirm('¿Eliminar asignación?')">
-                                            <i class="bi bi-trash"></i>
+                                        <a href="{% url 'eliminar_doc_generado' doc.id %}" class="btn btn-sm btn-outline-danger btn-pill" onclick="return confirm('¿Eliminar asignación?')">
+                                            <i class="bi bi-trash me-1"></i> Quitar
                                         </a>
                                         {% endif %}
                                     </td>

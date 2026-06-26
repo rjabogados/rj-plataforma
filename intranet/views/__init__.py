@@ -3,6 +3,7 @@ from .auth import login_view, salir, inicio, perfil, dashboard
 from .api import webhook_receptor
 
 from .reclutamiento import (
+    dashboard_reclutamiento,
     lista_candidatos, 
     obtener_candidato_ajax, 
     actualizar_candidato_ajax, 
