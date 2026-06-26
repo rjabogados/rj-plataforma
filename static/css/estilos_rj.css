@@ -705,3 +705,70 @@ footer {
         gap: 2rem;
     }
 }
+
+.message-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+    transition: var(--transition-smooth);
+    text-decoration: none;
+}
+
+.message-row:hover {
+    background-color: rgba(24, 61, 116, 0.03);
+}
+
+.message-row-unread {
+    background: rgba(24, 61, 116, 0.06);
+    border-left: 4px solid var(--rj-azul);
+}
+
+.avatar-soft {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--rj-azul-soft);
+    color: var(--rj-azul);
+    flex-shrink: 0;
+}
+
+.avatar-soft.secondary {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+}
+
+.progress-slim {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(226, 232, 240, 0.85);
+    overflow: hidden;
+}
+
+.progress-slim .progress-bar {
+    border-radius: 999px;
+}
+
+.form-panel-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.45rem;
+}
+
+.module-meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.empty-panel {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: #64748b;
+}

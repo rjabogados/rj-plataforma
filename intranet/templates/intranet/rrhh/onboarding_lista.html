@@ -2,9 +2,9 @@
 
 {% block content %}
 <div class="container-fluid p-4">
-    <div class="mb-4">
-        <h2 class="navbar-main-title fw-bold mb-1" style="color: var(--rj-azul);">Centro de Onboarding e Inducción</h2>
-        <p class="text-muted">Gestiona el ingreso de candidatos y diseña la malla formativa inicial.</p>
+    <div class="section-header">
+        <h2 class="navbar-main-title fw-bold mb-1">Centro de Onboarding e Inducción</h2>
+        <p class="text-muted">Gestiona el ingreso de candidatos y diseña la malla formativa inicial con una vista más clara y operativa.</p>
     </div>
 
     {% if messages %}
@@ -37,10 +37,13 @@
         <!-- PESTAÑA 1: GESTIÓN DE CANDIDATOS           -->
         <!-- ========================================== -->
         <div class="tab-pane fade show active" id="candidatos" role="tabpanel">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0 text-dark">Candidatos en Proceso</h5>
-                    <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevoCandidato">
+            <div class="panel-shell overflow-hidden">
+                <div class="panel-toolbar">
+                    <div>
+                        <h5 class="fw-bold mb-1 text-dark">Candidatos en proceso</h5>
+                        <p class="text-muted small mb-0">Revisa expedientes, avance y asignación antes de la entrada a planilla.</p>
+                    </div>
+                    <button class="btn btn-primary btn-pill fw-semibold" data-bs-toggle="modal" data-bs-target="#modalNuevoCandidato">
                         <i class="bi bi-person-plus-fill me-2"></i> Nuevo Postulante
                     </button>
                 </div>
@@ -64,12 +67,14 @@
                                         <div class="small text-muted"><i class="bi bi-card-text"></i> {{ item.onboarding.dni }}</div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ item.onboarding.puesto_esperado }}</span>
-                                        {% if item.onboarding.campaña_destino %}<span class="badge bg-info text-dark">{{ item.onboarding.campaña_destino.nombre }}</span>{% endif %}
+                                        <div class="module-meta-badges">
+                                            <span class="status-pill neutral">{{ item.onboarding.puesto_esperado }}</span>
+                                            {% if item.onboarding.campaña_destino %}<span class="status-pill info">{{ item.onboarding.campaña_destino.nombre }}</span>{% endif %}
+                                        </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                            <div class="progress progress-slim flex-grow-1 me-2">
                                                 <div class="progress-bar {% if item.porcentaje == 100 %}bg-success{% else %}bg-primary{% endif %}" style="width: {{ item.porcentaje }}%;"></div>
                                             </div>
                                             <span class="small fw-bold">{{ item.porcentaje }}%</span>
@@ -78,16 +83,16 @@
                                     </td>
                                     <td>
                                         {% if item.onboarding.estado == 'COMPLETADO' %}
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">En Planilla</span>
+                                            <span class="status-pill success">En planilla</span>
                                         {% else %}
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">En Proceso</span>
+                                            <span class="status-pill warning">En proceso</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-end pe-4">
                                         {% if not item.onboarding.colaborador %}
-                                            <button class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalExpediente{{ item.onboarding.id }}">Ver Expediente</button>
+                                            <button class="btn btn-sm btn-outline-primary btn-pill fw-semibold" data-bs-toggle="modal" data-bs-target="#modalExpediente{{ item.onboarding.id }}">Ver expediente</button>
                                         {% else %}
-                                            <a href="{% url 'asignar_modulos_induccion' item.onboarding.colaborador.id %}" class="btn btn-sm btn-primary fw-bold">Asignar Módulos</a>
+                                            <a href="{% url 'asignar_modulos_induccion' item.onboarding.colaborador.id %}" class="btn btn-sm btn-primary btn-pill fw-semibold">Asignar módulos</a>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -106,13 +111,13 @@
         <!-- ========================================== -->
         <div class="tab-pane fade" id="modulos" role="tabpanel">
             <div class="d-flex gap-2 mb-4 justify-content-end">
-                <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearModulo">
+                <button class="btn btn-primary btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearModulo">
                     <i class="bi bi-folder-plus me-2"></i> Crear Módulo
                 </button>
-                <button class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearClaseInduccion">
+                <button class="btn btn-success btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearClaseInduccion">
                     <i class="bi bi-easel2-fill me-2"></i> Agregar Presentación (Canva/PPT)
                 </button>
-                <button class="btn btn-warning fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearPrueba">
+                <button class="btn btn-warning btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearPrueba">
                     <i class="bi bi-ui-checks me-2"></i> Crear Prueba Rápida
                 </button>
             </div>
@@ -120,25 +125,25 @@
             <div class="row g-4">
                 {% for curso in modulos_biblioteca %}
                 <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 border-top border-primary border-4">
+                    <div class="card h-100 card-buk card-module">
                         <div class="card-body p-4">
                             <h5 class="fw-bold text-dark mb-2">{{ curso.titulo }}</h5>
                             <p class="text-muted small mb-3">{{ curso.descripcion }}</p>
                             
-                            <div class="mb-3">
+                            <div class="module-meta-badges mb-3">
                                 {% if curso.publico_general %}
-                                    <span class="badge bg-light text-dark border"><i class="bi bi-globe me-1"></i>Para Todos</span>
+                                    <span class="status-pill neutral"><i class="bi bi-globe me-1"></i>Para todos</span>
                                 {% else %}
-                                    {% if curso.rol_permitido %}<span class="badge bg-info-subtle text-info-emphasis border"><i class="bi bi-person-badge me-1"></i>{{ curso.rol_permitido }}</span>{% endif %}
-                                    {% if curso.cartera_vinculada %}<span class="badge bg-warning-subtle text-warning-emphasis border"><i class="bi bi-building me-1"></i>{{ curso.cartera_vinculada.nombre }}</span>{% endif %}
-                                    {% if curso.subcartera_vinculada %}<span class="badge bg-danger-subtle text-danger-emphasis border"><i class="bi bi-diagram-2 me-1"></i>{{ curso.subcartera_vinculada }}</span>{% endif %}
+                                    {% if curso.rol_permitido %}<span class="status-pill info"><i class="bi bi-person-badge me-1"></i>{{ curso.rol_permitido }}</span>{% endif %}
+                                    {% if curso.cartera_vinculada %}<span class="status-pill warning"><i class="bi bi-building me-1"></i>{{ curso.cartera_vinculada.nombre }}</span>{% endif %}
+                                    {% if curso.subcartera_vinculada %}<span class="status-pill danger"><i class="bi bi-diagram-2 me-1"></i>{{ curso.subcartera_vinculada }}</span>{% endif %}
                                 {% endif %}
                             </div>
 
                             <ul class="list-group list-group-flush small mb-3 border-top border-bottom">
                                 <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                                     <span><i class="bi bi-play-btn text-primary me-2"></i>Presentaciones</span>
-                                    <span class="badge bg-primary rounded-pill">{{ curso.lecciones.count }}</span>
+                                    <span class="badge-soft">{{ curso.lecciones.count }}</span>
                                 </li>
                                 <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                                     <span><i class="bi bi-ui-checks text-success me-2"></i>Prueba Rápida</span>
@@ -152,15 +157,15 @@
                             
                             <!-- Botones de Acción -->
                             <div class="d-flex flex-wrap gap-2">
-                                <button class="btn btn-sm btn-outline-primary fw-bold w-100" data-bs-toggle="modal" data-bs-target="#modalEditarModulo{{ curso.id }}">
+                                <button class="btn btn-sm btn-outline-primary btn-pill fw-semibold w-100" data-bs-toggle="modal" data-bs-target="#modalEditarModulo{{ curso.id }}">
                                     <i class="bi bi-pencil-square"></i> Editar Módulo
                                 </button>
                                 {% if curso.evaluacion %}
-                                <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-success fw-bold flex-grow-1">
+                                <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-success btn-pill fw-semibold flex-grow-1">
                                     <i class="bi bi-file-earmark-excel"></i> Subir Balotario
                                 </a>
                                 {% endif %}
-                                <a href="{% url 'eliminar_curso_induccion' curso.id %}" class="btn btn-sm btn-outline-danger fw-bold" onclick="return confirm('¿Seguro de eliminar este módulo?');">
+                                <a href="{% url 'eliminar_curso_induccion' curso.id %}" class="btn btn-sm btn-outline-danger btn-pill fw-semibold" onclick="return confirm('¿Seguro de eliminar este módulo?');">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>
@@ -171,14 +176,14 @@
                 <!-- MODAL: EDITAR MÓDULO DE INDUCCIÓN -->
                 <div class="modal fade" id="modalEditarModulo{{ curso.id }}" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header bg-primary text-white">
+                        <div class="modal-content border-0 shadow-lg rounded-4">
+                            <div class="modal-header bg-primary text-white rounded-top-4">
                                 <h5 class="modal-title fw-bold">Editar Módulo de Inducción</h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
                             <form method="POST" action="{% url 'editar_curso_induccion' curso.id %}">
                                 {% csrf_token %}
-                                <div class="modal-body p-4">
+                                <div class="modal-body p-4 lms-input-soft">
                                     <div class="mb-3">
                                         <label class="form-label fw-bold small">Título del Módulo</label>
                                         <input type="text" class="form-control" name="titulo" value="{{ curso.titulo }}" required>
@@ -213,8 +218,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="modal-footer bg-light">
-                                    <button type="submit" class="btn btn-primary fw-bold">Actualizar Módulo</button>
+                                <div class="modal-footer bg-light rounded-bottom-4">
+                                    <button type="submit" class="btn btn-primary btn-pill fw-semibold">Actualizar Módulo</button>
                                 </div>
                             </form>
                         </div>
@@ -237,15 +242,15 @@
 <!-- MODAL: CREAR MÓDULO -->
 <div class="modal fade" id="modalCrearModulo" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
                 <h5 class="modal-title fw-bold"><i class="bi bi-folder-plus me-2"></i> Crear Módulo de Inducción</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{% url 'onboarding_admin' %}">
                 {% csrf_token %}
                 <input type="hidden" name="crear_modulo" value="1">
-                <div class="modal-body p-4">
+                <div class="modal-body p-4 lms-input-soft">
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Título del Módulo</label>
                         <input type="text" class="form-control" name="titulo" placeholder="Ej: Políticas de Seguridad de la Información" required>
@@ -280,8 +285,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-primary fw-bold">Guardar Módulo</button>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-primary btn-pill fw-semibold">Guardar Módulo</button>
                 </div>
             </form>
         </div>
@@ -291,15 +296,15 @@
 <!-- MODAL: AGREGAR CLASE / CANVA -->
 <div class="modal fade" id="modalCrearClaseInduccion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-success text-white">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white rounded-top-4">
                 <h5 class="modal-title fw-bold"><i class="bi bi-easel2-fill me-2"></i> Subir Material a la Inducción</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{% url 'onboarding_admin' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="crear_leccion" value="1">
-                <div class="modal-body p-4">
+                <div class="modal-body p-4 lms-input-soft">
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Módulo de destino:</label>
                         <select class="form-select" name="curso_id" required>
@@ -338,8 +343,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-success fw-bold">Guardar Material</button>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-success btn-pill fw-semibold">Guardar Material</button>
                 </div>
             </form>
         </div>
@@ -349,15 +354,15 @@
 <!-- MODAL: CREAR PRUEBA RÁPIDA -->
 <div class="modal fade" id="modalCrearPrueba" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-warning text-dark">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-warning text-dark rounded-top-4">
                 <h5 class="modal-title fw-bold"><i class="bi bi-ui-checks me-2"></i> Crear Prueba Rápida</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{% url 'onboarding_admin' %}">
                 {% csrf_token %}
                 <input type="hidden" name="crear_evaluacion" value="1">
-                <div class="modal-body p-4">
+                <div class="modal-body p-4 lms-input-soft">
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Vincular al Módulo:</label>
                         <select class="form-select" name="curso_id" required>
@@ -382,8 +387,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-warning fw-bold text-dark w-100">Crear y Subir Balotario</button>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-warning btn-pill fw-semibold text-dark w-100">Crear y Subir Balotario</button>
                 </div>
             </form>
         </div>
@@ -393,15 +398,15 @@
 <!-- MODAL: NUEVO CANDIDATO (Original) -->
 <div class="modal fade" id="modalNuevoCandidato" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
                 <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i> Registrar Postulante</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{% url 'onboarding_admin' %}">
                 {% csrf_token %}
                 <input type="hidden" name="registrar_candidato" value="1">
-                <div class="modal-body p-4">
+                <div class="modal-body p-4 lms-input-soft">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small">Nombres</label>
@@ -430,8 +435,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-primary fw-bold w-100">Registrar y Crear Expediente</button>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-primary btn-pill fw-semibold w-100">Registrar y Crear Expediente</button>
                 </div>
             </form>
         </div>
