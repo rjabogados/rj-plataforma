@@ -1,41 +1,56 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Dashboard de Evaluaciones | RJ Abogados</h2>
-        <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary">Volver al Gestor</a>
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h2>Dashboard de Evaluaciones</h2>
+            <p class="text-muted mb-0">Vista ejecutiva del rendimiento académico, actividad de exámenes y tasa de aprobación global.</p>
+        </div>
+        <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary btn-pill fw-semibold">Volver al gestor</a>
     </div>
 
-    <div class="row mb-4">
+    <div class="row g-4 mb-4">
         <div class="col-md-3">
-            <div class="card text-white bg-primary shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase text-white-50">Cursos Activos</h6>
-                    <h2 class="mb-0">{{ total_cursos }}</h2>
+            <div class="page-hero h-100 p-0">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-white-50">Cursos Activos</h6>
+                        <h2 class="mb-0">{{ total_cursos }}</h2>
+                    </div>
+                    <i class="bi bi-journal-richtext fs-1 text-white-50"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-info shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase text-white-50">Exámenes Creados</h6>
-                    <h2 class="mb-0">{{ total_examenes_creados }}</h2>
+            <div class="panel-shell h-100">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-info mb-1">Exámenes Creados</h6>
+                        <h2 class="mb-0 text-dark">{{ total_examenes_creados }}</h2>
+                    </div>
+                    <i class="bi bi-ui-checks fs-1 text-info opacity-50"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-success shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase text-white-50">Exámenes Rendidos</h6>
-                    <h2 class="mb-0">0 </h2>
+            <div class="panel-shell h-100">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-success mb-1">Exámenes Rendidos</h6>
+                        <h2 class="mb-0 text-dark">0</h2>
+                    </div>
+                    <i class="bi bi-clipboard2-check fs-1 text-success opacity-50"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-warning shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase text-white-50">Nota Promedio</h6>
-                    <h2 class="mb-0">0 </h2>
+            <div class="panel-shell h-100">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase text-warning mb-1">Nota Promedio</h6>
+                        <h2 class="mb-0 text-dark">0</h2>
+                    </div>
+                    <i class="bi bi-bar-chart-line fs-1 text-warning opacity-50"></i>
                 </div>
             </div>
         </div>
@@ -43,11 +58,11 @@
 
     <div class="row">
         <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white fw-bold">
+            <div class="panel-shell overflow-hidden">
+                <div class="card-header bg-white fw-bold p-4">
                     Tasa de Aprobación Global
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <canvas id="graficoAprobacion"></canvas>
                 </div>
             </div>
@@ -71,8 +86,8 @@
                 datasets: [{
                     data: [aprobados, reprobados],
                     backgroundColor: [
-                        '#198754', // Verde Success de Bootstrap
-                        '#dc3545'  // Rojo Danger de Bootstrap
+                        '#15803d',
+                        '#D60C3B'
                     ],
                     borderWidth: 1
                 }]

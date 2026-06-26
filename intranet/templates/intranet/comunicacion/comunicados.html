@@ -1,12 +1,14 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold text-dark mb-0"><i class="bi bi-megaphone-fill text-warning"></i> Anuncios y Comunicados</h4>
-        
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-megaphone-fill me-2"></i>Anuncios y Comunicados</h2>
+            <p class="text-muted mb-0">Comparte novedades internas, avisos clave y anuncios corporativos en un formato más claro.</p>
+        </div>
         {% if es_admin %}
-        <button class="btn btn-warning fw-bold rounded-pill shadow-sm px-4 text-dark" data-bs-toggle="modal" data-bs-target="#modalComunicado">
-            <i class="bi bi-plus-circle"></i> Nuevo Anuncio
+        <button class="btn btn-warning btn-pill fw-semibold shadow-sm px-4 text-dark" data-bs-toggle="modal" data-bs-target="#modalComunicado">
+            <i class="bi bi-plus-circle me-2"></i>Nuevo anuncio
         </button>
         {% endif %}
     </div>
@@ -14,9 +16,9 @@
     <div class="row g-4">
         {% for c in comunicados %}
         <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 rounded-4 h-100 border-top border-4 border-warning">
+            <div class="card card-buk card-module h-100">
                 <div class="card-body p-4">
-                    <div class="small text-muted mb-2"><i class="bi bi-calendar-event"></i> {{ c.fecha_publicacion|date:"d \d\e F, Y" }}</div>
+                    <div class="small text-muted mb-2"><i class="bi bi-calendar-event me-1"></i>{{ c.fecha_publicacion|date:"d \d\e F, Y" }}</div>
                     <h5 class="fw-bold text-dark mb-3">{{ c.titulo }}</h5>
                     <div class="text-secondary small mb-0" style="line-height: 1.6;">
                         {{ c.mensaje|linebreaks }}
@@ -37,29 +39,29 @@
 <div class="modal fade" id="modalComunicado" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-warning border-0">
+            <div class="modal-header bg-warning border-0 rounded-top-4">
                 <h5 class="modal-title fw-bold text-dark"><i class="bi bi-megaphone"></i> Publicar Anuncio Oficial</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
             <form method="POST" action="{% url 'comunicados' %}">
                 {% csrf_token %}
-                <div class="modal-body p-4 bg-light">
+                <div class="modal-body p-4 bg-light lms-input-soft">
                     
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Título del Anuncio</label>
-                        <input type="text" class="form-control border-secondary" name="titulo" required placeholder="Ej: Feriado Largo y Horarios">
+                        <label class="form-label small fw-semibold text-secondary">Título del anuncio</label>
+                        <input type="text" class="form-control" name="titulo" required placeholder="Ej: Feriado Largo y Horarios">
                     </div>
                     
                     <div class="mb-2">
-                        <label class="form-label small fw-bold text-muted">Mensaje</label>
-                        <textarea class="form-control border-secondary" name="mensaje" rows="5" required placeholder="Escribe el comunicado aquí..."></textarea>
+                        <label class="form-label small fw-semibold text-secondary">Mensaje</label>
+                        <textarea class="form-control" name="mensaje" rows="5" required placeholder="Escribe el comunicado aquí..."></textarea>
                     </div>
 
                 </div>
                 <div class="modal-footer border-0 bg-white">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-5 shadow-sm">Publicar</button>
+                    <button type="button" class="btn btn-light btn-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-dark btn-pill fw-semibold px-5 shadow-sm">Publicar</button>
                 </div>
             </form>
             
