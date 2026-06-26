@@ -1,0 +1,13 @@
+{# Componente de métrica/KPI - para dashboards #}
+<div class="card card-buk p-4 text-center border-0">
+    <div class="mb-3">
+        <i class="bi bi-{{ icon }} fs-1" style="color: {{ color | default:'var(--rj-azul)' }};"></i>
+    </div>
+    <h6 class="text-muted fw-semibold mb-2">{{ label }}</h6>
+    <h2 class="fw-bold mb-0" style="color: {{ color | default:'var(--rj-azul)' }};">
+        {{ value }}
+    </h2>
+    {% if subtitle %}
+    <small class="text-muted d-block mt-2">{{ subtitle }}</small>
+    {% endif %}
+</div>

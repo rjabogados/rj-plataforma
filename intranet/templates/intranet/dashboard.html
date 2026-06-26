@@ -1,65 +1,164 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid">
-    <h3 class="fw-bold mb-4"><i class="bi bi-speedometer2 text-warning me-2"></i> Dashboard Ejecutivo</h3>
+<div class="container-fluid px-4">
+    <!-- HEADER DE PÁGINA -->
+    <div class="section-header mb-5">
+        <h2 class="mb-2">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard Ejecutivo
+        </h2>
+        <p class="text-muted mb-0">Resumen de actividades y acceso rápido a funciones administrativas</p>
+    </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-primary text-white">
+    <!-- MÉTRICAS PRINCIPALES -->
+    <div class="grid-responsive mb-5">
+        <div>
+            <div class="card card-buk p-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-people-fill fs-2" style="color: var(--rj-azul);"></i>
+                </div>
+                <h6 class="text-muted fw-semibold mb-2">Personal Activo</h6>
+                <h2 class="fw-bold mb-0" style="color: var(--rj-azul);">{{ total_colaboradores }}</h2>
+                <small class="text-muted d-block mt-2">Colaboradores en nómina</small>
+            </div>
+        </div>
+
+        <div>
+            <div class="card card-buk p-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-exclamation-circle-fill fs-2" style="color: var(--rj-rojo);"></i>
+                </div>
+                <h6 class="text-muted fw-semibold mb-2">Tickets Pendientes</h6>
+                <h2 class="fw-bold mb-0" style="color: var(--rj-rojo);">{{ tickets_pendientes }}</h2>
+                <small class="text-muted d-block mt-2">Que requieren atención</small>
+            </div>
+        </div>
+
+        <div>
+            <div class="card card-buk p-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-calendar-event-fill fs-2" style="color: #ff8c00;"></i>
+                </div>
+                <h6 class="text-muted fw-semibold mb-2">Vacaciones Pendientes</h6>
+                <h2 class="fw-bold mb-0" style="color: #ff8c00;">{{ vacaciones_pendientes }}</h2>
+                <small class="text-muted d-block mt-2">Solicitudes por revisar</small>
+            </div>
+        </div>
+
+        <div>
+            <div class="card card-buk p-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill fs-2" style="color: #4caf50;"></i>
+                </div>
+                <h6 class="text-muted fw-semibold mb-2">Asistencias Hoy</h6>
+                <h2 class="fw-bold mb-0" style="color: #4caf50;">{{ asistencias_hoy }}</h2>
+                <small class="text-muted d-block mt-2">Personal registrado</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCIONES PRINCIPALES -->
+    <div class="row g-4 mb-5">
+        <!-- PANEL DE GESTIÓN -->
+        <div class="col-lg-6">
+            <div class="card card-module card-buk h-100">
+                <div class="card-header border-0 pb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-sliders me-2" style="color: var(--rj-azul);"></i>
+                        Gestión Administrativa
+                    </h5>
+                </div>
                 <div class="card-body">
-                    <h6 class="opacity-75">Personal Activo</h6>
-                    <h2 class="fw-bold">{{ total_colaboradores }}</h2>
+                    <div class="d-grid gap-3">
+                        <a href="{% url 'tickets_admin' %}" class="btn btn-primary-buk py-3 text-start">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-ticket-detailed"></i> Gestionar Tickets
+                                    <small class="d-block text-white-50">Revisar y resolver solicitudes de personal</small>
+                                </div>
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+                        <a href="{% url 'vacaciones_admin' %}" class="btn btn-outline-primary py-3 text-start">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-calendar-check"></i> Calendario Vacaciones
+                                    <small class="d-block text-muted">Autorizar y gestionar días libres</small>
+                                </div>
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+                        <a href="{% url 'documentos_admin' %}" class="btn btn-outline-primary py-3 text-start">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-file-earmark-text"></i> Gestionar Documentos
+                                    <small class="d-block text-muted">Revisar y distribuir documentos</small>
+                                </div>
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-danger text-white">
-                <div class="card-body">
-                    <h6 class="opacity-75">Tickets Pendientes</h6>
-                    <h2 class="fw-bold">{{ tickets_pendientes }}</h2>
+
+        <!-- PANEL DE SINCRONIZACIÓN -->
+        <div class="col-lg-6">
+            <div class="card card-module card-buk h-100">
+                <div class="card-header border-0 pb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-cloud-sync me-2" style="color: var(--rj-amarillo);"></i>
+                        Sincronización de Datos
+                    </h5>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-info text-white">
                 <div class="card-body">
-                    <h6 class="opacity-75">Solicitudes Vacaciones</h6>
-                    <h2 class="fw-bold">{{ vacaciones_pendientes }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-success text-white">
-                <div class="card-body">
-                    <h6 class="opacity-75">Asistencias Hoy</h6>
-                    <h2 class="fw-bold">{{ asistencias_hoy }}</h2>
+                    <p class="text-muted mb-4">
+                        Mantén los registros de asistencia y datos del huellero sincronizados con Google Sheets.
+                    </p>
+                    <form method="POST" action="{% url 'sincronizar_sheets' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary-buk w-100 py-3">
+                            <i class="bi bi-arrow-repeat me-2"></i>
+                            Sincronizar Google Sheets Ahora
+                        </button>
+                    </form>
+                    <small class="text-muted d-block mt-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Última sincronización: <strong>Hace 2 horas</strong>
+                    </small>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h5 class="fw-bold mb-3">Acceso Directo a Gestión</h5>
-                <div class="d-grid gap-2">
-                    <a href="{% url 'tickets_admin' %}" class="btn btn-outline-danger py-3 fw-bold">Gestionar Tickets de Personal</a>
-                    <a href="{% url 'vacaciones_admin' %}" class="btn btn-outline-info py-3 fw-bold">Gestionar Calendario Vacaciones</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h5 class="fw-bold mb-3">Sincronización</h5>
-                <p class="text-muted small">Mantén los datos del huellero actualizados con el Google Sheet oficial.</p>
-                <form method="POST" action="{% url 'sincronizar_sheets' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-dark w-100 py-3 fw-bold">
-                        <i class="bi bi-arrow-clockwise"></i> Sincronizar Google Sheets
-                    </button>
-                </form>
-            </div>
-        </div>
+    <!-- ACCESO RÁPIDO A MÓDULOS -->
+    <div class="section-header mb-4">
+        <h5 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Acceso Rápido a Módulos</h5>
+    </div>
+
+    <div class="grid-responsive">
+        <a href="{% url 'gestor_lms' %}" class="card card-buk p-4 text-center text-decoration-none" style="cursor: pointer;">
+            <i class="bi bi-book-fill fs-2 mb-3" style="color: #4caf50;"></i>
+            <h6 class="fw-bold text-dark">Academia LMS</h6>
+            <p class="text-muted small mb-0">Cursos, lecciones y exámenes</p>
+        </a>
+
+        <a href="{% url 'asistencia' %}" class="card card-buk p-4 text-center text-decoration-none" style="cursor: pointer;">
+            <i class="bi bi-clock-fill fs-2 mb-3" style="color: var(--rj-rojo);"></i>
+            <h6 class="fw-bold text-dark">Asistencia</h6>
+            <p class="text-muted small mb-0">Registro de entrada/salida</p>
+        </a>
+
+        <a href="{% url 'comunicados' %}" class="card card-buk p-4 text-center text-decoration-none" style="cursor: pointer;">
+            <i class="bi bi-megaphone-fill fs-2 mb-3" style="color: var(--rj-amarillo);"></i>
+            <h6 class="fw-bold text-dark">Comunicados</h6>
+            <p class="text-muted small mb-0">Novedades y anuncios</p>
+        </a>
+
+        <a href="{% url 'mensajeria' %}" class="card card-buk p-4 text-center text-decoration-none" style="cursor: pointer;">
+            <i class="bi bi-chat-dots-fill fs-2 mb-3" style="color: #2196f3;"></i>
+            <h6 class="fw-bold text-dark">Mensajería</h6>
+            <p class="text-muted small mb-0">Sistema de mensajes interno</p>
+        </a>
     </div>
 </div>
 {% endblock %}

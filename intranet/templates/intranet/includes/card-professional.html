@@ -1,0 +1,22 @@
+{# Card profesional reutilizable estilo Buk #}
+<div class="card card-buk card-module h-100">
+    {% if card_header %}
+    <div class="card-header border-0 pb-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold text-dark mb-0">
+                {% if header_icon %}<i class="bi bi-{{ header_icon }} me-2"></i>{% endif %}
+                {{ card_header }}
+            </h5>
+            {% if header_action %}{{ header_action }}{% endif %}
+        </div>
+    </div>
+    {% endif %}
+    <div class="card-body">
+        {{ slot }}
+    </div>
+    {% if card_footer %}
+    <div class="card-footer bg-transparent border-top pt-3">
+        {{ card_footer }}
+    </div>
+    {% endif %}
+</div>

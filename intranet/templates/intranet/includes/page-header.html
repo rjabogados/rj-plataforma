@@ -1,0 +1,18 @@
+{# Componente de header de página reutilizable #}
+<div class="section-header mb-4">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h2 class="mb-2">
+                {% if icon %}<i class="bi bi-{{ icon }} me-2"></i>{% endif %}
+                {{ title }}
+            </h2>
+            {% if subtitle %}<p class="text-muted mb-0">{{ subtitle }}</p>{% endif %}
+        </div>
+        {% if action_url %}
+        <a href="{{ action_url }}" class="btn btn-primary btn-sm">
+            {% if action_icon %}<i class="bi bi-{{ action_icon }} me-2"></i>{% endif %}
+            {{ action_text }}
+        </a>
+        {% endif %}
+    </div>
+</div>
