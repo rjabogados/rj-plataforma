@@ -3,9 +3,17 @@
     --rj-azul-hover: #1e4d92;
     --rj-rojo: #D60C3B;
     --rj-amarillo: #FF9E20;
+    --rj-celeste: #0f766e;
+    --rj-celeste-soft: rgba(15, 118, 110, 0.12);
+    --rj-verde: #15803d;
+    --rj-verde-soft: rgba(21, 128, 61, 0.12);
+    --rj-dorado-soft: rgba(255, 158, 32, 0.14);
+    --rj-rojo-soft: rgba(214, 12, 59, 0.12);
+    --rj-azul-soft: rgba(24, 61, 116, 0.1);
     --rj-gris-claro: #f8fafc;
     --rj-gris-medio: #e2e8f0;
     --rj-gris-texto: #475569;
+    --rj-gris-oscuro: #0f172a;
     --sidebar-width: 260px;
     --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --box-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -27,6 +35,238 @@ body {
     overflow-x: hidden;
     color: var(--rj-gris-texto);
     line-height: 1.6;
+}
+
+.text-info { color: var(--rj-celeste) !important; }
+.bg-info { background-color: var(--rj-celeste) !important; }
+.bg-info-subtle { background-color: var(--rj-celeste-soft) !important; }
+.border-info { border-color: rgba(15, 118, 110, 0.28) !important; }
+
+.text-success { color: var(--rj-verde) !important; }
+.bg-success { background-color: var(--rj-verde) !important; }
+.bg-success-subtle { background-color: var(--rj-verde-soft) !important; }
+
+.btn-info {
+    background-color: var(--rj-celeste) !important;
+    border-color: var(--rj-celeste) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(15, 118, 110, 0.18);
+}
+.btn-info:hover, .btn-info:focus {
+    background-color: #0b5d57 !important;
+    border-color: #0b5d57 !important;
+    color: #ffffff !important;
+}
+
+.btn-success {
+    background-color: var(--rj-verde) !important;
+    border-color: var(--rj-verde) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(21, 128, 61, 0.18);
+}
+.btn-success:hover, .btn-success:focus {
+    background-color: #166534 !important;
+    border-color: #166534 !important;
+    color: #ffffff !important;
+}
+
+.btn-warning {
+    background-color: var(--rj-amarillo) !important;
+    border-color: var(--rj-amarillo) !important;
+    color: #2b2113 !important;
+    box-shadow: 0 4px 10px rgba(255, 158, 32, 0.2);
+}
+.btn-warning:hover, .btn-warning:focus {
+    background-color: #e58d19 !important;
+    border-color: #e58d19 !important;
+    color: #2b2113 !important;
+}
+
+.btn-outline-info {
+    color: var(--rj-celeste) !important;
+    border-color: rgba(15, 118, 110, 0.35) !important;
+}
+.btn-outline-info:hover, .btn-outline-info:focus {
+    background-color: var(--rj-celeste) !important;
+    border-color: var(--rj-celeste) !important;
+    color: #ffffff !important;
+}
+
+.btn-outline-warning {
+    color: #b45309 !important;
+    border-color: rgba(255, 158, 32, 0.5) !important;
+}
+.btn-outline-warning:hover, .btn-outline-warning:focus {
+    background-color: var(--rj-amarillo) !important;
+    border-color: var(--rj-amarillo) !important;
+    color: #2b2113 !important;
+}
+
+.btn-outline-success {
+    color: var(--rj-verde) !important;
+    border-color: rgba(21, 128, 61, 0.35) !important;
+}
+.btn-outline-success:hover, .btn-outline-success:focus {
+    background-color: var(--rj-verde) !important;
+    border-color: var(--rj-verde) !important;
+    color: #ffffff !important;
+}
+
+.card {
+    border-radius: 1.25rem;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.table-dark,
+.table-dark th {
+    background-color: var(--rj-gris-oscuro) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.nav-tabs {
+    border-bottom: 1px solid var(--rj-gris-medio);
+}
+
+.nav-tabs .nav-link {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+    font-weight: 600;
+    border-radius: 0;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--rj-azul);
+    border-color: rgba(24, 61, 116, 0.12);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--rj-azul);
+    background: transparent;
+    border-color: var(--rj-azul);
+}
+
+.modal-content {
+    border: none;
+    border-radius: 1.5rem;
+    box-shadow: var(--box-shadow-lg);
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 1.25rem 1.5rem 1rem;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 1rem 1.5rem 1.25rem;
+}
+
+.page-hero {
+    background: linear-gradient(135deg, var(--rj-azul) 0%, var(--rj-azul-hover) 100%);
+    border-radius: 1.6rem;
+    color: #ffffff;
+    box-shadow: 0 18px 40px rgba(24, 61, 116, 0.18);
+}
+
+.icon-chip {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--rj-azul-soft);
+    color: var(--rj-azul);
+}
+
+.icon-chip.info {
+    background: var(--rj-celeste-soft);
+    color: var(--rj-celeste);
+}
+
+.icon-chip.warning {
+    background: var(--rj-dorado-soft);
+    color: #b45309;
+}
+
+.icon-chip.success {
+    background: var(--rj-verde-soft);
+    color: var(--rj-verde);
+}
+
+.icon-chip.danger {
+    background: var(--rj-rojo-soft);
+    color: var(--rj-rojo);
+}
+
+.panel-shell {
+    background: #ffffff;
+    border: 1px solid var(--rj-gris-medio);
+    border-radius: 1.4rem;
+    box-shadow: var(--box-shadow-sm);
+}
+
+.panel-shell-soft {
+    background: linear-gradient(135deg, #ffffff 0%, var(--rj-gris-claro) 100%);
+    border: 1px solid var(--rj-gris-medio);
+    border-radius: 1.4rem;
+    box-shadow: var(--box-shadow-sm);
+}
+
+.panel-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.status-pill.info {
+    background: var(--rj-celeste-soft);
+    color: var(--rj-celeste);
+    border-color: rgba(15, 118, 110, 0.18);
+}
+
+.status-pill.warning {
+    background: var(--rj-dorado-soft);
+    color: #b45309;
+    border-color: rgba(255, 158, 32, 0.22);
+}
+
+.status-pill.success {
+    background: var(--rj-verde-soft);
+    color: var(--rj-verde);
+    border-color: rgba(21, 128, 61, 0.18);
+}
+
+.status-pill.danger {
+    background: var(--rj-rojo-soft);
+    color: var(--rj-rojo);
+    border-color: rgba(214, 12, 59, 0.18);
+}
+
+.status-pill.neutral {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+    border-color: rgba(100, 116, 139, 0.18);
 }
 
 /* --- BARRA LATERAL (SIDEBAR) - ESTILO BUK --- */

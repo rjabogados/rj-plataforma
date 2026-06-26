@@ -5,14 +5,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container-fluid p-4">
-    
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-            <h2 class="fw-bold m-0" style="color: var(--rj-azul);"><i class="bi bi-graph-up-arrow me-2"></i>Dashboard de Reclutamiento</h2>
+            <h2 class="fw-bold m-0"><i class="bi bi-graph-up-arrow me-2"></i>Dashboard de Reclutamiento</h2>
             <p class="text-muted small mb-0">Análisis de embudo y rendimiento de campañas en tiempo real.</p>
         </div>
         
-        <div class="bg-white p-2 rounded-3 shadow-sm border d-flex align-items-center gap-2">
+        <div class="panel-shell d-flex align-items-center gap-2 p-2">
             <span class="small fw-bold text-muted ms-2">Período:</span>
             <input type="date" id="filtro-inicio" class="form-control form-control-sm border-primary" style="max-width: 130px;">
             <span class="small text-muted">hasta</span>
@@ -25,7 +24,7 @@
 
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #183D74 0%, #1e4b8f 100%); color: white;">
+            <div class="page-hero h-100 p-0">
                 <div class="card-body p-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-white-50 fw-bold mb-1">TOTAL CANDIDATOS</h6>
@@ -36,7 +35,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+            <div class="panel-shell h-100">
                 <div class="card-body p-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-success fw-bold mb-1">ENTREVISTAS AGENDADAS</h6>
@@ -47,7 +46,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+            <div class="panel-shell h-100">
                 <div class="card-body p-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-danger fw-bold mb-1">DESCARTADOS</h6>
@@ -61,9 +60,9 @@
 
     <div class="row">
         <div class="col-md-7 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="panel-shell h-100">
                 <div class="card-header bg-white border-0 pt-4 pb-0">
-                    <h6 class="fw-bold" style="color: var(--rj-azul);">Rendimiento por Sede</h6>
+                    <h6 class="fw-bold text-primary">Rendimiento por Sede</h6>
                 </div>
                 <div class="card-body p-4">
                     <canvas id="graficoSedes" height="100"></canvas>
@@ -72,9 +71,9 @@
         </div>
         
         <div class="col-md-5 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="panel-shell h-100">
                 <div class="card-header bg-white border-0 pt-4 pb-0">
-                    <h6 class="fw-bold" style="color: var(--rj-azul);">Estado del Embudo</h6>
+                    <h6 class="fw-bold text-primary">Estado del Embudo</h6>
                 </div>
                 <div class="card-body p-4 d-flex justify-content-center">
                     <canvas id="graficoEstados" height="200" style="max-height: 250px;"></canvas>
