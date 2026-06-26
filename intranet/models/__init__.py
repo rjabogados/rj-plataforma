@@ -1,4 +1,4 @@
-from .rrhh_core import Negocio, Colaborador, Asistencia
+from .rrhh_core import Negocio, Area, Cargo, Colaborador, Asistencia
 from .solicitudes import Ticket, SolicitudVacaciones
 from .comunicacion import Comunicado, MensajeInterno, EventoCalendario
 from .reclutamiento import CandidatoReclutamiento

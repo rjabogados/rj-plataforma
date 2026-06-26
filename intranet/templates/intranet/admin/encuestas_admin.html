@@ -32,6 +32,46 @@
                             </select>
                         </div>
                     </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="form-check form-switch bg-light p-3 rounded-3 border">
+                                <input class="form-check-input me-2" type="checkbox" name="publico_general" checked>
+                                <label class="form-check-label fw-bold">Visible para toda la empresa</label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Rol</label>
+                            <select class="form-select" name="rol_permitido">
+                                <option value="">-- Todos --</option>
+                                {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Área</label>
+                            <select class="form-select" name="area_permitida">
+                                <option value="">-- Todas --</option>
+                                {% for area in areas %}<option value="{{ area.id }}">{{ area.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Cargo</label>
+                            <select class="form-select" name="cargo_permitido">
+                                <option value="">-- Todos --</option>
+                                {% for cargo in cargos %}<option value="{{ cargo.id }}">{{ cargo.nombre }}{% if cargo.area %} - {{ cargo.area.nombre }}{% endif %}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Cartera</label>
+                            <select class="form-select" name="cartera_vinculada">
+                                <option value="">-- Todas --</option>
+                                {% for n in negocios %}<option value="{{ n.id }}">{{ n.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Subcartera</label>
+                            <input type="text" class="form-control" name="subcartera_vinculada" placeholder="Ej: Mora Temprana">
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-danger w-100 fw-bold rounded-pill">Publicar Encuesta</button>
                 </form>
             </div>
@@ -50,6 +90,14 @@
                     <button class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalPregunta{{ e.id }}"><i class="bi bi-plus-lg"></i> Pregunta</button>
                 </div>
                 <p class="small text-muted">{{ e.descripcion }}</p>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    {% if not e.publico_general %}<span class="badge bg-warning text-dark">Segmentada</span>{% endif %}
+                    {% if e.rol_permitido %}<span class="badge bg-info text-dark">Rol: {{ e.get_rol_permitido_display }}</span>{% endif %}
+                    {% if e.area_permitida %}<span class="badge bg-primary">Área: {{ e.area_permitida.nombre }}</span>{% endif %}
+                    {% if e.cargo_permitido %}<span class="badge bg-success">Cargo: {{ e.cargo_permitido.nombre }}</span>{% endif %}
+                    {% if e.cartera_vinculada %}<span class="badge bg-secondary">Cartera: {{ e.cartera_vinculada.nombre }}</span>{% endif %}
+                    {% if e.subcartera_vinculada %}<span class="badge bg-dark">Subcartera: {{ e.subcartera_vinculada }}</span>{% endif %}
+                </div>
 
                 <hr class="opacity-25 my-2">
                 <div class="small fw-bold mb-2 text-secondary">Estructura de la Encuesta ({{ e.preguntas.count }} preguntas):</div>

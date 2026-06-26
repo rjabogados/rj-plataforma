@@ -1,0 +1,212 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="mb-2"><i class="bi bi-people-badge-fill me-2"></i>Panel RRHH</h2>
+            <p class="text-muted mb-0">Resumen operativo del personal, alertas de estructura y acceso rápido a decisiones de gestión.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'exportar_directorio_rrhh' %}" class="btn btn-success btn-pill fw-semibold shadow-sm px-4">
+                <i class="bi bi-download me-2"></i>Exportar Directorio
+            </a>
+            <a href="{% url 'colaboradores' %}" class="btn btn-outline-primary btn-pill fw-semibold shadow-sm px-4">
+                <i class="bi bi-person-lines-fill me-2"></i>Ir al Directorio
+            </a>
+        </div>
+    </div>
+
+    <div class="grid-responsive mb-4">
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-people-fill fs-2 text-primary"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Colaboradores</h6>
+            <h2 class="fw-bold mb-0 text-primary">{{ total_colaboradores }}</h2>
+            <small class="text-muted">Registrados en la plataforma</small>
+        </div>
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-person-check-fill fs-2 text-success"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Activos</h6>
+            <h2 class="fw-bold mb-0 text-success">{{ colaboradores_activos }}</h2>
+            <small class="text-muted">Usuarios habilitados</small>
+        </div>
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-exclamation-triangle-fill fs-2 text-warning"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Sin Área / Cargo</h6>
+            <h2 class="fw-bold mb-0 text-warning">{{ sin_area }} / {{ sin_cargo }}</h2>
+            <small class="text-muted">Pendientes de depuración</small>
+        </div>
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-calendar-check-fill fs-2 text-danger"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Pendientes</h6>
+            <h2 class="fw-bold mb-0 text-danger">{{ tickets_pendientes }} / {{ vacaciones_pendientes }}</h2>
+            <small class="text-muted">Tickets / Vacaciones</small>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-diagram-3 me-2 text-primary"></i>Distribución por Área</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="list-group list-group-flush">
+                        {% for area in areas_resumen %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-semibold text-dark">{{ area.area__nombre|default:"Sin área" }}</div>
+                                <small class="text-muted">Personal asignado</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ area.total }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted mb-0">No hay áreas registradas todavía.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-patch-check-fill me-2 text-success"></i>Distribución por Cargo</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="list-group list-group-flush">
+                        {% for cargo in cargos_resumen %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-semibold text-dark">{{ cargo.cargo__nombre|default:"Sin cargo" }}</div>
+                                <small class="text-muted">Carga operativa</small>
+                            </div>
+                            <span class="badge bg-success rounded-pill">{{ cargo.total }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted mb-0">Todavía no hay cargos cargados.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person-plus-fill me-2 text-info"></i>Altas Recientes</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="text-muted small">
+                                <tr>
+                                    <th>Colaborador</th>
+                                    <th>Área / Cargo</th>
+                                    <th>Ingreso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for colab in ultimos_ingresos %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ colab.user.last_name }}, {{ colab.user.first_name }}</div>
+                                        <small class="text-muted">{{ colab.dni }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold">{{ colab.area.nombre|default:"Sin área" }}</div>
+                                        <small class="text-muted">{{ colab.cargo.nombre|default:"Sin cargo" }}</small>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ colab.fecha_ingreso|date:"d M Y" }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-muted text-center py-4">Aún no hay ingresos recientes con fecha cargada.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i>Lectura Rápida</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="row g-3">
+                        {% for rol in roles_resumen %}
+                        <div class="col-md-6">
+                            <div class="border rounded-4 p-3 h-100 bg-light">
+                                <div class="small text-muted text-uppercase fw-bold">{{ rol.rol }}</div>
+                                <div class="fs-4 fw-bold text-dark">{{ rol.total }}</div>
+                                <div class="text-muted small">Colaboradores en este rol</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-muted">No hay datos suficientes para mostrar la distribución por rol.</div>
+                        {% endfor %}
+                        <div class="col-md-6">
+                            <div class="border rounded-4 p-3 h-100 bg-white">
+                                <div class="small text-muted text-uppercase fw-bold">Asistencias Hoy</div>
+                                <div class="fs-4 fw-bold text-primary">{{ asistencias_hoy }}</div>
+                                <div class="text-muted small">Marcas registradas hoy</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-6">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-alarm-fill me-2 text-danger"></i>Atrasos de Hoy</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="list-group list-group-flush">
+                        {% for atraso in atrasos_hoy %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-semibold text-dark">{{ atraso.colaborador.user.last_name }}, {{ atraso.colaborador.user.first_name }}</div>
+                                <small class="text-muted">{{ atraso.colaborador.area.nombre|default:"Sin área" }} · {{ atraso.colaborador.cargo.nombre|default:"Sin cargo" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-danger">+{{ atraso.minutos }} min</span>
+                                <div class="small text-muted mt-1">{{ atraso.hora_programada|time:"H:i" }} → {{ atraso.hora_ingreso|time:"H:i" }}</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted mb-0">No se detectaron atrasos en las asistencias registradas hoy.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-exclamation-circle-fill me-2 text-warning"></i>Sin Marcación de Ingreso</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="list-group list-group-flush">
+                        {% for asistencia in sin_marca_ingreso_hoy %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-semibold text-dark">{{ asistencia.colaborador.user.last_name }}, {{ asistencia.colaborador.user.first_name }}</div>
+                                <small class="text-muted">{{ asistencia.colaborador.area.nombre|default:"Sin área" }} · {{ asistencia.colaborador.cargo.nombre|default:"Sin cargo" }}</small>
+                            </div>
+                            <span class="badge bg-warning text-dark">Sin F1</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted mb-0">Todos los registros de hoy tienen al menos una marcación de ingreso.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

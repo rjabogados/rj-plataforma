@@ -1,5 +1,6 @@
 import os
 import json
+import hmac
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -8,6 +9,15 @@ from intranet.models import CandidatoReclutamiento
 # Llave maestra (puede estar vacía en desarrollo para permitir migraciones)
 API_SECRET_KEY = os.environ.get('API_SECRET_KEY')
 
+
+def get_api_key(request, payload):
+    return (
+        request.headers.get('X-API-Key', '')
+        or request.headers.get('Authorization', '').removeprefix('Bearer ').strip()
+        or str(payload.get('api_key', '')).strip()
+    )
+
+@csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def webhook_receptor(request):
     # Validar que la clave esté configurada cuando se intente usar
@@ -32,10 +42,10 @@ def webhook_receptor(request):
             datos = json.loads(request.body)
             
             # Validar API Key
-            api_key_recibida = datos.get('api_key', '')
+            api_key_recibida = get_api_key(request, datos)
             
             # Comparación segura (previene timing attacks)
-            if not api_key_recibida or api_key_recibida != API_SECRET_KEY:
+            if not api_key_recibida or not hmac.compare_digest(api_key_recibida, API_SECRET_KEY):
                 return build_response({'error': 'Acceso denegado.'}, status=403)
             
             origen = datos.get('origen', '').strip()

@@ -32,7 +32,7 @@
                     </div>
                     <div class="mb-4">
                         <label class="form-label small fw-semibold text-secondary">Adjuntar evidencia</label>
-                        <input type="file" class="form-control" name="adjunto">
+                        <input type="file" class="form-control" name="adjunto" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
                         <small class="text-muted d-block mt-2">Puedes subir receta médica, captura, constancia o voucher.</small>
                     </div>
                     <button type="submit" name="crear_ticket" class="btn btn-primary btn-pill w-100 fw-semibold py-2">Enviar a Recursos Humanos</button>
@@ -72,7 +72,7 @@
                                 </td>
                                 <td>
                                     {% if t.adjunto_comprobante %}
-                                    <a href="{{ t.adjunto_comprobante.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-pill fw-semibold">
+                                    <a href="{% url 'ver_adjunto_ticket' t.id %}" target="_blank" class="btn btn-sm btn-outline-primary btn-pill fw-semibold">
                                         <i class="bi bi-paperclip me-1"></i> Ver adjunto
                                     </a>
                                     {% else %}

@@ -1,0 +1,174 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="mb-2"><i class="bi bi-diagram-3-fill me-2 text-primary"></i>Panel Supervisor</h2>
+            <p class="text-muted mb-0">Vista operativa del equipo asignado por área o cargo. Diseñada para seguimiento diario y control de incidencias.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'exportar_equipo_supervisor' %}" class="btn btn-primary btn-pill fw-semibold shadow-sm px-4">
+                <i class="bi bi-download me-2"></i>Exportar Equipo
+            </a>
+            <a href="{% url 'tickets_admin' %}" class="btn btn-outline-danger btn-pill fw-semibold shadow-sm px-4">
+                <i class="bi bi-inboxes-fill me-2"></i>Ver Tickets Globales
+            </a>
+        </div>
+    </div>
+
+    <div class="grid-responsive mb-4">
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-people-fill fs-2 text-primary"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Equipo Asignado</h6>
+            <h2 class="fw-bold mb-0 text-primary">{{ equipo_total }}</h2>
+            <small class="text-muted">Miembros bajo tu área/cargo</small>
+        </div>
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-person-check-fill fs-2 text-success"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Activos</h6>
+            <h2 class="fw-bold mb-0 text-success">{{ equipo_activo }}</h2>
+            <small class="text-muted">Usuarios habilitados</small>
+        </div>
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-ticket-detailed-fill fs-2 text-warning"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Tickets Pendientes</h6>
+            <h2 class="fw-bold mb-0 text-warning">{{ tickets_pendientes }}</h2>
+            <small class="text-muted">Incidencias por revisar</small>
+        </div>
+        <div class="card card-buk p-4 text-center">
+            <div class="mb-2"><i class="bi bi-airplane-engines-fill fs-2 text-danger"></i></div>
+            <h6 class="text-muted fw-semibold mb-1">Vacaciones Pendientes</h6>
+            <h2 class="fw-bold mb-0 text-danger">{{ vacaciones_pendientes }}</h2>
+            <small class="text-muted">Solicitudes de descanso</small>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Mi Equipo</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="text-muted small">
+                                <tr>
+                                    <th>Colaborador</th>
+                                    <th>Área / Cargo</th>
+                                    <th>Rol</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for colab in equipo_qs %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ colab.user.last_name }}, {{ colab.user.first_name }}</div>
+                                        <small class="text-muted">{{ colab.dni }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold">{{ colab.area.nombre|default:"Sin área" }}</div>
+                                        <small class="text-muted">{{ colab.cargo.nombre|default:"Sin cargo" }}</small>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ colab.get_rol_display }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-muted text-center py-4">No hay equipo asignado todavía. Si tu perfil no tiene área/cargo, RRHH debe completarlo.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-alarm-fill me-2 text-danger"></i>Alertas del Equipo</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="mb-4">
+                        <div class="fw-bold text-dark mb-2">Atrasos de Hoy</div>
+                        <div class="list-group list-group-flush">
+                            {% for asistencia in atrasos_equipo %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <div class="fw-semibold">{{ asistencia.colaborador.user.last_name }}, {{ asistencia.colaborador.user.first_name }}</div>
+                                    <small class="text-muted">{{ asistencia.colaborador.cargo.nombre|default:"Sin cargo" }}</small>
+                                </div>
+                                <span class="badge bg-danger">Tarde</span>
+                            </div>
+                            {% empty %}
+                            <div class="text-muted small">Sin atrasos detectados hoy.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark mb-2">Sin F1 Hoy</div>
+                        <div class="list-group list-group-flush">
+                            {% for asistencia in sin_marca_equipo %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <div class="fw-semibold">{{ asistencia.colaborador.user.last_name }}, {{ asistencia.colaborador.user.first_name }}</div>
+                                    <small class="text-muted">{{ asistencia.colaborador.area.nombre|default:"Sin área" }}</small>
+                                </div>
+                                <span class="badge bg-warning text-dark">Sin marca</span>
+                            </div>
+                            {% empty %}
+                            <div class="text-muted small">Todos marcaron ingreso hoy.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-ticket-detailed-fill me-2 text-warning"></i>Tickets Recientes del Equipo</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <ul class="list-group list-group-flush">
+                        {% for ticket in tickets_recientes %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">{{ ticket.colaborador.user.last_name }}, {{ ticket.colaborador.user.first_name }}</div>
+                                <small class="text-muted">{{ ticket.get_tipo_display }} · {{ ticket.fecha_registro|date:"d M H:i" }}</small>
+                            </div>
+                            <span class="badge {% if ticket.estado == 'PENDIENTE' %}bg-warning text-dark{% elif ticket.estado == 'APROBADO' %}bg-success{% else %}bg-danger{% endif %}">{{ ticket.get_estado_display }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item px-0 text-muted">No hay tickets en el equipo.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card card-buk h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-airplane-engines me-2 text-info"></i>Vacaciones Recientes del Equipo</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <ul class="list-group list-group-flush">
+                        {% for vac in vacaciones_recientes %}
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">{{ vac.colaborador.user.last_name }}, {{ vac.colaborador.user.first_name }}</div>
+                                <small class="text-muted">{{ vac.fecha_inicio|date:"d M" }} - {{ vac.fecha_fin|date:"d M" }}</small>
+                            </div>
+                            <span class="badge {% if vac.estado == 'PENDIENTE' %}bg-warning text-dark{% elif vac.estado == 'APROBADO' %}bg-success{% else %}bg-danger{% endif %}">{{ vac.get_estado_display }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item px-0 text-muted">No hay vacaciones registradas en el equipo.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

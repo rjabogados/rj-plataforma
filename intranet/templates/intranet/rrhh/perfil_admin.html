@@ -1,0 +1,232 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="mb-2"><i class="bi bi-person-vcard-fill me-2 text-primary"></i>Ficha Administrativa por Persona</h2>
+            <p class="text-muted mb-0">Previsualizador centralizado de datos, incidencias, vacaciones, asistencias y actividad recogida por colaborador.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="card card-buk h-100">
+                <div class="card-body p-3">
+                    <form method="GET" class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Buscar persona</label>
+                        <input type="text" name="q" class="form-control" value="{{ busqueda }}" placeholder="Nombre, DNI o usuario">
+                    </form>
+
+                    <div class="list-group list-group-flush">
+                        {% for colab in colaboradores %}
+                        <a href="{% url 'perfil_admin' %}?colaborador={{ colab.id }}{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="list-group-item list-group-item-action px-0 {% if seleccionado and seleccionado.id == colab.id %}active{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="fw-semibold">{{ colab.user.last_name }}, {{ colab.user.first_name }}</div>
+                                    <small class="{% if seleccionado and seleccionado.id == colab.id %}text-white-50{% else %}text-muted{% endif %}">{{ colab.dni }} · {{ colab.get_rol_display }}</small>
+                                </div>
+                                <span class="badge {% if seleccionado and seleccionado.id == colab.id %}bg-light text-dark{% else %}bg-primary{% endif %}">{{ colab.area.nombre|default:"Sin área" }}</span>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="text-muted small">No hay colaboradores con ese filtro.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            {% if seleccionado %}
+            <div class="card card-buk mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between flex-wrap gap-3 align-items-start">
+                        <div>
+                            <h3 class="mb-1 fw-bold text-dark">{{ seleccionado.user.last_name }}, {{ seleccionado.user.first_name }}</h3>
+                            <div class="text-muted">{{ seleccionado.user.username }} · DNI {{ seleccionado.dni }}</div>
+                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                <span class="badge bg-primary">{{ seleccionado.get_rol_display }}</span>
+                                <span class="badge bg-info text-dark">{{ seleccionado.area.nombre|default:"Sin área" }}</span>
+                                <span class="badge bg-success">{{ seleccionado.cargo.nombre|default:"Sin cargo" }}</span>
+                                <span class="badge bg-secondary">{{ seleccionado.negocio.nombre|default:"Sin cartera" }}</span>
+                                <span class="badge bg-light text-dark border">{{ seleccionado.subcartera|default:"Sin subcartera" }}</span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'exportar_directorio_rrhh' %}" class="btn btn-outline-success btn-sm">Exportar Directorio</a>
+                            <a href="{% url 'dashboard_rrhh' %}" class="btn btn-outline-primary btn-sm">Volver al Panel RRHH</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-responsive mb-4">
+                <div class="card card-buk p-3 text-center">
+                    <div class="small text-muted">Asistencias</div>
+                    <div class="fs-3 fw-bold text-primary">{{ asistencias|length }}</div>
+                </div>
+                <div class="card card-buk p-3 text-center">
+                    <div class="small text-muted">Tickets</div>
+                    <div class="fs-3 fw-bold text-warning">{{ tickets|length }}</div>
+                </div>
+                <div class="card card-buk p-3 text-center">
+                    <div class="small text-muted">Vacaciones</div>
+                    <div class="fs-3 fw-bold text-danger">{{ vacaciones|length }}</div>
+                </div>
+                <div class="card card-buk p-3 text-center">
+                    <div class="small text-muted">Docs / LMS</div>
+                    <div class="fs-3 fw-bold text-success">{{ documentos_personales|length }} / {{ matriculas|length }}</div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-folder2-open me-2 text-primary"></i>Datos Base</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <div class="row g-3">
+                                <div class="col-md-6"><div class="small text-muted">Correo</div><div class="fw-semibold">{{ seleccionado.user.email|default:"Sin correo" }}</div></div>
+                                <div class="col-md-6"><div class="small text-muted">Teléfono</div><div class="fw-semibold">{{ seleccionado.celular|default:"Sin celular" }}</div></div>
+                                <div class="col-md-6"><div class="small text-muted">Horario</div><div class="fw-semibold">{{ seleccionado.get_tipo_horario_display }}</div></div>
+                                <div class="col-md-6"><div class="small text-muted">Ingreso</div><div class="fw-semibold">{{ seleccionado.fecha_ingreso|date:"d M Y"|default:"Sin fecha" }}</div></div>
+                                <div class="col-md-6"><div class="small text-muted">Sueldo Base</div><div class="fw-semibold">S/ {{ seleccionado.sueldo_base }}</div></div>
+                                <div class="col-md-6"><div class="small text-muted">Régimen</div><div class="fw-semibold">{{ seleccionado.regimen_laboral|default:"Sin régimen" }}</div></div>
+                                <div class="col-12"><div class="small text-muted">Banco / Cuenta</div><div class="fw-semibold">{{ seleccionado.banco_pago }} · {{ seleccionado.cuenta_bancaria|default:"Sin cuenta" }}</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-journal-check me-2 text-success"></i>Onboarding / Expediente</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            {% if onboarding %}
+                            <div class="mb-3">
+                                <div class="small text-muted">Estado</div>
+                                <div class="fw-semibold">{{ onboarding.get_estado_display }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="small text-muted">Porcentaje de expediente</div>
+                                <div class="fw-semibold">{{ onboarding.porcentaje_expediente }}%</div>
+                            </div>
+                            <div class="small text-muted mb-2">Documentos cargados</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge {% if onboarding.doc_cv %}bg-success{% else %}bg-light text-dark border{% endif %}">CV</span>
+                                <span class="badge {% if onboarding.doc_dni %}bg-success{% else %}bg-light text-dark border{% endif %}">DNI</span>
+                                <span class="badge {% if onboarding.doc_antecedentes %}bg-success{% else %}bg-light text-dark border{% endif %}">Antecedentes</span>
+                                <span class="badge {% if onboarding.doc_recibo_servicios %}bg-success{% else %}bg-light text-dark border{% endif %}">Recibo</span>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">No existe expediente de onboarding asociado a esta persona.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0"><h5 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Asistencias</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            <div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead class="text-muted small"><tr><th>Fecha</th><th>Ingreso</th><th>Salida</th></tr></thead><tbody>{% for a in asistencias %}<tr><td>{{ a.fecha|date:"d M Y" }}</td><td>{{ a.f1_ingreso|time:"H:i"|default:"--" }}</td><td>{{ a.f4_salida|time:"H:i"|default:"--" }}</td></tr>{% empty %}<tr><td colspan="3" class="text-muted text-center py-3">Sin registros de asistencia.</td></tr>{% endfor %}</tbody></table></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0"><h5 class="fw-bold mb-0"><i class="bi bi-ticket-detailed-fill me-2 text-warning"></i>Tickets y Faltas</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            {% for ticket in tickets %}
+                            <div class="border rounded-4 p-3 mb-3 bg-light">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <div>
+                                        <div class="fw-semibold">{{ ticket.get_tipo_display }}</div>
+                                        <div class="small text-muted">{{ ticket.fecha_registro|date:"d M Y H:i" }}</div>
+                                    </div>
+                                    <span class="badge {% if ticket.estado == 'PENDIENTE' %}bg-warning text-dark{% elif ticket.estado == 'APROBADO' %}bg-success{% else %}bg-danger{% endif %}">{{ ticket.get_estado_display }}</span>
+                                </div>
+                                <div class="small mt-2">{{ ticket.motivo }}</div>
+                            </div>
+                            {% empty %}<p class="text-muted mb-0">No hay tickets registrados.</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0"><h5 class="fw-bold mb-0"><i class="bi bi-airplane-engines me-2 text-info"></i>Vacaciones</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            {% for vac in vacaciones %}
+                            <div class="border rounded-4 p-3 mb-3 bg-light">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <div>
+                                        <div class="fw-semibold">{{ vac.fecha_inicio|date:"d M Y" }} - {{ vac.fecha_fin|date:"d M Y" }}</div>
+                                        <div class="small text-muted">{{ vac.dias_solicitados }} días · {{ vac.fecha_solicitud|date:"d M Y H:i" }}</div>
+                                    </div>
+                                    <span class="badge {% if vac.estado == 'PENDIENTE' %}bg-warning text-dark{% elif vac.estado == 'APROBADO' %}bg-success{% else %}bg-danger{% endif %}">{{ vac.get_estado_display }}</span>
+                                </div>
+                                <div class="small mt-2"><span class="fw-semibold">Observaciones RRHH:</span> {{ vac.comentarios_rrhh|default:"Sin observaciones" }}</div>
+                            </div>
+                            {% empty %}<p class="text-muted mb-0">No hay solicitudes de vacaciones.</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0"><h5 class="fw-bold mb-0"><i class="bi bi-file-earmark-text me-2 text-success"></i>Documentos</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            <div class="mb-3">
+                                <div class="fw-semibold mb-2">Documentos Personales</div>
+                                {% for doc in documentos_personales %}<div class="small mb-2"><span class="fw-semibold">{{ doc.titulo }}</span> · {{ doc.tipo }} · {{ doc.fecha_entrega|date:"d M Y" }}</div>{% empty %}<div class="text-muted small mb-3">Sin documentos personales.</div>{% endfor %}
+                            </div>
+                            <div>
+                                <div class="fw-semibold mb-2">Documentos Generados</div>
+                                {% for doc in documentos_generados %}<div class="small mb-2"><span class="fw-semibold">{{ doc.titulo }}</span> · {{ doc.get_estado_display }} · {{ doc.fecha_emision|date:"d M Y" }}</div>{% empty %}<div class="text-muted small">Sin documentos generados.</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0"><h5 class="fw-bold mb-0"><i class="bi bi-mortarboard me-2 text-primary"></i>Capacitación / LMS</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            {% for m in matriculas %}<div class="border rounded-4 p-3 mb-3 bg-light"><div class="fw-semibold">{{ m.curso.titulo }}</div><div class="small text-muted">{{ m.get_estado_display }}{% if m.nota_obtenida %} · Nota {{ m.nota_obtenida }}{% endif %}</div></div>{% empty %}<p class="text-muted mb-0">Sin matrículas registradas.</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card card-buk h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0"><h5 class="fw-bold mb-0"><i class="bi bi-ui-checks-grid me-2 text-warning"></i>Respuestas de Encuestas y Mensajería</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            <div class="mb-4">
+                                <div class="fw-semibold mb-2">Encuestas</div>
+                                {% for r in respuestas_encuesta %}<div class="small mb-2"><span class="fw-semibold">{{ r.pregunta.encuesta.titulo }}</span> · {{ r.pregunta.texto }}{% if r.valor_texto %} · {{ r.valor_texto }}{% else %} · {{ r.valor_si_no|yesno:"Sí,No,Sin dato" }}{% endif %}</div>{% empty %}<div class="text-muted small">Sin respuestas registradas.</div>{% endfor %}
+                            </div>
+                            <div>
+                                <div class="fw-semibold mb-2">Mensajes</div>
+                                {% for msg in mensajes %}<div class="small mb-2"><span class="fw-semibold">{{ msg.asunto }}</span> · {{ msg.fecha_envio|date:"d M Y H:i" }}</div>{% empty %}<div class="text-muted small">Sin mensajes internos.</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card card-buk p-5 text-center">
+                <h4 class="fw-bold mb-2">No hay colaborador seleccionado</h4>
+                <p class="text-muted mb-0">Busca una persona desde el panel izquierdo para cargar su ficha administrativa.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

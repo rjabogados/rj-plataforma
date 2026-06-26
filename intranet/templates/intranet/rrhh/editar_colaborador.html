@@ -78,6 +78,28 @@
                             <option value="GERENCIA" {% if colab.rol == 'GERENCIA' %}selected{% endif %}>Gerencia</option>
                         </select>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Área</label>
+                        <select class="form-select border-secondary" name="area">
+                            <option value="">-- Sin asignar --</option>
+                            {% for area in areas %}
+                            <option value="{{ area.id }}" {% if colab.area and colab.area.id == area.id %}selected{% endif %}>{{ area.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Cargo</label>
+                        <select class="form-select border-secondary" name="cargo">
+                            <option value="">-- Sin asignar --</option>
+                            {% for cargo in cargos %}
+                            <option value="{{ cargo.id }}" {% if colab.cargo and colab.cargo.id == cargo.id %}selected{% endif %}>{{ cargo.nombre }}{% if cargo.area %} - {{ cargo.area.nombre }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold text-muted">Subcartera</label>
+                        <input type="text" class="form-control border-secondary" name="subcartera" value="{{ colab.subcartera|default:'' }}" placeholder="Ej: Mora Temprana / Especiales">
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label small fw-bold text-muted">Tipo Horario</label>
                         <select class="form-select border-secondary" name="tipo_horario" required>

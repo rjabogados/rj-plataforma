@@ -19,15 +19,57 @@
 
     <div class="panel-shell mb-4">
         <div class="card-body p-3">
-            <form method="GET" action="{% url 'colaboradores' %}" class="d-flex gap-2 align-items-center lms-input-soft">
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-secondary"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control bg-light" placeholder="Buscar por DNI, Nombres o Apellidos..." value="{{ query }}">
+            <form method="GET" action="{% url 'colaboradores' %}" class="lms-input-soft">
+                <div class="row g-2 align-items-end">
+                    <div class="col-lg-3">
+                        <label class="form-label small fw-semibold text-muted">Buscar nombre / documento</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-secondary"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="q" class="form-control bg-light" placeholder="Nombre, DNI o usuario" value="{{ request.GET.q|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Documento</label>
+                        <input type="text" name="documento" class="form-control bg-light" value="{{ request.GET.documento|default:'' }}">
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Área</label>
+                        <select class="form-select bg-light" name="area">
+                            <option value="">Todas</option>
+                            {% for area in areas %}
+                                <option value="{{ area.id }}" {% if request.GET.area == area.id|stringformat:'s' %}selected{% endif %}>{{ area.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Cargo</label>
+                        <select class="form-select bg-light" name="cargo">
+                            <option value="">Todos</option>
+                            {% for cargo in cargos %}
+                                <option value="{{ cargo.id }}" {% if request.GET.cargo == cargo.id|stringformat:'s' %}selected{% endif %}>{{ cargo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if filtros_disponibles.cartera %}
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Cartera</label>
+                        <select class="form-select bg-light" name="cartera">
+                            <option value="">Todas</option>
+                            {% for n in negocios %}
+                                <option value="{{ n.id }}" {% if request.GET.cartera == n.id|stringformat:'s' %}selected{% endif %}>{{ n.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Subcartera</label>
+                        <input type="text" name="subcartera" class="form-control bg-light" value="{{ request.GET.subcartera|default:'' }}" placeholder="Ej: Mora Temprana">
+                    </div>
+                    {% endif %}
+                    <div class="col-lg-12 d-flex gap-2 pt-2">
+                        <button type="submit" class="btn btn-dark btn-pill fw-semibold px-4 shadow-sm">Filtrar</button>
+                        <a href="{% url 'colaboradores' %}" class="btn btn-outline-danger btn-pill fw-semibold shadow-sm">Limpiar</a>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-dark btn-pill fw-semibold px-4 shadow-sm">Buscar</button>
-                {% if query %}
-                <a href="{% url 'colaboradores' %}" class="btn btn-outline-danger btn-pill fw-semibold shadow-sm">Limpiar</a>
-                {% endif %}
             </form>
         </div>
     </div>
@@ -41,7 +83,9 @@
                             <th class="ps-4">Usuario / Intranet</th>
                             <th>Nombres y Apellidos</th>
                             <th>DNI</th>
-                            <th>Cartera / Negocio</th>
+                            <th>Área</th>
+                            <th>Cargo</th>
+                            <th>Cartera / Subcartera</th>
                             <th>Rol y Horario</th>
                             <th class="text-end pe-4">Acciones</th>
                         </tr>
@@ -59,13 +103,23 @@
                             </td>
                             <td><span class="badge bg-light text-dark border">{{ c.dni }}</span></td>
                             <td>
+                                <span class="fw-bold text-dark">{{ c.area.nombre|default:"-- Sin Área --" }}</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark">{{ c.cargo.nombre|default:"-- Sin Cargo --" }}</span>
+                            </td>
+                            <td>
                                 <span class="fw-bold text-dark">{{ c.negocio.nombre|default:"-- Sin Cartera --" }}</span>
+                                <div class="small text-muted">{{ c.subcartera|default:"Sin subcartera" }}</div>
                             </td>
                             <td>
                                 <span class="status-pill info">{{ c.get_rol_display }}</span>
                                 <div class="small text-muted mt-1"><i class="bi bi-clock"></i> {{ c.get_tipo_horario_display }}</div>
                             </td>
                             <td class="text-end pe-4">
+                                <a href="{% url 'perfil_admin' %}?colaborador={{ c.id }}" class="btn btn-sm btn-light border btn-pill shadow-sm" title="Ver ficha">
+                                    <i class="bi bi-person-vcard text-success"></i>
+                                </a>
                                 <a href="{% url 'editar_colaborador' c.id %}" class="btn btn-sm btn-light border btn-pill shadow-sm" title="Editar">
                                     <i class="bi bi-pencil-square text-primary"></i>
                                 </a>
@@ -76,7 +130,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="bi bi-people opacity-50 display-1 mb-3 d-block"></i>
                                     <h5 class="fw-bold">No se encontraron colaboradores</h5>
@@ -155,6 +209,28 @@
                                 <option value="{{ key }}">{{ value }}</option>
                                 {% endfor %}
                             </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Área</label>
+                            <select class="form-select" name="area">
+                                <option value="">-- Sin asignar --</option>
+                                {% for area in areas %}
+                                <option value="{{ area.id }}">{{ area.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Cargo</label>
+                            <select class="form-select" name="cargo">
+                                <option value="">-- Sin asignar --</option>
+                                {% for cargo in cargos %}
+                                <option value="{{ cargo.id }}">{{ cargo.nombre }}{% if cargo.area %} - {{ cargo.area.nombre }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-dark">Subcartera</label>
+                            <input type="text" class="form-control" name="subcartera" placeholder="Ej: Mora Temprana / Especiales / Castigada">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-dark">Tipo Horario</label>

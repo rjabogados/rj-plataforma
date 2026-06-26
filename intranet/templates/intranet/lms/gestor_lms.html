@@ -226,6 +226,24 @@
                                                         {% endfor %}
                                                     </select>
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Filtrar por Área</label>
+                                                    <select class="form-select" name="area_permitida">
+                                                        <option value="">-- Todas las Áreas --</option>
+                                                        {% for area in areas %}
+                                                            <option value="{{ area.id }}" {% if curso.area_permitida_id == area.id %}selected{% endif %}>{{ area.nombre }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Filtrar por Cargo</label>
+                                                    <select class="form-select" name="cargo_permitido">
+                                                        <option value="">-- Todos los Cargos --</option>
+                                                        {% for cargo in cargos %}
+                                                            <option value="{{ cargo.id }}" {% if curso.cargo_permitido_id == cargo.id %}selected{% endif %}>{{ cargo.nombre }}{% if cargo.area %} - {{ cargo.area.nombre }}{% endif %}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -287,6 +305,20 @@
                                 <select class="form-select" name="cartera_vinculada">
                                     <option value="">-- Todas las Carteras --</option>
                                     {% for n in negocios %}<option value="{{ n.id }}">{{ n.nombre }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Filtrar por Área</label>
+                                <select class="form-select" name="area_permitida">
+                                    <option value="">-- Todas las Áreas --</option>
+                                    {% for area in areas %}<option value="{{ area.id }}">{{ area.nombre }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Filtrar por Cargo</label>
+                                <select class="form-select" name="cargo_permitido">
+                                    <option value="">-- Todos los Cargos --</option>
+                                    {% for cargo in cargos %}<option value="{{ cargo.id }}">{{ cargo.nombre }}{% if cargo.area %} - {{ cargo.area.nombre }}{% endif %}</option>{% endfor %}
                                 </select>
                             </div>
                         </div>

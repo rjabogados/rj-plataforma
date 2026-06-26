@@ -9,6 +9,17 @@ from intranet.models import CandidatoReclutamiento , HistorialEstado, RegistroCo
 from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
 
+
+def usuario_puede_reclutamiento(user):
+    if user.is_superuser:
+        return True
+    perfil = getattr(user, 'perfil', None)
+    return bool(perfil and perfil.rol in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA'])
+
+
+def respuesta_no_autorizado():
+    return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+
 @login_required
 def lista_candidatos(request):
     # Obtener todos los candidatos ordenados por los más recientes
@@ -53,9 +64,8 @@ def actualizar_estado_ajax(request):
             return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
         
         # Validar que el usuario es directivo
-        perfil = getattr(request.user, 'perfil', None)
-        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
-            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
         
         candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
         candidato.estado_candidato = nuevo_estado
@@ -75,9 +85,8 @@ def actualizar_estado_ajax(request):
 def obtener_candidato_ajax(request, candidato_id):
     try:
         # Verificar permisos
-        perfil = getattr(request.user, 'perfil', None)
-        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
-            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
         
         # Validar ID
         try:
@@ -110,9 +119,8 @@ def actualizar_candidato_ajax(request):
         data = json.loads(request.body)
         
         # Validar permiso
-        perfil = getattr(request.user, 'perfil', None)
-        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
-            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
         
         candidato_id = data.get('id')
         if not candidato_id:
@@ -153,9 +161,8 @@ def actualizar_candidato_ajax(request):
 @require_http_methods(["POST"])
 def descartar_candidato_ajax(request):
     try:
-        perfil = getattr(request.user, 'perfil', None)
-        if not perfil or perfil.rol not in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA']:
-            return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
         
         data = json.loads(request.body)
         candidato_id = data.get('id')
@@ -179,8 +186,13 @@ def descartar_candidato_ajax(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
         
+@login_required(login_url='login')
+@require_http_methods(["GET"])
 def metricas_dashboard_ajax(request):
     """Devuelve los datos procesados para los gráficos del dashboard"""
+    if not usuario_puede_reclutamiento(request.user):
+        return respuesta_no_autorizado()
+
     candidatos = CandidatoReclutamiento.objects.all()
 
     # 1. Filtros de Período (Fechas)

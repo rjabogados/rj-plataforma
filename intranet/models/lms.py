@@ -1,5 +1,5 @@
 from django.db import models
-from .rrhh_core import Colaborador, Negocio
+from .rrhh_core import Colaborador, Negocio, Area, Cargo
 
 # ==========================================
 # 1. ACADEMIA Y CURSOS (AHORA CON SMART TARGETING)
@@ -21,6 +21,18 @@ class CursoInduccion(models.Model):
     rol_permitido = models.CharField(
         max_length=50, choices=Colaborador.ROLES, null=True, blank=True, 
         help_text="Mostrar SOLO a este Rol (Ej: Solo Supervisores)."
+    )
+
+    area_permitida = models.ForeignKey(
+        Area, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='cursos_permitidos',
+        help_text="Mostrar SOLO a esta área."
+    )
+
+    cargo_permitido = models.ForeignKey(
+        Cargo, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='cursos_permitidos',
+        help_text="Mostrar SOLO a este cargo."
     )
     
     cartera_vinculada = models.ForeignKey(
@@ -199,6 +211,12 @@ class Encuesta(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     es_anonima = models.BooleanField(default=True)
     con_puntaje = models.BooleanField(default=False)
+    publico_general = models.BooleanField(default=True, help_text="Si está activo, todos podrán verla.")
+    rol_permitido = models.CharField(max_length=50, choices=Colaborador.ROLES, null=True, blank=True)
+    area_permitida = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name='encuestas_permitidas')
+    cargo_permitido = models.ForeignKey(Cargo, on_delete=models.SET_NULL, null=True, blank=True, related_name='encuestas_permitidas')
+    cartera_vinculada = models.ForeignKey(Negocio, on_delete=models.SET_NULL, null=True, blank=True, related_name='encuestas_permitidas')
+    subcartera_vinculada = models.CharField(max_length=100, blank=True, null=True)
     activa = models.BooleanField(default=True, db_index=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 

@@ -80,7 +80,7 @@
             </div>
         </li>
 
-        {% if user.is_superuser or user.perfil.es_directivo %}
+        {% if user.is_superuser or user.perfil.puede_ver_gestion %}
         <li class="mt-3 mb-2 sidebar-separator"></li>
         <li class="nav-item mt-1 mb-1 menu-header-tag">
             <span class="text-uppercase fw-bold px-3">Gestión y Control</span>
@@ -92,6 +92,29 @@
                 <span>Dashboard Analytics</span>
             </a>
         </li>
+
+        <li class="nav-item">
+            <a href="{% url 'dashboard_rrhh' %}" class="nav-link analytics-link">
+                <i class="bi bi-people-badge menu-icon me-3"></i> 
+                <span>Panel RRHH</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="{% url 'perfil_admin' %}" class="nav-link analytics-link">
+                <i class="bi bi-person-vcard-fill menu-icon me-3"></i> 
+                <span>Ficha por Persona</span>
+            </a>
+        </li>
+
+        {% if user.is_superuser or user.perfil.puede_ver_panel_supervisor %}
+        <li class="nav-item">
+            <a href="{% url 'dashboard_supervisor' %}" class="nav-link analytics-link">
+                <i class="bi bi-diagram-3-fill menu-icon me-3"></i> 
+                <span>Panel Supervisor</span>
+            </a>
+        </li>
+        {% endif %}
 
         <li class="nav-item">
             <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAdmin" role="button" aria-expanded="false">
@@ -137,7 +160,7 @@
         </li>
         {% endif %}
         
-        {% if user.is_superuser or user.perfil.es_calidad %}
+        {% if user.is_superuser or user.perfil.puede_ver_calidad_panel %}
         <li class="mt-3 mb-1 sidebar-separator"></li>
         <li class="nav-item mt-1 mb-1 menu-header-tag">
             <span class="text-uppercase fw-bold px-3">Calidad y Auditoría</span>

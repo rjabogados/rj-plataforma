@@ -5,6 +5,9 @@ import json
 import random 
 import secrets
 import string
+import mimetypes
+import os
+from urllib.parse import quote
 from datetime import datetime, date
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -15,18 +18,75 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Q, Prefetch, Avg
 from django.utils import timezone
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, Http404
+from django.views.decorators.http import require_http_methods
 
 from intranet.models import (
-    Colaborador, Negocio, Encuesta, Pregunta, RespuestaEncuesta,
+    Colaborador, Negocio, Area, Cargo, Encuesta, Pregunta, RespuestaEncuesta,
     MensajeInterno, EventoCalendario, Comunicado, CandidatoOnboarding,
     MaterialFormativo, MatriculaCurso,
     PreguntaEvaluacion, RespuestaColaborador, OpcionRespuesta
 )
 
-from .utils import solo_directivos, solo_calidad, generar_username_unico
+from .utils import solo_directivos, solo_calidad, generar_username_unico, filtrar_colaboradores, filtros_personal_disponibles, perfil_coincide_segmentacion
 
 from intranet.models.lms import EvaluacionCurso, CursoInduccion, LeccionCurso, ProgresoLeccion
+
+MAX_INTERNO_ADJUNTO_SIZE = 15 * 1024 * 1024
+ADJUNTOS_COMUNICACION_PERMITIDOS = {
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt',
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi', '.webm'
+}
+
+
+def usuario_es_directivo(user):
+    if user.is_superuser:
+        return True
+    perfil = getattr(user, 'perfil', None)
+    return bool(perfil and perfil.rol in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA'])
+
+
+def build_storage_response(field_file):
+    if not field_file or not field_file.name:
+        raise Http404("Archivo no disponible")
+
+    storage = field_file.storage
+    if not storage.exists(field_file.name):
+        raise Http404("Archivo no disponible")
+
+    filename = field_file.name.split('/')[-1]
+    content_type, _ = mimetypes.guess_type(filename)
+    response = FileResponse(storage.open(field_file.name, 'rb'), content_type=content_type or 'application/octet-stream')
+    response['Content-Disposition'] = f"inline; filename*=UTF-8''{quote(filename)}"
+    return response
+
+
+def adjunto_comunicacion_valido(adjunto):
+    if not adjunto:
+        return True
+    extension = os.path.splitext(adjunto.name)[1].lower()
+    return extension in ADJUNTOS_COMUNICACION_PERMITIDOS and adjunto.size <= MAX_INTERNO_ADJUNTO_SIZE
+
+
+def es_participante_mensaje(mensaje, perfil):
+    return mensaje.remitente_id == perfil.id or mensaje.destinatario_id == perfil.id
+
+
+def crear_comunicado_desde_request(request):
+    titulo = request.POST.get('titulo', '').strip()
+    mensaje = request.POST.get('mensaje', '').strip()
+    adjunto = request.FILES.get('adjunto')
+
+    if not titulo or not mensaje:
+        messages.error(request, 'El título y el mensaje son obligatorios.')
+        return False
+    if not adjunto_comunicacion_valido(adjunto):
+        messages.error(request, 'El adjunto no es válido. Usa archivos permitidos de hasta 15 MB.')
+        return False
+
+    Comunicado.objects.create(titulo=titulo[:200], mensaje=mensaje, adjunto=adjunto, activo=True)
+    messages.success(request, 'Comunicado publicado correctamente.')
+    return True
 
 # ==========================================
 # DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
@@ -34,6 +94,8 @@ from intranet.models.lms import EvaluacionCurso, CursoInduccion, LeccionCurso, P
 @login_required(login_url='login')
 @solo_directivos
 def colaboradores(request):
+    perfil_actual = getattr(request.user, 'perfil', None)
+
     if request.method == 'POST':
         nombres = request.POST.get('nombres')
         apellidos = request.POST.get('apellidos')
@@ -41,6 +103,9 @@ def colaboradores(request):
         correo_val = request.POST.get('correo').strip().lower() or None
         rol_val = request.POST.get('rol')
         negocio_id = request.POST.get('negocio')
+        area_id = request.POST.get('area')
+        cargo_id = request.POST.get('cargo')
+        subcartera = request.POST.get('subcartera', '').strip() or None
         tipo_horario = request.POST.get('tipo_horario')
         
         username_custom = request.POST.get('username', '').strip()
@@ -50,6 +115,10 @@ def colaboradores(request):
         password_final = password_custom if password_custom else dni_val
 
         negocio_instancia = Negocio.objects.get(id=negocio_id) if negocio_id else None
+        area_instancia = Area.objects.filter(id=area_id).first() if area_id else None
+        cargo_instancia = Cargo.objects.select_related('area').filter(id=cargo_id).first() if cargo_id else None
+        if cargo_instancia and not area_instancia and cargo_instancia.area:
+            area_instancia = cargo_instancia.area
         f_ingreso = request.POST.get('fecha_ingreso')
         fecha_formal = datetime.strptime(f_ingreso, '%Y-%m-%d').date() if f_ingreso else date.today()
 
@@ -60,22 +129,26 @@ def colaboradores(request):
             )
             Colaborador.objects.create(
                 user=nuevo_user, dni=dni_val, rol=rol_val, negocio=negocio_instancia, 
+                area=area_instancia, cargo=cargo_instancia, subcartera=subcartera,
                 tipo_horario=tipo_horario, hora_ingreso=request.POST.get('hora_ingreso') or None, 
                 hora_salida=request.POST.get('hora_salida') or None, fecha_ingreso=fecha_formal
             )
             return redirect('colaboradores')
 
-    query = request.GET.get('q', '').strip()
-    if query:
-        lista_colaboradores = Colaborador.objects.filter(
-            Q(user__first_name__icontains=query) | Q(user__last_name__icontains=query) | Q(dni__icontains=query)
-        ).select_related('user', 'negocio')
-    else:
-        lista_colaboradores = Colaborador.objects.all().select_related('user', 'negocio')
+    lista_colaboradores = filtrar_colaboradores(
+        Colaborador.objects.select_related('user', 'negocio', 'area', 'cargo'),
+        request.GET,
+        perfil_actual,
+    )
 
     return render(request, 'intranet/rrhh/colaboradores.html', {
-        'colaboradores': lista_colaboradores, 'negocios': Negocio.objects.all(), 
-        'roles': Colaborador.ROLES, 'tipos_horario': Colaborador.TIPO_HORARIO, 'query': query
+        'colaboradores': lista_colaboradores,
+        'negocios': Negocio.objects.all(),
+        'areas': Area.objects.filter(activa=True).order_by('nombre'),
+        'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('nombre'),
+        'roles': Colaborador.ROLES,
+        'tipos_horario': Colaborador.TIPO_HORARIO,
+        'filtros_disponibles': filtros_personal_disponibles(perfil_actual),
     })
 
 def generar_contrasena_segura():
@@ -173,6 +246,13 @@ def editar_colaborador(request, pk):
         
         negocio_id = request.POST.get('negocio')
         colab.negocio = Negocio.objects.get(id=negocio_id) if negocio_id else None
+        area_id = request.POST.get('area')
+        cargo_id = request.POST.get('cargo')
+        colab.area = Area.objects.filter(id=area_id).first() if area_id else None
+        colab.cargo = Cargo.objects.select_related('area').filter(id=cargo_id).first() if cargo_id else None
+        if colab.cargo and not colab.area and colab.cargo.area:
+            colab.area = colab.cargo.area
+        colab.subcartera = request.POST.get('subcartera', '').strip() or None
         colab.save()
 
         onboarding_activo = request.POST.get('switch_onboarding') == 'on'
@@ -193,7 +273,11 @@ def editar_colaborador(request, pk):
         
     tiene_onboarding = CandidatoOnboarding.objects.filter(colaborador=colab).exists()
     return render(request, 'intranet/rrhh/editar_colaborador.html', {
-        'colab': colab, 'negocios': Negocio.objects.all(), 'tiene_onboarding': tiene_onboarding
+        'colab': colab,
+        'negocios': Negocio.objects.all(),
+        'areas': Area.objects.filter(activa=True).order_by('nombre'),
+        'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('nombre'),
+        'tiene_onboarding': tiene_onboarding
     })
 
 @login_required(login_url='login')
@@ -291,7 +375,7 @@ def gestionar_onboarding(request): return redirect('onboarding_admin')
 @login_required(login_url='login')
 @solo_directivos
 def onboarding_admin(request):
-    from intranet.models.rrhh_core import Negocio, Colaborador
+    from intranet.models.rrhh_core import Negocio, Area, Cargo, Colaborador
     from intranet.models.lms import CursoInduccion, EvaluacionCurso, LeccionCurso, CandidatoOnboarding
     
     if request.method == 'POST':
@@ -303,14 +387,21 @@ def onboarding_admin(request):
             # --- Smart Targeting (Segmentación) ---
             publico_general = request.POST.get('publico_general') == 'on'
             rol_permitido = request.POST.get('rol_permitido') or None
+            area_permitida_id = request.POST.get('area_permitida')
+            cargo_permitido_id = request.POST.get('cargo_permitido')
             cartera_id = request.POST.get('cartera_vinculada')
             subcartera = request.POST.get('subcartera_vinculada') or None
             
             cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
+            area_obj = Area.objects.filter(id=area_permitida_id).first() if area_permitida_id else None
+            cargo_obj = Cargo.objects.select_related('area').filter(id=cargo_permitido_id).first() if cargo_permitido_id else None
+            if cargo_obj and not area_obj and cargo_obj.area:
+                area_obj = cargo_obj.area
 
             CursoInduccion.objects.create(
                 titulo=titulo, descripcion=descripcion, tipo='INDUCCION',
                 publico_general=publico_general, rol_permitido=rol_permitido,
+                area_permitida=area_obj, cargo_permitido=cargo_obj,
                 cartera_vinculada=cartera_obj, subcartera_vinculada=subcartera
             )
             messages.success(request, f"Módulo de Inducción '{titulo}' creado exitosamente.")
@@ -385,10 +476,12 @@ def onboarding_admin(request):
     # Extraemos SOLO los de inducción (y sus clases/exámenes precargados)
     cursos_biblioteca = CursoInduccion.objects.filter(activo=True, tipo='INDUCCION').select_related('evaluacion').prefetch_related('lecciones').order_by('-fecha_creacion')
     negocios = Negocio.objects.all()
+    areas = Area.objects.filter(activa=True).order_by('nombre')
+    cargos = Cargo.objects.filter(activa=True).select_related('area').order_by('nombre')
 
     return render(request, 'intranet/rrhh/onboarding_lista.html', {
         'candidatos_progreso': lista_candidatos_progreso, 'candidatos': onboardings_activos, 
-        'modulos_biblioteca': cursos_biblioteca, 'negocios': negocios, 'roles': Colaborador.ROLES
+        'modulos_biblioteca': cursos_biblioteca, 'negocios': negocios, 'areas': areas, 'cargos': cargos, 'roles': Colaborador.ROLES
     })
 
 @login_required(login_url='login')
@@ -402,6 +495,12 @@ def editar_curso_induccion(request, curso_id):
         curso.descripcion = request.POST.get('descripcion')
         curso.publico_general = request.POST.get('publico_general') == 'on'
         curso.rol_permitido = request.POST.get('rol_permitido') or None
+        area_id = request.POST.get('area_permitida')
+        cargo_id = request.POST.get('cargo_permitido')
+        curso.area_permitida = Area.objects.filter(id=area_id).first() if area_id else None
+        curso.cargo_permitido = Cargo.objects.select_related('area').filter(id=cargo_id).first() if cargo_id else None
+        if curso.cargo_permitido and not curso.area_permitida and curso.cargo_permitido.area:
+            curso.area_permitida = curso.cargo_permitido.area
         curso.subcartera_vinculada = request.POST.get('subcartera_vinculada') or None
         cartera_id = request.POST.get('cartera_vinculada')
         curso.cartera_vinculada_id = cartera_id if cartera_id else None
@@ -447,7 +546,10 @@ def mi_induccion(request):
     cursos_disponibles = CursoInduccion.objects.filter(
         Q(publico_general=True) | 
         Q(rol_permitido=colaborador.rol) | 
-        Q(cartera_vinculada=colaborador.negocio),
+        Q(area_permitida=colaborador.area) |
+        Q(cargo_permitido=colaborador.cargo) |
+        Q(cartera_vinculada=colaborador.negocio) |
+        Q(subcartera_vinculada=colaborador.subcartera),
         activo=True,
         tipo='INDUCCION' 
     ).distinct()
@@ -524,10 +626,63 @@ def pasar_a_planilla(request, candidato_id):
 # MOTOR DE ENCUESTAS, COMUNICADOS, CALENDARIO...
 # ==========================================
 @login_required(login_url='login')
-def encuestas_personal(request): return render(request, 'intranet/comunicacion/encuestas_personal.html', {'encuestas': Encuesta.objects.filter(activa=True).order_by('-fecha_creacion')})
+def encuestas_personal(request):
+    perfil = getattr(request.user, 'perfil', None)
+    encuestas = Encuesta.objects.filter(activa=True).select_related('area_permitida', 'cargo_permitido', 'cartera_vinculada').prefetch_related('preguntas').order_by('-fecha_creacion')
+    visibles = []
+    for encuesta in encuestas:
+        if perfil_coincide_segmentacion(
+            perfil,
+            rol=encuesta.rol_permitido,
+            area=encuesta.area_permitida,
+            cargo=encuesta.cargo_permitido,
+            cartera=encuesta.cartera_vinculada,
+            subcartera=encuesta.subcartera_vinculada,
+            publico_general=encuesta.publico_general,
+        ):
+            visibles.append(encuesta)
+    return render(request, 'intranet/comunicacion/encuestas_personal.html', {'encuestas': visibles, 'perfil': perfil})
 @login_required(login_url='login')
 @solo_directivos
-def encuestas_admin(request): return render(request, 'intranet/admin/encuestas_admin.html', {'encuestas': Encuesta.objects.all().prefetch_related('preguntas')})
+def encuestas_admin(request):
+    if request.method == 'POST':
+        if request.POST.get('crear_encuesta') == '1':
+            encuesta = Encuesta.objects.create(
+                titulo=request.POST.get('titulo', '').strip(),
+                descripcion=request.POST.get('descripcion', '').strip(),
+                es_anonima=request.POST.get('es_anonima') == '1',
+                con_puntaje=request.POST.get('con_puntaje') == '1',
+                publico_general=request.POST.get('publico_general') == 'on',
+                rol_permitido=request.POST.get('rol_permitido') or None,
+                area_permitida=Area.objects.filter(id=request.POST.get('area_permitida')).first() if request.POST.get('area_permitida') else None,
+                cargo_permitido=Cargo.objects.select_related('area').filter(id=request.POST.get('cargo_permitido')).first() if request.POST.get('cargo_permitido') else None,
+                cartera_vinculada=Negocio.objects.filter(id=request.POST.get('cartera_vinculada')).first() if request.POST.get('cartera_vinculada') else None,
+                subcartera_vinculada=request.POST.get('subcartera_vinculada') or None,
+            )
+            if encuesta.cargo_permitido and not encuesta.area_permitida and encuesta.cargo_permitido.area:
+                encuesta.area_permitida = encuesta.cargo_permitido.area
+                encuesta.save(update_fields=['area_permitida'])
+            messages.success(request, 'Encuesta creada correctamente.')
+            return redirect('encuestas_admin')
+
+        if request.POST.get('crear_pregunta') == '1':
+            encuesta = get_object_or_404(Encuesta, id=request.POST.get('encuesta_id'))
+            Pregunta.objects.create(
+                encuesta=encuesta,
+                texto=request.POST.get('texto', '').strip(),
+                tipo=request.POST.get('tipo') or 'ABIERTA',
+                puntos_si=request.POST.get('puntos_si') or 0,
+            )
+            messages.success(request, 'Pregunta agregada a la encuesta.')
+            return redirect('encuestas_admin')
+
+    return render(request, 'intranet/admin/encuestas_admin.html', {
+        'encuestas': Encuesta.objects.all().select_related('area_permitida', 'cargo_permitido', 'cartera_vinculada').prefetch_related('preguntas'),
+        'negocios': Negocio.objects.all(),
+        'areas': Area.objects.filter(activa=True).order_by('nombre'),
+        'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('nombre'),
+        'roles': Colaborador.ROLES,
+    })
 @login_required(login_url='login')
 @solo_directivos
 def resultados_encuesta(request, pk): return render(request, 'intranet/comunicacion/encuesta_exito.html')
@@ -535,19 +690,118 @@ def resultados_encuesta(request, pk): return render(request, 'intranet/comunicac
 @solo_directivos
 def exportar_encuesta(request, pk): return HttpResponse("Exportar")
 @login_required(login_url='login')
-def mensajeria(request): return render(request, 'intranet/comunicacion/mensajeria.html')
+def mensajeria(request):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil:
+        return redirect('inicio')
+
+    if request.method == 'POST' and request.POST.get('enviar_mensaje'):
+        destinatarios_ids = request.POST.getlist('destinatarios')
+        asunto = request.POST.get('asunto', '').strip()
+        cuerpo = request.POST.get('cuerpo', '').strip()
+        adjunto = request.FILES.get('adjunto')
+
+        if not destinatarios_ids or not asunto or not cuerpo:
+            messages.error(request, 'Completa destinatarios, asunto y mensaje.')
+            return redirect('mensajeria')
+        if not adjunto_comunicacion_valido(adjunto):
+            messages.error(request, 'El adjunto no es válido. Usa archivos permitidos de hasta 15 MB.')
+            return redirect('mensajeria')
+
+        destinatarios = Colaborador.objects.filter(id__in=destinatarios_ids).exclude(id=perfil.id).select_related('user')
+        if not destinatarios.exists():
+            messages.error(request, 'Selecciona al menos un destinatario válido.')
+            return redirect('mensajeria')
+
+        adjunto_bytes = adjunto.read() if adjunto else None
+        for destinatario in destinatarios:
+            mensaje = MensajeInterno.objects.create(
+                remitente=perfil,
+                destinatario=destinatario,
+                asunto=asunto[:200],
+                cuerpo=cuerpo,
+            )
+            if adjunto_bytes is not None:
+                mensaje.adjunto.save(adjunto.name, ContentFile(adjunto_bytes), save=True)
+        messages.success(request, 'Mensaje enviado correctamente.')
+        return redirect('mensajeria')
+
+    query = request.GET.get('q', '').strip()
+    recibidos = MensajeInterno.objects.filter(destinatario=perfil).select_related('remitente__user', 'destinatario__user').order_by('-fecha_envio')
+    enviados = MensajeInterno.objects.filter(remitente=perfil).select_related('remitente__user', 'destinatario__user').order_by('-fecha_envio')
+
+    if query:
+        recibidos = recibidos.filter(Q(remitente__user__first_name__icontains=query) | Q(remitente__user__last_name__icontains=query) | Q(asunto__icontains=query))
+        enviados = enviados.filter(Q(destinatario__user__first_name__icontains=query) | Q(destinatario__user__last_name__icontains=query) | Q(asunto__icontains=query))
+
+    compañeros = Colaborador.objects.exclude(id=perfil.id).select_related('user').order_by('user__last_name', 'user__first_name')
+    return render(request, 'intranet/comunicacion/mensajeria.html', {
+        'recibidos': recibidos,
+        'enviados': enviados,
+        'compañeros': compañeros,
+        'query': query,
+    })
 @login_required(login_url='login')
-def leer_mensaje(request, pk): return render(request, 'intranet/comunicacion/leer_mensaje.html')
+def leer_mensaje(request, pk):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil:
+        return redirect('inicio')
+
+    mensaje = get_object_or_404(MensajeInterno.objects.select_related('remitente__user', 'destinatario__user'), id=pk)
+    if not es_participante_mensaje(mensaje, perfil):
+        raise Http404('Mensaje no disponible')
+
+    es_receptor = mensaje.destinatario_id == perfil.id
+    if es_receptor and not mensaje.leido:
+        mensaje.leido = True
+        mensaje.save(update_fields=['leido'])
+
+    return render(request, 'intranet/comunicacion/leer_mensaje.html', {'mensaje': mensaje, 'es_receptor': es_receptor})
 @login_required(login_url='login')
-def calendario(request): return render(request, 'intranet/dashboard/calendario.html')
+def calendario(request):
+    eventos = []
+    for evento in EventoCalendario.objects.all().order_by('fecha_inicio'):
+        eventos.append({
+            'id': evento.id,
+            'title': evento.titulo,
+            'start': evento.fecha_inicio.isoformat() if evento.fecha_inicio else None,
+            'end': evento.fecha_fin.isoformat() if evento.fecha_fin else None,
+            'description': evento.descripcion or '',
+        })
+    return render(
+        request,
+        'intranet/dashboard/calendario.html',
+        {'eventos_json': json.dumps(eventos), 'es_admin': getattr(request.user, 'is_staff', False) or request.user.is_superuser},
+    )
 @login_required(login_url='login')
-def comunicados(request): return render(request, 'intranet/comunicacion/comunicados.html')
+def comunicados(request):
+    if request.method == 'POST':
+        if not usuario_es_directivo(request.user):
+            raise Http404('No autorizado')
+        crear_comunicado_desde_request(request)
+        return redirect('comunicados')
+
+    return render(request, 'intranet/comunicacion/comunicados.html', {
+        'comunicados': Comunicado.objects.filter(activo=True).order_by('-fecha_publicacion'),
+        'es_admin': usuario_es_directivo(request.user),
+    })
 @login_required(login_url='login')
 @solo_directivos
-def gestor_comunicados(request): return render(request, 'intranet/comunicacion/gestor_comunicados.html')
+def gestor_comunicados(request):
+    if request.method == 'POST':
+        crear_comunicado_desde_request(request)
+        return redirect('gestor_comunicados')
+    return render(request, 'intranet/comunicacion/gestor_comunicados.html', {
+        'comunicados': Comunicado.objects.filter(activo=True).order_by('-fecha_publicacion')
+    })
 @login_required(login_url='login')
 @solo_directivos
-def eliminar_comunicado(request, pk): return redirect('gestor_comunicados')
+@require_http_methods(["POST"])
+def eliminar_comunicado(request, pk):
+    comunicado = get_object_or_404(Comunicado, id=pk)
+    comunicado.delete()
+    messages.success(request, 'Comunicado eliminado correctamente.')
+    return redirect('gestor_comunicados')
 @login_required(login_url='login')
 @solo_directivos
 def eliminar_evento(request, pk): return redirect('calendario')
@@ -576,9 +830,15 @@ def gestor_lms(request):
             descripcion = request.POST.get('descripcion')
             publico_general = request.POST.get('publico_general') == 'on'
             rol_permitido = request.POST.get('rol_permitido') or None
+            area_permitida_id = request.POST.get('area_permitida')
+            cargo_permitido_id = request.POST.get('cargo_permitido')
             cartera_id = request.POST.get('cartera_vinculada')
             cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
             categoria_text = request.POST.get('categoria') or None
+            area_obj = Area.objects.filter(id=area_permitida_id).first() if area_permitida_id else None
+            cargo_obj = Cargo.objects.select_related('area').filter(id=cargo_permitido_id).first() if cargo_permitido_id else None
+            if cargo_obj and not area_obj and cargo_obj.area:
+                area_obj = cargo_obj.area
 
             CursoInduccion.objects.create(
                 titulo=titulo,
@@ -586,6 +846,8 @@ def gestor_lms(request):
                 tipo='ACADEMIA', 
                 publico_general=publico_general,
                 rol_permitido=rol_permitido,
+                area_permitida=area_obj,
+                cargo_permitido=cargo_obj,
                 cartera_vinculada=cartera_obj,
                 subcartera_vinculada=categoria_text
             )
@@ -660,6 +922,8 @@ def gestor_lms(request):
         'cursos_sin_categoria': cursos_sin_categoria,
         'cursos': cursos_disponibles,
         'negocios': Negocio.objects.all(),
+        'areas': Area.objects.filter(activa=True).order_by('nombre'),
+        'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('nombre'),
         'roles': Colaborador.ROLES
     })
 
@@ -673,6 +937,12 @@ def editar_curso_lms(request, curso_id):
         curso.descripcion = request.POST.get('descripcion')
         curso.publico_general = request.POST.get('publico_general') == 'on'
         curso.rol_permitido = request.POST.get('rol_permitido') or None
+        area_id = request.POST.get('area_permitida')
+        cargo_id = request.POST.get('cargo_permitido')
+        curso.area_permitida = Area.objects.filter(id=area_id).first() if area_id else None
+        curso.cargo_permitido = Cargo.objects.select_related('area').filter(id=cargo_id).first() if cargo_id else None
+        if curso.cargo_permitido and not curso.area_permitida and curso.cargo_permitido.area:
+            curso.area_permitida = curso.cargo_permitido.area
         
         cartera_id = request.POST.get('cartera_vinculada')
         curso.cartera_vinculada_id = cartera_id if cartera_id else None
@@ -703,7 +973,10 @@ def academia(request):
     cursos_disponibles = CursoInduccion.objects.filter(
         Q(publico_general=True) | 
         Q(rol_permitido=colaborador.rol) | 
-        Q(cartera_vinculada=colaborador.negocio),
+        Q(area_permitida=colaborador.area) |
+        Q(cargo_permitido=colaborador.cargo) |
+        Q(cartera_vinculada=colaborador.negocio) |
+        Q(subcartera_vinculada=colaborador.subcartera),
         activo=True,
         tipo='ACADEMIA'
     ).distinct()
@@ -1061,6 +1334,40 @@ def ver_leccion(request, leccion_id):
         'curso': leccion.curso,
         'ya_completada': ya_completada
     })
+
+
+@login_required(login_url='login')
+def ver_leccion_pdf(request, leccion_id):
+    leccion = get_object_or_404(LeccionCurso, id=leccion_id)
+
+    if not leccion.archivo_pdf:
+        raise Http404("Archivo no disponible")
+
+    if not usuario_es_directivo(request.user):
+        perfil = getattr(request.user, 'perfil', None)
+        if not perfil or not MatriculaCurso.objects.filter(colaborador=perfil, curso=leccion.curso).exists():
+            raise Http404("Archivo no disponible")
+
+    return build_storage_response(leccion.archivo_pdf)
+
+
+@login_required(login_url='login')
+def ver_adjunto_mensaje(request, pk):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil:
+        raise Http404('Archivo no disponible')
+
+    mensaje = get_object_or_404(MensajeInterno, id=pk)
+    if not es_participante_mensaje(mensaje, perfil):
+        raise Http404('Archivo no disponible')
+
+    return build_storage_response(mensaje.adjunto)
+
+
+@login_required(login_url='login')
+def ver_adjunto_comunicado(request, pk):
+    comunicado = get_object_or_404(Comunicado, id=pk, activo=True)
+    return build_storage_response(comunicado.adjunto)
 
 @login_required(login_url='login')
 def completar_leccion(request, leccion_id):

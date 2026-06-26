@@ -8,6 +8,12 @@
             <div class="card shadow-sm border-0 rounded-4 p-4 h-100 border-top border-4 border-danger">
                 <h5 class="fw-bold text-dark">{{ e.titulo }}</h5>
                 <p class="small text-muted mb-3">{{ e.descripcion }}</p>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {% if e.area_permitida %}<span class="badge bg-primary">Área: {{ e.area_permitida.nombre }}</span>{% endif %}
+                    {% if e.cargo_permitido %}<span class="badge bg-success">Cargo: {{ e.cargo_permitido.nombre }}</span>{% endif %}
+                    {% if e.cartera_vinculada %}<span class="badge bg-secondary">Cartera: {{ e.cartera_vinculada.nombre }}</span>{% endif %}
+                    {% if e.subcartera_vinculada %}<span class="badge bg-dark">Subcartera: {{ e.subcartera_vinculada }}</span>{% endif %}
+                </div>
                 {% if e.es_anonima %}
                 <div class="alert alert-light border small py-2 text-secondary"><i class="bi bi-incognito"></i> Tus respuestas serán 100% anónimas.</div>
                 {% endif %}

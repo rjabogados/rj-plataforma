@@ -1,6 +1,6 @@
-from django.urls import path, re_path
-from django.views.static import serve
+from django.urls import path
 from django.conf import settings
+from django.conf.urls.static import static
 
 # Importaciones de vistas
 from . import views
@@ -18,6 +18,7 @@ urlpatterns = [
     # ==========================================
     path('', views.inicio, name='inicio'),
     path('perfil/', views.perfil, name='perfil'),
+    path('perfil-admin/', views.perfil_admin, name='perfil_admin'),
     path('salir/', views.salir, name='salir'),
     path('login/', views.login_view, name='login'),
 
@@ -58,6 +59,7 @@ urlpatterns = [
     # --- RUTAS DE APRENDIZAJE: CLASES Y VIDEOS (NUEVAS) ---
     path('academia/curso/<int:curso_id>/', lms.detalle_curso, name='detalle_curso'),
     path('academia/leccion/<int:leccion_id>/', lms.ver_leccion, name='ver_leccion'),
+    path('academia/leccion/<int:leccion_id>/pdf/', views.ver_leccion_pdf, name='ver_leccion_pdf'),
     path('academia/leccion/<int:leccion_id>/completar/', lms.completar_leccion, name='completar_leccion'),
 
     # --- RUTAS DE GAMIFICACIÓN Y ANALÍTICA ---
@@ -73,9 +75,11 @@ urlpatterns = [
     # ==========================================
     path('admin-documentos/despacho/', views.documentos_admin, name='documentos_admin'),
     path('admin-documentos/plantillas/', views.gestionar_plantillas, name='gestionar_plantillas'),
+    path('admin-documentos/ver/<int:doc_id>/', views.ver_documento_admin, name='ver_documento_admin'),
     path('documentos/borrar-asignacion/<int:doc_id>/', views.eliminar_documento_generado, name='eliminar_doc_generado'),
     path('plantillas/borrar-formato/<int:plantilla_id>/', views.eliminar_plantilla, name='eliminar_plantilla'),
     path('mis-documentos/', views.documentos_personal, name='documentos_personal'),
+    path('mis-documentos/ver/<int:doc_id>/', views.ver_documento_personal, name='ver_documento_personal'),
     path('mis-documentos/firmar/<int:doc_id>/', views.firmar_documento, name='firmar_documento'),
 
     # ==========================================
@@ -83,6 +87,7 @@ urlpatterns = [
     # ==========================================
     path('tickets/', views.tickets, name='tickets'),
     path('tickets-admin/', views.tickets_admin, name='tickets_admin'),
+    path('tickets/adjunto/<int:pk>/', views.ver_adjunto_ticket, name='ver_adjunto_ticket'),
     path('tickets/revisar/<int:pk>/<str:estado>/', views.revisar_ticket, name='revisar_ticket'),
     path('vacaciones/', views.vacaciones, name='vacaciones'),
     path('vacaciones-admin/', views.vacaciones_admin, name='vacaciones_admin'),
@@ -110,7 +115,9 @@ urlpatterns = [
     # ==========================================
     path('mensajeria/', views.mensajeria, name='mensajeria'),
     path('mensajeria/leer/<int:pk>/', views.leer_mensaje, name='leer_mensaje'),
+    path('mensajeria/adjunto/<int:pk>/', views.ver_adjunto_mensaje, name='ver_adjunto_mensaje'),
     path('comunicados/', views.comunicados, name='comunicados'),
+    path('comunicados/adjunto/<int:pk>/', views.ver_adjunto_comunicado, name='ver_adjunto_comunicado'),
     path('comunicados/eliminar/<int:pk>/', views.eliminar_comunicado, name='eliminar_comunicado'),
     path('gestor-anuncios/', views.gestor_comunicados, name='gestor_comunicados'),
     path('calendario/', views.calendario, name='calendario'),
@@ -121,6 +128,10 @@ urlpatterns = [
     # MÓDULOS SECUNDARIOS Y DASHBOARD
     # ==========================================
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/rrhh/', views.dashboard_rrhh, name='dashboard_rrhh'),
+    path('dashboard/rrhh/exportar-directorio/', views.exportar_directorio_rrhh, name='exportar_directorio_rrhh'),
+    path('dashboard/supervisor/', views.dashboard_supervisor, name='dashboard_supervisor'),
+    path('dashboard/supervisor/exportar-equipo/', views.exportar_equipo_supervisor, name='exportar_equipo_supervisor'),
     path('activos/', views.activos, name='activos'),
     path('televisor/', views.modo_televisor, name='modo_televisor'),
     path('api/webhook/', views.webhook_receptor, name='webhook_receptor'),
@@ -138,7 +149,5 @@ urlpatterns = [
     path('curso/<int:curso_id>/generar-examen/', ia_views.generar_examen_ia, name='generar_examen_ia'),
 ]
 
-# --- HACK PARA MOSTRAR PDFs y FOTOS SUBIDAS EN PRODUCCIÓN ---
-urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
-]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

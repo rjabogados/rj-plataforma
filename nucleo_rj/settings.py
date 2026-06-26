@@ -9,23 +9,35 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 't', 'yes', 'on'}
+
+
+def env_list(name, default=None):
+    value = os.environ.get(name)
+    if value is None:
+        return list(default or [])
+    return [item.strip() for item in value.split(',') if item.strip()]
+
 # SECURITY WARNING: keep the secret key used in production secret!
-# ¡CORRECCIÓN CRÍTICA! Le ponemos un "salvavidas" por si Render no encuentra la llave
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-salvavidas-temporal-12345')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-only-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# FORZAMOS EL DEBUG A TRUE PARA VER EL ERROR
-DEBUG = True
+DEBUG = env_bool('DEBUG', default=False)
 
-# ABRIMOS LAS PUERTAS A CUALQUIER DOMINIO TEMPORALMENTE
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = env_list(
+    'ALLOWED_HOSTS',
+    default=['127.0.0.1', 'localhost', 'rj-plataforma.onrender.com', 'www.rj-plataforma.onrender.com'],
+)
 
-# Aquí agregamos la dirección que te dio Ngrok y Render:
-CSRF_TRUSTED_ORIGINS = [
-    'https://why-unknown-wildfire.ngrok-free.dev', 
-    'https://*.ngrok-free.app',
-    'https://rj-plataforma.onrender.com'
-]
+CSRF_TRUSTED_ORIGINS = env_list(
+    'CSRF_TRUSTED_ORIGINS',
+    default=['https://rj-plataforma.onrender.com', 'https://www.rj-plataforma.onrender.com'],
+)
 
 # Application definition
 INSTALLED_APPS = [
@@ -172,5 +184,17 @@ CORS_ALLOW_HEADERS = [
 
 # Permitir iframes del mismo dominio (Para el visor de PDFs de la Academia LMS)
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', default=True)
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

@@ -2,7 +2,20 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin  # <- Importación corregida para el panel de usuarios
 from django.contrib.admin.sites import NotRegistered  # <- Importación corregida para el escudo de Render
-from intranet.models import Negocio, Colaborador, Asistencia
+from intranet.models import Negocio, Area, Cargo, Colaborador, Asistencia
+
+
+@admin.register(Area)
+class AreaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'activa')
+    search_fields = ('nombre',)
+
+
+@admin.register(Cargo)
+class CargoAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'area', 'activa')
+    list_filter = ('activa', 'area')
+    search_fields = ('nombre', 'descripcion', 'area__nombre')
 
 @admin.register(Negocio)
 class NegocioAdmin(admin.ModelAdmin):
@@ -12,11 +25,11 @@ class NegocioAdmin(admin.ModelAdmin):
 @admin.register(Colaborador)
 class ColaboradorAdmin(admin.ModelAdmin):
     # Mostramos columnas clave en el panel
-    list_display = ('get_nombre_completo', 'dni', 'rol', 'negocio', 'tipo_horario')
+    list_display = ('get_nombre_completo', 'dni', 'rol', 'area', 'cargo', 'negocio', 'subcartera', 'tipo_horario')
     # Filtros laterales
-    list_filter = ('rol', 'tipo_horario', 'negocio')
+    list_filter = ('rol', 'tipo_horario', 'area', 'cargo', 'negocio')
     # Barra de búsqueda
-    search_fields = ('dni', 'user__first_name', 'user__last_name')
+    search_fields = ('dni', 'subcartera', 'user__first_name', 'user__last_name', 'cargo__nombre', 'area__nombre', 'negocio__nombre')
 
     def get_nombre_completo(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}"

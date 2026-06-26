@@ -42,7 +42,7 @@
             <div class="flex-grow-1 w-100 bg-dark position-relative" style="overflow: hidden;">
                 
                 {% if leccion.archivo_pdf %}
-                    <iframe src="{{ leccion.archivo_pdf.url }}#toolbar=0&navpanes=0&scrollbar=0" 
+                    <iframe src="{% url 'ver_leccion_pdf' leccion.id %}#toolbar=0&navpanes=0&scrollbar=0" 
                             class="w-100 h-100 border-0" 
                             allowfullscreen="true"
                             mozallowfullscreen="true"

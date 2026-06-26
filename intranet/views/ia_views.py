@@ -1,4 +1,5 @@
 import json
+import os
 import PyPDF2
 import requests
 from django.conf import settings
@@ -8,6 +9,13 @@ from django.contrib.auth.decorators import login_required
 
 # IMPORTACIÓN CORRECTA: Apuntando a tus modelos exactos
 from ..models.lms import CursoInduccion, EvaluacionCurso, PreguntaEvaluacion, OpcionRespuesta 
+
+MAX_PDF_SIZE = 10 * 1024 * 1024
+
+
+def es_pdf_valido(archivo_pdf):
+    extension = os.path.splitext(archivo_pdf.name)[1].lower()
+    return extension == '.pdf' and archivo_pdf.size <= MAX_PDF_SIZE
 
 @login_required
 def generar_examen_ia(request, curso_id):
@@ -22,6 +30,10 @@ def generar_examen_ia(request, curso_id):
 
         if not archivo_pdf:
             messages.error(request, "Por favor, sube un archivo PDF.")
+            return redirect('gestor_lms')
+
+        if not es_pdf_valido(archivo_pdf):
+            messages.error(request, "El archivo debe ser un PDF de hasta 10 MB.")
             return redirect('gestor_lms')
 
         try:
@@ -79,12 +91,9 @@ def generar_examen_ia(request, curso_id):
                 "generationConfig": {"temperature": 0.2}
             }
             
-            respuesta_cruda = requests.post(url_limpia, headers=headers, json=data)
+            respuesta_cruda = requests.post(url_limpia, headers=headers, json=data, timeout=20)
+            respuesta_cruda.raise_for_status()
             
-            if respuesta_cruda.status_code != 200:
-                error_msg = respuesta_cruda.json().get('error', {}).get('message', 'Error desconocido de la API')
-                raise Exception(f"Google rechazó la conexión directa: {error_msg}")
-
             respuesta_json = respuesta_cruda.json()
             texto_limpio = respuesta_json['candidates'][0]['content']['parts'][0]['text']
 
@@ -137,6 +146,9 @@ def generar_examen_ia(request, curso_id):
 
         except json.JSONDecodeError:
             messages.error(request, "La IA de Gemini se confundió al estructurar las preguntas. Por favor, intenta generar de nuevo.")
+            return redirect('gestor_lms')
+        except requests.RequestException:
+            messages.error(request, "No se pudo completar la conexión con el servicio de IA. Intenta de nuevo en unos minutos.")
             return redirect('gestor_lms')
         except Exception as e:
             messages.error(request, f"Error al procesar: {str(e)}")

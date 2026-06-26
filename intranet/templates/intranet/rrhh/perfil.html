@@ -29,6 +29,14 @@
                         <label class="form-label text-muted small fw-bold">Cartera Operativa / Área</label>
                         <input type="text" class="form-control bg-light text-muted" value="{% if perfil and perfil.negocio %}{{ perfil.negocio.nombre }}{% elif perfil and perfil.area %}{{ perfil.area.nombre }}{% else %}Central Administrativa{% endif %}" readonly>
                     </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label text-muted small fw-bold">Cargo Asignado</label>
+                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil and perfil.cargo %}{{ perfil.cargo.nombre }}{% else %}Sin cargo definido{% endif %}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label text-muted small fw-bold">Subcartera</label>
+                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil and perfil.subcartera %}{{ perfil.subcartera }}{% else %}Sin subcartera{% endif %}" readonly>
+                    </div>
 
                     <hr class="mb-4">
                     <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pencil-square"></i> Información Actualizable</h6>

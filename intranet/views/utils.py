@@ -19,6 +19,84 @@ def requiere_rol(roles_permitidos):
 
 solo_directivos = requiere_rol(['ADMINISTRATIVO', 'RRHH', 'GERENCIA'])
 solo_calidad = requiere_rol(['CALIDAD', 'SUPERVISOR', 'GERENCIA'])
+solo_supervisores = requiere_rol(['SUPERVISOR'])
+
+
+def _perfil_scope(perfil):
+    if not perfil:
+        return 'GENERAL'
+    if getattr(perfil, 'es_directivo', False):
+        return 'ADMINISTRATIVO'
+    if getattr(perfil, 'es_operativo', False):
+        return 'ASESOR'
+    return getattr(perfil, 'scope_plataforma', 'GENERAL')
+
+
+def filtros_personal_disponibles(perfil):
+    scope = _perfil_scope(perfil)
+    if scope == 'ASESOR':
+        return {'nombre': True, 'documento': True, 'cargo': True, 'area': True, 'cartera': True, 'subcartera': True}
+    if scope == 'ADMINISTRATIVO':
+        return {'nombre': True, 'documento': True, 'cargo': True, 'area': True, 'cartera': False, 'subcartera': False}
+    return {'nombre': True, 'documento': True, 'cargo': False, 'area': False, 'cartera': False, 'subcartera': False}
+
+
+def filtrar_colaboradores(queryset, params, perfil=None):
+    from django.db.models import Q
+
+    busqueda = (params.get('q') or '').strip()
+    documento = (params.get('documento') or '').strip()
+    cargo = (params.get('cargo') or '').strip()
+    area = (params.get('area') or '').strip()
+    cartera = (params.get('cartera') or '').strip()
+    subcartera = (params.get('subcartera') or '').strip()
+
+    visibilidad = filtros_personal_disponibles(perfil)
+
+    if busqueda:
+        queryset = queryset.filter(
+            Q(user__first_name__icontains=busqueda) |
+            Q(user__last_name__icontains=busqueda) |
+            Q(user__username__icontains=busqueda) |
+            Q(dni__icontains=busqueda)
+        )
+
+    if documento:
+        queryset = queryset.filter(dni__icontains=documento)
+
+    if visibilidad.get('cargo') and cargo:
+        queryset = queryset.filter(cargo_id=cargo)
+
+    if visibilidad.get('area') and area:
+        queryset = queryset.filter(area_id=area)
+
+    if visibilidad.get('cartera') and cartera:
+        queryset = queryset.filter(negocio_id=cartera)
+
+    if visibilidad.get('subcartera') and subcartera:
+        queryset = queryset.filter(subcartera__icontains=subcartera)
+
+    return queryset
+
+
+def perfil_coincide_segmentacion(perfil, *, rol=None, area=None, cargo=None, cartera=None, subcartera=None, publico_general=False):
+    if publico_general:
+        return True
+    if not perfil:
+        return False
+
+    if rol and perfil.rol == rol:
+        return True
+    if area and getattr(perfil, 'area_id', None) == getattr(area, 'id', area):
+        return True
+    if cargo and getattr(perfil, 'cargo_id', None) == getattr(cargo, 'id', cargo):
+        return True
+    if cartera and getattr(perfil, 'negocio_id', None) == getattr(cartera, 'id', cartera):
+        return True
+    if subcartera and (perfil.subcartera or '') and str(perfil.subcartera).strip().lower() == str(subcartera).strip().lower():
+        return True
+
+    return False
 
 # --- HERRAMIENTAS GLOBALES ---
 def obtener_ip_cliente(request):

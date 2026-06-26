@@ -21,7 +21,8 @@ def sincronizar_sheets(request):
     sheet_id = getattr(settings, 'GOOGLE_SHEETS_CONFIG', {}).get('SHEET_ID', '14rxk-CP5XH8IXJv9QP8ypqir0oIP0DQv7F_soOlaZDo')
     
     try:
-        response = requests.get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv")
+        response = requests.get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv", timeout=15)
+        response.raise_for_status()
         response.encoding = 'utf-8'
         with transaction.atomic():
             for fila in csv.DictReader(response.text.splitlines()):

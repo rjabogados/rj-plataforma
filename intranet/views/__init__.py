@@ -1,4 +1,4 @@
-from .auth import login_view, salir, inicio, perfil, dashboard
+from .auth import login_view, salir, inicio, perfil, dashboard, dashboard_rrhh, exportar_directorio_rrhh, dashboard_supervisor, exportar_equipo_supervisor, perfil_admin
 
 from .api import webhook_receptor
 
@@ -18,13 +18,13 @@ from .asistencia import (
 
 from .solicitudes import (
     tickets, tickets_admin, revisar_ticket, 
-    vacaciones, vacaciones_admin, eliminar_vacaciones
+    vacaciones, vacaciones_admin, eliminar_vacaciones, ver_adjunto_ticket
 )
 
 from .documentos import (
     documentos_admin, gestionar_plantillas, documentos_personal, 
     firmar_documento, eliminar_documento, eliminar_plantilla, 
-    eliminar_documento_generado
+    eliminar_documento_generado, ver_documento_personal, ver_documento_admin
 )
 
 from .lms import (
@@ -34,5 +34,6 @@ from .lms import (
     encuestas_personal, encuestas_admin, resultados_encuesta, exportar_encuesta,
     mensajeria, leer_mensaje, calendario, comunicados, gestor_comunicados,
     eliminar_comunicado, eliminar_evento, eliminar_candidato,
-    activos, gestor_lms, academia, beneficios
+    activos, gestor_lms, academia, beneficios, ver_leccion_pdf,
+    ver_adjunto_mensaje, ver_adjunto_comunicado
 )

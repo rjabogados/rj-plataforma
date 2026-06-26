@@ -105,7 +105,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
-        var eventosData = {{ eventos_json|safe }};
+        var eventosData = JSON.parse(document.getElementById('eventos-json').textContent);
 
         var calendar = new FullCalendar.Calendar(calendarEl, {
             locale: 'es',
@@ -146,6 +146,8 @@
         calendar.render();
     });
 </script>
+
+{{ eventos_json|json_script:"eventos-json" }}
 
 <style>
     .fc {

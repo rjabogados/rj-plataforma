@@ -48,6 +48,9 @@ def generar_documento_para_colaborador(plantilla_obj, colaborador):
     rol_real = perfil.rol if perfil else 'No asignado'
     horario_real = perfil.tipo_horario if perfil else 'No asignado'
     negocio_real = perfil.negocio.nombre if perfil and perfil.negocio else 'No asignado'
+    area_real = perfil.area.nombre if perfil and perfil.area else 'No asignada'
+    cargo_real = perfil.cargo.nombre if perfil and perfil.cargo else 'No asignado'
+    subcartera_real = perfil.subcartera if perfil and perfil.subcartera else 'No asignada'
     
     if perfil and perfil.fecha_ingreso:
         fecha_ing_str = perfil.fecha_ingreso.strftime("%d/%m/%Y")
@@ -62,8 +65,11 @@ def generar_documento_para_colaborador(plantilla_obj, colaborador):
         'dni': dni_real[:20],
         'correo': colaborador.email[:200],
         'rol': rol_real[:100],
+        'area': area_real[:150],
+        'cargo': cargo_real[:150],
         'horario': horario_real[:50],
         'negocio': negocio_real[:150],
+        'subcartera': subcartera_real[:100],
         'fecha_ingreso': fecha_ing_str,
         'fecha_hoy': date.today().strftime("%d/%m/%Y"),
         'fecha_actual': date.today().strftime("%d/%m/%Y"),

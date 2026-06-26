@@ -6,6 +6,52 @@
         <p class="text-muted mb-0">Valida evidencias y resuelve tickets del equipo operativo desde un solo panel.</p>
     </div>
 
+    <div class="card card-buk mb-4">
+        <div class="card-body p-3">
+            <form method="GET" class="lms-input-soft">
+                <div class="row g-2 align-items-end">
+                    <div class="col-lg-3">
+                        <label class="form-label small fw-semibold text-muted">Buscar</label>
+                        <input type="text" name="q" class="form-control" value="{{ request.GET.q|default:'' }}" placeholder="Nombre, usuario o DNI">
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Documento</label>
+                        <input type="text" name="documento" class="form-control" value="{{ request.GET.documento|default:'' }}">
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Área</label>
+                        <select class="form-select" name="area">
+                            <option value="">Todas</option>
+                            {% for area in areas %}<option value="{{ area.id }}" {% if request.GET.area == area.id|stringformat:'s' %}selected{% endif %}>{{ area.nombre }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Cargo</label>
+                        <select class="form-select" name="cargo">
+                            <option value="">Todos</option>
+                            {% for cargo in cargos %}<option value="{{ cargo.id }}" {% if request.GET.cargo == cargo.id|stringformat:'s' %}selected{% endif %}>{{ cargo.nombre }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Cartera</label>
+                        <select class="form-select" name="cartera">
+                            <option value="">Todas</option>
+                            {% for n in negocios %}<option value="{{ n.id }}" {% if request.GET.cartera == n.id|stringformat:'s' %}selected{% endif %}>{{ n.nombre }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Subcartera</label>
+                        <input type="text" name="subcartera" class="form-control" value="{{ request.GET.subcartera|default:'' }}" placeholder="Ej: Mora Temprana">
+                    </div>
+                    <div class="col-lg-12 d-flex gap-2 pt-2">
+                        <button type="submit" class="btn btn-dark btn-pill fw-semibold px-4 shadow-sm">Filtrar</button>
+                        <a href="{% url 'tickets_admin' %}" class="btn btn-outline-danger btn-pill fw-semibold shadow-sm">Limpiar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card card-buk overflow-hidden">
         <div class="card-body p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
@@ -41,16 +87,22 @@
                             </td>
                             <td>
                                 {% if t.adjunto_comprobante %}
-                                    <a href="{{ t.adjunto_comprobante.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-pill fw-semibold"><i class="bi bi-file-earmark-medical me-1"></i> Abrir adjunto</a>
+                                    <a href="{% url 'ver_adjunto_ticket' t.id %}" target="_blank" class="btn btn-sm btn-outline-primary btn-pill fw-semibold"><i class="bi bi-file-earmark-medical me-1"></i> Abrir adjunto</a>
                                 {% else %}
                                     <span class="text-muted small">Sin adjunto</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">
                                 {% if t.estado == 'PENDIENTE' %}
-                                    <div class="btn-group shadow-sm">
-                                        <a href="{% url 'revisar_ticket' t.id 'APROBADO' %}" class="btn btn-sm btn-success fw-semibold"><i class="bi bi-check-lg"></i> Aprobar</a>
-                                        <a href="{% url 'revisar_ticket' t.id 'RECHAZADO' %}" class="btn btn-sm btn-danger fw-semibold"><i class="bi bi-x-lg"></i> Rechazar</a>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <form method="POST" action="{% url 'revisar_ticket' t.id 'APROBADO' %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-success fw-semibold"><i class="bi bi-check-lg"></i> Aprobar</button>
+                                        </form>
+                                        <form method="POST" action="{% url 'revisar_ticket' t.id 'RECHAZADO' %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger fw-semibold"><i class="bi bi-x-lg"></i> Rechazar</button>
+                                        </form>
                                     </div>
                                 {% else %}
                                     <span class="badge {% if t.estado == 'APROBADO' %}bg-success-subtle text-success border border-success{% else %}bg-danger-subtle text-danger border border-danger{% endif %} p-2 rounded-pill">

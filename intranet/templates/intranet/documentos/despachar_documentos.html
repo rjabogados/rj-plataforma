@@ -40,11 +40,48 @@
                                 {% for p in plantillas %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
                             </select>
                         </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-secondary">Filtrar colaboradores</label>
+                            </div>
+                            <div class="col-12">
+                                <input type="text" class="form-control" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Nombre, usuario o DNI">
+                            </div>
+                            <div class="col-6">
+                                <select class="form-select" name="area">
+                                    <option value="">Área</option>
+                                    {% for area in areas %}
+                                        <option value="{{ area.id }}" {% if request.GET.area == area.id|stringformat:'s' %}selected{% endif %}>{{ area.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select class="form-select" name="cargo">
+                                    <option value="">Cargo</option>
+                                    {% for cargo in cargos %}
+                                        <option value="{{ cargo.id }}" {% if request.GET.cargo == cargo.id|stringformat:'s' %}selected{% endif %}>{{ cargo.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if filtros_disponibles.cartera %}
+                            <div class="col-6">
+                                <select class="form-select" name="cartera">
+                                    <option value="">Cartera</option>
+                                    {% for n in negocios %}
+                                        <option value="{{ n.id }}" {% if request.GET.cartera == n.id|stringformat:'s' %}selected{% endif %}>{{ n.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <input type="text" class="form-control" name="subcartera" value="{{ request.GET.subcartera|default:'' }}" placeholder="Subcartera">
+                            </div>
+                            {% endif %}
+                        </div>
                         <div class="mb-4">
                             <label class="form-label small fw-semibold text-secondary">2. Seleccionar colaborador</label>
                             <select class="form-select" name="colaborador_id" required>
-                                <option value="" disabled selected>Busca un asesor...</option>
-                                {% for c in colaboradores %}<option value="{{ c.id }}">{{ c.first_name }} {{ c.last_name }} ({{ c.username }})</option>{% endfor %}
+                                <option value="" disabled selected>Busca un colaborador...</option>
+                                {% for c in colaboradores %}<option value="{{ c.id }}">{{ c.user.first_name }} {{ c.user.last_name }} - {{ c.dni }}{% if c.cargo %} - {{ c.cargo.nombre }}{% endif %}{% if c.area %} / {{ c.area.nombre }}{% endif %}</option>{% endfor %}
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary btn-pill w-100 fw-semibold py-2"><i class="bi bi-magic me-2"></i>Autocompletar y generar PDF</button>
@@ -69,6 +106,7 @@
                                 <tr>
                                     <th class="ps-4">Documento</th>
                                     <th>Colaborador</th>
+                                    <th>Área / Cargo</th>
                                     <th>Estado</th>
                                     <th class="text-center">Archivo</th>
                                     <th class="text-center">Acciones</th>
@@ -80,11 +118,17 @@
                                     <td class="ps-4"><div class="fw-bold text-dark">{{ doc.plantilla_origen.nombre }}</div></td>
                                     <td><span class="text-secondary">{{ doc.colaborador.first_name }} {{ doc.colaborador.last_name }}</span></td>
                                     <td>
+                                        {% if doc.colaborador.perfil %}
+                                            <div class="small text-dark">{{ doc.colaborador.perfil.area|default:'Sin área' }}</div>
+                                            <div class="small text-muted">{{ doc.colaborador.perfil.cargo|default:'Sin cargo' }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         {% if doc.estado == 'PENDIENTE' %}<span class="badge-status pending">Pendiente</span>
                                         {% else %}<span class="badge-status approved">Cerrado</span>{% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if doc.archivo_pdf %}<a href="{{ doc.archivo_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-danger btn-pill"><i class="bi bi-file-pdf me-1"></i> Ver PDF</a>{% endif %}
+                                        {% if doc.archivo_pdf %}<a href="{% url 'ver_documento_admin' doc.id %}" target="_blank" class="btn btn-sm btn-outline-danger btn-pill"><i class="bi bi-file-pdf me-1"></i> Ver PDF</a>{% endif %}
                                     </td>
                                     <td class="text-center">
                                         {% if doc.estado == 'PENDIENTE' %}

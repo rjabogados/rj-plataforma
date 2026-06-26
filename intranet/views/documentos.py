@@ -1,26 +1,57 @@
 import io
 import hashlib
+import mimetypes
+import os
+from urllib.parse import quote
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.files.base import ContentFile
+from django.http import FileResponse, Http404
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from PyPDF2 import PdfReader, PdfWriter
 
 # Importamos los modelos y el motor de automatización de Word/PDF
-from intranet.models import CategoriaDocumento, PlantillaDocumento, DocumentoGenerado, FirmaDigital
+from intranet.models import CategoriaDocumento, PlantillaDocumento, DocumentoGenerado, FirmaDigital, Colaborador
 from intranet.servicios.motor_documentos import generar_documento_para_colaborador
-from .utils import solo_directivos, obtener_ip_cliente
+from .utils import solo_directivos, obtener_ip_cliente, filtrar_colaboradores, filtros_personal_disponibles
+
+MAX_TEMPLATE_SIZE = 10 * 1024 * 1024
+
+
+def es_docx_valido(archivo):
+    extension = os.path.splitext(archivo.name)[1].lower()
+    return extension == '.docx' and archivo.size <= MAX_TEMPLATE_SIZE
+
+
+def build_inline_file_response(field_file):
+    if not field_file or not field_file.name:
+        raise Http404("Archivo no disponible")
+
+    storage = field_file.storage
+    if not storage.exists(field_file.name):
+        raise Http404("Archivo no disponible")
+
+    filename = os.path.basename(field_file.name)
+    content_type, _ = mimetypes.guess_type(filename)
+    response = FileResponse(storage.open(field_file.name, 'rb'), content_type=content_type or 'application/octet-stream')
+    response['Content-Disposition'] = f"inline; filename*=UTF-8''{quote(filename)}"
+    return response
 
 @login_required(login_url='login')
 @solo_directivos
 def documentos_admin(request):
     """Panel de despacho para generar contratos y reportes basados en plantillas."""
     plantillas = PlantillaDocumento.objects.filter(activo=True)
-    colaboradores = User.objects.filter(is_superuser=False).order_by('first_name')
+    perfil_actual = getattr(request.user, 'perfil', None)
+    colaboradores = filtrar_colaboradores(
+        Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio'),
+        request.GET,
+        perfil_actual,
+    )
 
     if request.method == 'POST':
         plantilla_id = request.POST.get('plantilla_id')
@@ -38,7 +69,15 @@ def documentos_admin(request):
             return redirect('documentos_admin')
 
     historial = DocumentoGenerado.objects.all().order_by('-fecha_emision')[:15]
-    return render(request, 'intranet/documentos/despachar_documentos.html', {'plantillas': plantillas, 'colaboradores': colaboradores, 'historial': historial})
+    return render(request, 'intranet/documentos/despachar_documentos.html', {
+        'plantillas': plantillas,
+        'colaboradores': colaboradores,
+        'historial': historial,
+        'negocios': Colaborador._meta.get_field('negocio').remote_field.model.objects.all(),
+        'areas': Colaborador._meta.get_field('area').remote_field.model.objects.filter(activa=True).order_by('nombre'),
+        'cargos': Colaborador._meta.get_field('cargo').remote_field.model.objects.filter(activa=True).select_related('area').order_by('nombre'),
+        'filtros_disponibles': filtros_personal_disponibles(perfil_actual),
+    })
 
 @login_required(login_url='login')
 @solo_directivos
@@ -50,6 +89,9 @@ def gestionar_plantillas(request):
         archivo = request.FILES.get('archivo_word')
         
         if nombre and archivo:
+            if not es_docx_valido(archivo):
+                messages.error(request, "La plantilla debe ser un archivo .docx de hasta 10 MB.")
+                return redirect('gestionar_plantillas')
             categoria = CategoriaDocumento.objects.filter(id=categoria_id).first()
             PlantillaDocumento.objects.create(nombre=nombre, categoria=categoria, archivo_word=archivo, activo=True)
             messages.success(request, "¡Excelente! La plantilla se ha guardado correctamente en el sistema.")
@@ -66,6 +108,19 @@ def documentos_personal(request):
     """Bóveda del trabajador para ver y descargar sus documentos/boletas."""
     mis_docs = DocumentoGenerado.objects.filter(colaborador=request.user).order_by('-fecha_emision')
     return render(request, 'intranet/documentos/documentos_personal.html', {'documentos': mis_docs})
+
+
+@login_required(login_url='login')
+def ver_documento_personal(request, doc_id):
+    documento = get_object_or_404(DocumentoGenerado, id=doc_id, colaborador=request.user)
+    return build_inline_file_response(documento.archivo_pdf)
+
+
+@login_required(login_url='login')
+@solo_directivos
+def ver_documento_admin(request, doc_id):
+    documento = get_object_or_404(DocumentoGenerado, id=doc_id)
+    return build_inline_file_response(documento.archivo_pdf)
 
 @login_required(login_url='login')
 def firmar_documento(request, doc_id):

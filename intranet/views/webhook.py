@@ -22,6 +22,15 @@ def verify_webhook_signature(payload, signature):
     
     return hmac.compare_digest(signature, expected_signature)
 
+def get_webhook_api_key(request, payload):
+    return (
+        request.headers.get('X-API-Key', '')
+        or request.headers.get('Authorization', '').removeprefix('Bearer ').strip()
+        or str(payload.get('api_key', '')).strip()
+    )
+
+
+@csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def recibir_matriz_excel(request):
     # Soporte para CORS preflight
@@ -38,9 +47,9 @@ def recibir_matriz_excel(request):
         body = json.loads(raw_body)
         
         # Validar API Key
-        api_key_recibida = body.get('api_key', '')
+        api_key_recibida = get_webhook_api_key(request, body)
         
-        if not api_key_recibida or api_key_recibida != WEBHOOK_API_KEY:
+        if not api_key_recibida or not WEBHOOK_API_KEY or not hmac.compare_digest(api_key_recibida, WEBHOOK_API_KEY):
             return JsonResponse(
                 {"error": "Acceso denegado."},
                 status=403

@@ -1,12 +1,19 @@
-from datetime import date
+import csv
+from datetime import date, datetime, timedelta
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q
+from django.http import HttpResponse
 
 # Importamos los modelos desde la carpeta superior
-from intranet.models import Comunicado, Colaborador, Ticket, SolicitudVacaciones, Asistencia, DocumentoGenerado
+from intranet.models import (
+    Comunicado, Colaborador, Ticket, SolicitudVacaciones, Asistencia, DocumentoGenerado,
+    DocumentoPersonal, MensajeInterno, EventoCalendario, MatriculaCurso, RespuestaEncuesta,
+    CandidatoOnboarding
+)
 # Importamos nuestras herramientas de seguridad
-from .utils import solo_directivos
+from .utils import solo_directivos, solo_supervisores
 
 def login_view(request):
     if request.method == 'POST':
@@ -58,3 +65,213 @@ def dashboard(request):
         'asistencias_hoy': Asistencia.objects.filter(fecha=date.today()).count()
     }
     return render(request, 'intranet/dashboard/dashboard.html', context)
+
+
+@login_required(login_url='login')
+@solo_directivos
+def dashboard_rrhh(request):
+    colaboradores = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').all()
+    tickets_pendientes = Ticket.objects.filter(estado='PENDIENTE').count()
+    vacaciones_pendientes = SolicitudVacaciones.objects.filter(estado='PENDIENTE').count()
+    asistencias_hoy_qs = Asistencia.objects.filter(fecha=date.today()).select_related('colaborador__user', 'colaborador__area', 'colaborador__cargo')
+    asistencias_hoy = asistencias_hoy_qs.count()
+
+    atrasos_hoy = []
+    sin_marca_ingreso_hoy = []
+    for asistencia in asistencias_hoy_qs:
+        if not asistencia.f1_ingreso:
+            sin_marca_ingreso_hoy.append(asistencia)
+            continue
+
+        hora_programada = asistencia.colaborador.hora_ingreso
+        if not hora_programada:
+            continue
+
+        ingreso_programado = datetime.combine(date.today(), hora_programada)
+        ingreso_real = datetime.combine(date.today(), asistencia.f1_ingreso)
+        if ingreso_real > ingreso_programado + timedelta(minutes=15):
+            atrasos_hoy.append({
+                'colaborador': asistencia.colaborador,
+                'minutos': int((ingreso_real - ingreso_programado).total_seconds() // 60),
+                'hora_programada': hora_programada,
+                'hora_ingreso': asistencia.f1_ingreso,
+            })
+
+    return render(request, 'intranet/rrhh/dashboard_rrhh.html', {
+        'total_colaboradores': colaboradores.count(),
+        'colaboradores_activos': colaboradores.filter(user__is_active=True).count(),
+        'sin_area': colaboradores.filter(area__isnull=True).count(),
+        'sin_cargo': colaboradores.filter(cargo__isnull=True).count(),
+        'tickets_pendientes': tickets_pendientes,
+        'vacaciones_pendientes': vacaciones_pendientes,
+        'asistencias_hoy': asistencias_hoy,
+        'atrasos_hoy': atrasos_hoy[:8],
+        'sin_marca_ingreso_hoy': sin_marca_ingreso_hoy[:8],
+        'areas_resumen': colaboradores.values('area__nombre').annotate(total=Count('id')).order_by('-total', 'area__nombre')[:6],
+        'cargos_resumen': colaboradores.values('cargo__nombre').annotate(total=Count('id')).order_by('-total', 'cargo__nombre')[:6],
+        'roles_resumen': colaboradores.values('rol').annotate(total=Count('id')).order_by('-total', 'rol'),
+        'ultimos_ingresos': colaboradores.exclude(fecha_ingreso__isnull=True).order_by('-fecha_ingreso')[:8],
+    })
+
+
+@login_required(login_url='login')
+@solo_directivos
+def exportar_directorio_rrhh(request):
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="directorio_rrhh.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Usuario', 'Nombres', 'Apellidos', 'DNI', 'Rol', 'Area', 'Cargo', 'Cartera', 'Subcartera', 'Horario', 'Fecha Ingreso'])
+
+    for perfil in Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').order_by('user__last_name', 'user__first_name'):
+        writer.writerow([
+            perfil.user.username,
+            perfil.user.first_name,
+            perfil.user.last_name,
+            perfil.dni,
+            perfil.get_rol_display(),
+            perfil.area.nombre if perfil.area else '',
+            perfil.cargo.nombre if perfil.cargo else '',
+            perfil.negocio.nombre if perfil.negocio else '',
+            perfil.subcartera or '',
+            perfil.get_tipo_horario_display(),
+            perfil.fecha_ingreso.strftime('%Y-%m-%d') if perfil.fecha_ingreso else '',
+        ])
+
+    return response
+
+
+@login_required(login_url='login')
+@solo_supervisores
+def dashboard_supervisor(request):
+    perfil = getattr(request.user, 'perfil', None)
+    equipo_qs = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').all()
+
+    if perfil and perfil.area_id:
+        equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
+    elif perfil and perfil.cargo_id:
+        equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+    else:
+        equipo_qs = equipo_qs.none()
+
+    tickets_equipo = Ticket.objects.filter(colaborador__in=equipo_qs).select_related('colaborador__user', 'colaborador__cargo').order_by('-fecha_registro')
+    vacaciones_equipo = SolicitudVacaciones.objects.filter(colaborador__in=equipo_qs).select_related('colaborador__user', 'colaborador__cargo').order_by('-fecha_solicitud')
+    asistencias_hoy_qs = Asistencia.objects.filter(colaborador__in=equipo_qs, fecha=date.today()).select_related('colaborador__user', 'colaborador__area', 'colaborador__cargo')
+
+    atrasos_equipo = []
+    sin_marca_equipo = []
+    for asistencia in asistencias_hoy_qs:
+        if not asistencia.f1_ingreso:
+            sin_marca_equipo.append(asistencia)
+            continue
+        if asistencia.colaborador.hora_ingreso:
+            hora_programada = datetime.combine(date.today(), asistencia.colaborador.hora_ingreso)
+            hora_real = datetime.combine(date.today(), asistencia.f1_ingreso)
+            if hora_real > hora_programada + timedelta(minutes=15):
+                atrasos_equipo.append(asistencia)
+
+    return render(request, 'intranet/rrhh/dashboard_supervisor.html', {
+        'perfil': perfil,
+        'equipo_total': equipo_qs.count(),
+        'equipo_activo': equipo_qs.filter(user__is_active=True).count(),
+        'tickets_pendientes': tickets_equipo.filter(estado='PENDIENTE').count(),
+        'vacaciones_pendientes': vacaciones_equipo.filter(estado='PENDIENTE').count(),
+        'asistencias_hoy': asistencias_hoy_qs.count(),
+        'atrasos_equipo': atrasos_equipo[:8],
+        'sin_marca_equipo': sin_marca_equipo[:8],
+        'equipo_qs': equipo_qs.order_by('user__last_name', 'user__first_name')[:10],
+        'tickets_recientes': tickets_equipo[:6],
+        'vacaciones_recientes': vacaciones_equipo[:6],
+    })
+
+
+@login_required(login_url='login')
+@solo_supervisores
+def exportar_equipo_supervisor(request):
+    perfil = getattr(request.user, 'perfil', None)
+    equipo_qs = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').all()
+
+    if perfil and perfil.area_id:
+        equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
+    elif perfil and perfil.cargo_id:
+        equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+    else:
+        equipo_qs = equipo_qs.none()
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="equipo_supervisor.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Usuario', 'Nombre', 'DNI', 'Area', 'Cargo', 'Cartera', 'Subcartera', 'Rol'])
+    for miembro in equipo_qs:
+        writer.writerow([
+            miembro.user.username,
+            f'{miembro.user.first_name} {miembro.user.last_name}'.strip(),
+            miembro.dni,
+            miembro.area.nombre if miembro.area else '',
+            miembro.cargo.nombre if miembro.cargo else '',
+            miembro.negocio.nombre if miembro.negocio else '',
+            miembro.subcartera or '',
+            miembro.get_rol_display(),
+        ])
+    return response
+
+
+@login_required(login_url='login')
+@solo_directivos
+def perfil_admin(request):
+    busqueda = (request.GET.get('q') or '').strip()
+    colaborador_id = (request.GET.get('colaborador') or '').strip()
+
+    colaboradores = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').all().order_by('user__last_name', 'user__first_name')
+    if busqueda:
+        colaboradores = colaboradores.filter(
+            Q(user__first_name__icontains=busqueda) |
+            Q(user__last_name__icontains=busqueda) |
+            Q(user__username__icontains=busqueda) |
+            Q(dni__icontains=busqueda)
+        )
+
+    seleccionado = None
+    if colaborador_id:
+        seleccionado = colaboradores.filter(pk=colaborador_id).first()
+    if not seleccionado:
+        seleccionado = colaboradores.first()
+
+    if seleccionado:
+        asistencias = Asistencia.objects.filter(colaborador=seleccionado).order_by('-fecha')
+        tickets = Ticket.objects.filter(colaborador=seleccionado).select_related('revisado_por').order_by('-fecha_registro')
+        vacaciones = SolicitudVacaciones.objects.filter(colaborador=seleccionado).select_related('revisado_por').order_by('-fecha_solicitud')
+        documentos_personales = DocumentoPersonal.objects.filter(colaborador=seleccionado).select_related('emitido_por').order_by('-fecha_entrega')
+        documentos_generados = DocumentoGenerado.objects.filter(colaborador=seleccionado.user).select_related('plantilla_origen').order_by('-fecha_emision')
+        matriculas = MatriculaCurso.objects.filter(colaborador=seleccionado).select_related('curso').order_by('-id')
+        respuestas_encuesta = RespuestaEncuesta.objects.filter(colaborador=seleccionado).select_related('pregunta__encuesta').order_by('-fecha_respuesta')
+        mensajes = MensajeInterno.objects.filter(Q(remitente=seleccionado) | Q(destinatario=seleccionado)).select_related('remitente__user', 'destinatario__user').order_by('-fecha_envio')
+        onboarding = CandidatoOnboarding.objects.filter(colaborador=seleccionado).first()
+        eventos_proximos = EventoCalendario.objects.filter(fecha_inicio__date__gte=date.today()).order_by('fecha_inicio')
+    else:
+        asistencias = Ticket.objects.none()
+        tickets = Ticket.objects.none()
+        vacaciones = SolicitudVacaciones.objects.none()
+        documentos_personales = DocumentoPersonal.objects.none()
+        documentos_generados = DocumentoGenerado.objects.none()
+        matriculas = MatriculaCurso.objects.none()
+        respuestas_encuesta = RespuestaEncuesta.objects.none()
+        mensajes = MensajeInterno.objects.none()
+        onboarding = None
+        eventos_proximos = EventoCalendario.objects.none()
+
+    return render(request, 'intranet/rrhh/perfil_admin.html', {
+        'colaboradores': colaboradores[:30],
+        'seleccionado': seleccionado,
+        'asistencias': asistencias[:10],
+        'tickets': tickets[:8],
+        'vacaciones': vacaciones[:8],
+        'documentos_personales': documentos_personales[:8],
+        'documentos_generados': documentos_generados[:8],
+        'matriculas': matriculas[:8],
+        'respuestas_encuesta': respuestas_encuesta[:8],
+        'mensajes': mensajes[:8],
+        'onboarding': onboarding,
+        'eventos_proximos': eventos_proximos[:6],
+        'busqueda': busqueda,
+    })
