@@ -15,12 +15,12 @@ def login_view(request):
             login(request, user)
             return redirect('inicio')
         else:
-            return render(request, 'intranet/login.html', {'error': 'Usuario o contraseña incorrectos'})
-    return render(request, 'intranet/login.html')
+            return render(request, 'intranet/auth/login.html', {'error': 'Usuario o contraseña incorrectos'})
+    return render(request, 'intranet/auth/login.html')
 
 @login_required
 def perfil(request):
-    return render(request, 'intranet/perfil.html')
+    return render(request, 'intranet/rrhh/perfil.html')
 
 def salir(request):
     logout(request)
@@ -46,7 +46,7 @@ def inicio(request):
         'mis_documentos': mis_documentos,
     }
     
-    return render(request, 'intranet/inicio.html', context)
+    return render(request, 'intranet/dashboard/inicio.html', context)
 
 @login_required(login_url='login')
 @solo_directivos
@@ -57,4 +57,4 @@ def dashboard(request):
         'vacaciones_pendientes': SolicitudVacaciones.objects.filter(estado='PENDIENTE').count(), 
         'asistencias_hoy': Asistencia.objects.filter(fecha=date.today()).count()
     }
-    return render(request, 'intranet/dashboard.html', context)
+    return render(request, 'intranet/dashboard/dashboard.html', context)

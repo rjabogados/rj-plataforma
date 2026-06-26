@@ -34,7 +34,7 @@ def lista_candidatos(request):
         'sede_filtro': sede_filtro,
         'sedes_disponibles': sedes_disponibles,
     }
-    return render(request, 'intranet/lista_candidatos.html', context)
+    return render(request, 'intranet/reclutamiento/lista_candidatos.html', context)
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])

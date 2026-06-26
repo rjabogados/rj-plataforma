@@ -70,7 +70,7 @@ def control_asistencia(request):
         'colaborador__user', 'colaborador__negocio'
     )
     
-    return render(request, 'intranet/asistencia.html', {
+    return render(request, 'intranet/rrhh/asistencia.html', {
         'asistencias': queryset.order_by('-fecha', 'colaborador__user__last_name'), 
         'fecha_inicio': f_inicio.strftime('%Y-%m-%d'), 
         'fecha_fin': f_fin.strftime('%Y-%m-%d'), 
@@ -126,7 +126,7 @@ def procesar_huellero(request):
 
 @login_required(login_url='login')
 def visor_asistencia(request): 
-    return render(request, 'intranet/visor_asistencia.html')
+    return render(request, 'intranet/rrhh/visor_asistencia.html')
 
 @login_required(login_url='login')
 @solo_directivos

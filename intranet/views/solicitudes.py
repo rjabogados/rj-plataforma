@@ -24,14 +24,14 @@ def tickets(request):
         return redirect('tickets')
         
     lista_tickets = Ticket.objects.filter(colaborador=perfil).order_by('-fecha_registro') if perfil else []
-    return render(request, 'intranet/tickets_personal.html', {'tickets': lista_tickets})
+    return render(request, 'intranet/tickets/tickets_personal.html', {'tickets': lista_tickets})
 
 @login_required(login_url='login')
 @solo_directivos
 def tickets_admin(request):
     """Panel gerencial para ver todos los tickets de la empresa."""
     lista_tickets = Ticket.objects.all().order_by('-fecha_registro')
-    return render(request, 'intranet/tickets_admin.html', {'tickets': lista_tickets})
+    return render(request, 'intranet/tickets/tickets_admin.html', {'tickets': lista_tickets})
 
 @login_required(login_url='login')
 @solo_directivos
@@ -64,7 +64,7 @@ def vacaciones(request):
         return redirect('vacaciones')
         
     lista_solicitudes = SolicitudVacaciones.objects.filter(colaborador=perfil).order_by('-fecha_solicitud') if perfil else []
-    return render(request, 'intranet/vacaciones_personal.html', {'solicitudes': lista_solicitudes})
+    return render(request, 'intranet/solicitudes/vacaciones_personal.html', {'solicitudes': lista_solicitudes})
 
 @login_required(login_url='login')
 @solo_directivos
@@ -80,7 +80,7 @@ def vacaciones_admin(request):
         solicitud.save()
         return redirect('vacaciones_admin')
         
-    return render(request, 'intranet/vacaciones_admin.html', {
+    return render(request, 'intranet/admin/vacaciones_admin.html', {
         'solicitudes': SolicitudVacaciones.objects.all().order_by('-fecha_solicitud')
     })
 

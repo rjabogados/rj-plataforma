@@ -38,7 +38,7 @@ def documentos_admin(request):
             return redirect('documentos_admin')
 
     historial = DocumentoGenerado.objects.all().order_by('-fecha_emision')[:15]
-    return render(request, 'intranet/despachar_documentos.html', {'plantillas': plantillas, 'colaboradores': colaboradores, 'historial': historial})
+    return render(request, 'intranet/documentos/despachar_documentos.html', {'plantillas': plantillas, 'colaboradores': colaboradores, 'historial': historial})
 
 @login_required(login_url='login')
 @solo_directivos
@@ -59,13 +59,13 @@ def gestionar_plantillas(request):
 
     plantillas = PlantillaDocumento.objects.all().order_by('-fecha_creacion')
     categorias = CategoriaDocumento.objects.all()
-    return render(request, 'intranet/gestionar_plantillas.html', {'plantillas': plantillas, 'categorias': categorias})
+    return render(request, 'intranet/documentos/gestionar_plantillas.html', {'plantillas': plantillas, 'categorias': categorias})
 
 @login_required(login_url='login')
 def documentos_personal(request):
     """Bóveda del trabajador para ver y descargar sus documentos/boletas."""
     mis_docs = DocumentoGenerado.objects.filter(colaborador=request.user).order_by('-fecha_emision')
-    return render(request, 'intranet/documentos_personal.html', {'documentos': mis_docs})
+    return render(request, 'intranet/documentos/documentos_personal.html', {'documentos': mis_docs})
 
 @login_required(login_url='login')
 def firmar_documento(request, doc_id):
@@ -144,7 +144,7 @@ def firmar_documento(request, doc_id):
 
         return redirect('documentos_personal')
 
-    return render(request, 'intranet/confirmar_firma.html', {'documento': documento})
+    return render(request, 'intranet/documentos/confirmar_firma.html', {'documento': documento})
 
 @login_required(login_url='login')
 @solo_directivos

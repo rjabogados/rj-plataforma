@@ -73,7 +73,7 @@ def colaboradores(request):
     else:
         lista_colaboradores = Colaborador.objects.all().select_related('user', 'negocio')
 
-    return render(request, 'intranet/colaboradores.html', {
+    return render(request, 'intranet/rrhh/colaboradores.html', {
         'colaboradores': lista_colaboradores, 'negocios': Negocio.objects.all(), 
         'roles': Colaborador.ROLES, 'tipos_horario': Colaborador.TIPO_HORARIO, 'query': query
     })
@@ -192,7 +192,7 @@ def editar_colaborador(request, pk):
         return redirect('colaboradores')
         
     tiene_onboarding = CandidatoOnboarding.objects.filter(colaborador=colab).exists()
-    return render(request, 'intranet/editar_colaborador.html', {
+    return render(request, 'intranet/rrhh/editar_colaborador.html', {
         'colab': colab, 'negocios': Negocio.objects.all(), 'tiene_onboarding': tiene_onboarding
     })
 
@@ -214,7 +214,7 @@ def mapear_excel(request):
         wb = openpyxl.load_workbook(default_storage.open(nombre_tmp))
         cabeceras_excel = [str(celda.value).strip() for celda in wb.active[1] if celda.value is not None]
         request.session['ruta_excel_tmp'] = nombre_tmp
-        return render(request, 'intranet/mapear_excel.html', {'cabeceras': cabeceras_excel})
+        return render(request, 'intranet/documentos/mapear_excel.html', {'cabeceras': cabeceras_excel})
     return redirect('colaboradores')
 
 @login_required(login_url='login')
@@ -386,7 +386,7 @@ def onboarding_admin(request):
     cursos_biblioteca = CursoInduccion.objects.filter(activo=True, tipo='INDUCCION').select_related('evaluacion').prefetch_related('lecciones').order_by('-fecha_creacion')
     negocios = Negocio.objects.all()
 
-    return render(request, 'intranet/onboarding_lista.html', {
+    return render(request, 'intranet/rrhh/onboarding_lista.html', {
         'candidatos_progreso': lista_candidatos_progreso, 'candidatos': onboardings_activos, 
         'modulos_biblioteca': cursos_biblioteca, 'negocios': negocios, 'roles': Colaborador.ROLES
     })
@@ -434,7 +434,7 @@ def asignar_modulos_induccion(request, colab_id):
         return redirect('onboarding_admin')
         
     cursos_actuales = MatriculaCurso.objects.filter(colaborador=colaborador).values_list('curso_id', flat=True)
-    return render(request, 'intranet/asignar_modulos.html', {'colaborador': colaborador, 'modulos_disponibles': cursos_disponibles, 'modulos_actuales': cursos_actuales})
+    return render(request, 'intranet/rrhh/asignar_modulos.html', {'colaborador': colaborador, 'modulos_disponibles': cursos_disponibles, 'modulos_actuales': cursos_actuales})
 
 @login_required(login_url='login')
 def mi_induccion(request):
@@ -474,7 +474,7 @@ def mi_induccion(request):
     completados = sum(1 for m in mis_modulos if m.estado == 'COMPLETADO')
     porcentaje = int((completados / total_modulos) * 100) if total_modulos > 0 else 0
 
-    return render(request, 'intranet/mi_induccion.html', {
+    return render(request, 'intranet/rrhh/mi_induccion.html', {
         'mis_modulos': mis_modulos,
         'total': total_modulos,
         'completados': completados,
@@ -524,27 +524,27 @@ def pasar_a_planilla(request, candidato_id):
 # MOTOR DE ENCUESTAS, COMUNICADOS, CALENDARIO...
 # ==========================================
 @login_required(login_url='login')
-def encuestas_personal(request): return render(request, 'intranet/encuestas_personal.html', {'encuestas': Encuesta.objects.filter(activa=True).order_by('-fecha_creacion')})
+def encuestas_personal(request): return render(request, 'intranet/comunicacion/encuestas_personal.html', {'encuestas': Encuesta.objects.filter(activa=True).order_by('-fecha_creacion')})
 @login_required(login_url='login')
 @solo_directivos
-def encuestas_admin(request): return render(request, 'intranet/encuestas_admin.html', {'encuestas': Encuesta.objects.all().prefetch_related('preguntas')})
+def encuestas_admin(request): return render(request, 'intranet/admin/encuestas_admin.html', {'encuestas': Encuesta.objects.all().prefetch_related('preguntas')})
 @login_required(login_url='login')
 @solo_directivos
-def resultados_encuesta(request, pk): return render(request, 'intranet/encuesta_resultados.html')
+def resultados_encuesta(request, pk): return render(request, 'intranet/comunicacion/encuesta_exito.html')
 @login_required(login_url='login')
 @solo_directivos
 def exportar_encuesta(request, pk): return HttpResponse("Exportar")
 @login_required(login_url='login')
-def mensajeria(request): return render(request, 'intranet/mensajeria.html')
+def mensajeria(request): return render(request, 'intranet/comunicacion/mensajeria.html')
 @login_required(login_url='login')
-def leer_mensaje(request, pk): return render(request, 'intranet/leer_mensaje.html')
+def leer_mensaje(request, pk): return render(request, 'intranet/comunicacion/leer_mensaje.html')
 @login_required(login_url='login')
-def calendario(request): return render(request, 'intranet/calendario.html')
+def calendario(request): return render(request, 'intranet/dashboard/calendario.html')
 @login_required(login_url='login')
-def comunicados(request): return render(request, 'intranet/comunicados.html')
+def comunicados(request): return render(request, 'intranet/comunicacion/comunicados.html')
 @login_required(login_url='login')
 @solo_directivos
-def gestor_comunicados(request): return render(request, 'intranet/gestor_comunicados.html')
+def gestor_comunicados(request): return render(request, 'intranet/comunicacion/gestor_comunicados.html')
 @login_required(login_url='login')
 @solo_directivos
 def eliminar_comunicado(request, pk): return redirect('gestor_comunicados')
@@ -556,9 +556,9 @@ def eliminar_evento(request, pk): return redirect('calendario')
 def eliminar_candidato(request, pk): return redirect('dashboard')
 @login_required(login_url='login')
 @solo_directivos
-def activos(request): return render(request, 'intranet/activos.html')
+def activos(request): return render(request, 'intranet/dashboard/activos.html')
 @login_required(login_url='login')
-def beneficios(request): return render(request, 'intranet/beneficios.html')
+def beneficios(request): return render(request, 'intranet/dashboard/beneficios.html')
 
 
 # ==========================================
@@ -721,7 +721,7 @@ def academia(request):
     completados = sum(1 for m in mis_cursos if m.estado == 'COMPLETADO')
     porcentaje = int((completados / total_cursos) * 100) if total_cursos > 0 else 0
 
-    return render(request, 'intranet/academia.html', {
+    return render(request, 'intranet/lms/academia.html', {
         'mis_cursos': mis_cursos,
         'total': total_cursos,
         'completados': completados,
