@@ -5,14 +5,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from intranet.models import CandidatoReclutamiento
 
-# Llave maestra
+# Llave maestra (puede estar vacía en desarrollo para permitir migraciones)
 API_SECRET_KEY = os.environ.get('API_SECRET_KEY')
-
-if not API_SECRET_KEY:
-    raise ValueError("API_SECRET_KEY debe estar configurada en las variables de entorno")
 
 @require_http_methods(["POST", "OPTIONS"])
 def webhook_receptor(request):
+    # Validar que la clave esté configurada cuando se intente usar
+    if not API_SECRET_KEY:
+        return JsonResponse({'error': 'API_SECRET_KEY no configurada'}, status=500)
+    
     def build_response(data, status=200):
         response = JsonResponse(data, status=status)
         # CORS SEGURO: Especificar origen permitido
