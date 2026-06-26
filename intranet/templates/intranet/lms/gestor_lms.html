@@ -2,21 +2,20 @@
 
 {% block content %}
 <div class="container-fluid p-4">
-    <div class="mb-4 d-flex justify-content-between align-items-center">
+    <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
         <div>
-            <h2 class="navbar-main-title fw-bold mb-1" style="color: var(--rj-azul);">Gestor de la Academia LMS</h2>
-            <p class="text-muted">Crea cursos, sube clases (Videos/PDFs) y configura exámenes con gamificación.</p>
+            <h2 class="navbar-main-title fw-bold mb-2 lms-page-title">Gestor de la Academia LMS</h2>
+            <p class="text-secondary">Administra módulos, clases y evaluaciones desde una interfaz limpia y profesional.</p>
         </div>
-        <div class="d-flex gap-2">
-            <!-- NUEVO BOTÓN DEL DASHBOARD -->
-            <a href="{% url 'dashboard_resultados' %}" class="btn btn-dark fw-bold shadow-sm">
-                <i class="bi bi-pie-chart-fill me-2"></i> Dashboard Analítico
+        <div class="d-flex flex-wrap gap-2 lms-header-actions">
+            <a href="{% url 'dashboard_resultados' %}" class="btn btn-outline-secondary btn-pill fw-semibold shadow-sm">
+                <i class="bi bi-pie-chart-fill me-2"></i>Dashboard
             </a>
-            <a href="{% url 'crear_curso_avanzado' %}" class="btn btn-primary fw-bold shadow-sm">
-                <i class="bi bi-journal-plus me-2"></i> Crear Curso
+            <a href="{% url 'crear_curso_avanzado' %}" class="btn btn-primary btn-pill fw-semibold shadow-sm">
+                <i class="bi bi-journal-plus me-2"></i>Crear Curso
             </a>
-            <button class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearLeccion">
-                <i class="bi bi-play-btn-fill me-2"></i> Agregar Clase
+            <button class="btn btn-outline-success btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearLeccion">
+                <i class="bi bi-play-btn-fill me-2"></i>Agregar Clase
             </button>
         </div>
     </div>
@@ -32,17 +31,18 @@
 
     <div class="row">
         <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 border-top border-primary border-4">
-                <div class="card-header bg-white border-0 pt-4 pb-0">
-                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-gear-fill text-primary me-2"></i>Configurar Examen Final</h5>
-                </div>
+            <div class="card lms-form-card h-100 position-relative">
                 <div class="card-body p-4">
+                    <div class="lms-card-hero mb-4 p-4 position-relative">
+                        <h5 class="fw-bold mb-1">Configurar Examen Final</h5>
+                        <p class="text-secondary mb-0">Define la evaluación para tu curso y aplica condiciones clave de gamificación.</p>
+                    </div>
                     <form method="POST" action="{% url 'gestor_lms' %}">
                         {% csrf_token %}
                         <input type="hidden" name="crear_evaluacion" value="1">
                         
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-secondary">Vincular al Curso:</label>
+                        <div class="mb-3 lms-input-soft">
+                            <label class="form-label small fw-semibold text-secondary">Vincular al Curso</label>
                             <select class="form-select" name="curso_id" required>
                                 <option value="">-- Selecciona un curso --</option>
                                 {% for c in cursos %}
@@ -53,56 +53,59 @@
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-secondary">Título del Examen:</label>
+                        <div class="mb-3 lms-input-soft">
+                            <label class="form-label small fw-semibold text-secondary">Título del Examen</label>
                             <input type="text" class="form-control" name="titulo" placeholder="Ej: Evaluación de Políticas" required>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-secondary">Pts. Máximos:</label>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Pts. Máximos</label>
                                 <input type="number" class="form-control" name="puntaje_maximo" value="20" step="1" required>
                             </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-success">Nota Aprobatoria:</label>
-                                <input type="number" class="form-control border-success" name="puntaje_aprobatorio" value="14" step="1" required>
+                            <div class="col-6 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Nota Aprobatoria</label>
+                                <input type="number" class="form-control" name="puntaje_aprobatorio" value="14" step="1" required>
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-danger"><i class="bi bi-stopwatch"></i> Tiempo (min):</label>
-                                <input type="number" class="form-control border-danger" name="tiempo_limite_minutos" value="15" required help-text="0 para sin límite">
+                        <div class="row g-3 mb-3">
+                            <div class="col-6 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Tiempo (min)</label>
+                                <input type="number" class="form-control" name="tiempo_limite_minutos" value="15" required>
                             </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-warning"><i class="bi bi-star-fill"></i> Puntos Premio:</label>
-                                <input type="number" class="form-control border-warning" name="puntos_premio" value="50" required>
+                            <div class="col-6 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Puntos Premio</label>
+                                <input type="number" class="form-control" name="puntos_premio" value="50" required>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-primary">Preguntas a Mostrar al Azar:</label>
-                            <input type="number" class="form-control border-primary" name="preguntas_a_mostrar" value="10" required>
+                        <div class="mb-4 lms-input-soft">
+                            <label class="form-label small fw-semibold text-secondary">Preguntas a Mostrar al Azar</label>
+                            <input type="number" class="form-control" name="preguntas_a_mostrar" value="10" required>
                         </div>
 
-                        <div class="form-check form-switch mb-4 bg-light p-3 rounded-3">
+                        <div class="form-check form-switch mb-4 lms-input-soft p-3">
                             <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="orden_aleatorio" id="orden_aleatorio" checked>
-                            <label class="form-check-label small fw-bold text-dark" style="cursor: pointer;" for="orden_aleatorio">
+                            <label class="form-check-label small fw-semibold text-secondary" style="cursor: pointer;" for="orden_aleatorio">
                                 Mezclar alternativas (Anti-Copia)
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Guardar Reglas del Examen</button>
+                        <button type="submit" class="btn btn-primary w-100 btn-pill fw-semibold py-2">Guardar Reglas del Examen</button>
                     </form>
                 </div>
             </div>
         </div>
 
         <div class="col-md-8 mb-4">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-collection-fill me-2"></i>Cursos y Módulos Activos</h5>
-            <form method="GET" action="{% url 'gestor_lms' %}" class="row g-2 align-items-end mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-collection-fill me-2"></i>Cursos y Módulos Activos</h5>
+                <small class="text-muted">Revisa la biblioteca completa y filtra por categoría.</small>
+            </div>
+            <form method="GET" action="{% url 'gestor_lms' %}" class="row g-3 align-items-end mb-4 p-4 lms-form-card lms-input-soft">
                 <div class="col-md-5">
-                    <label class="form-label small fw-bold text-secondary">Filtrar por Categoría</label>
+                    <label class="form-label small fw-semibold text-secondary">Filtrar por Categoría</label>
                     <select class="form-select" name="categoria">
                         <option value="">-- Todas las categorías --</option>
                         {% for cat in categorias %}
@@ -111,36 +114,35 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label d-block opacity-0">Filtrar</label>
-                    <button type="submit" class="btn btn-outline-primary w-100 fw-bold">Aplicar filtro</button>
+                    <button type="submit" class="btn btn-primary btn-pill w-100 fw-semibold">Aplicar filtro</button>
                 </div>
                 {% if categoria_filtro %}
-                <div class="col-md-3 d-flex align-items-center">
-                    <span class="badge bg-info text-dark">Mostrando: {{ categoria_filtro }}</span>
-                    <a href="{% url 'gestor_lms' %}" class="btn btn-link text-decoration-none">Limpiar</a>
+                <div class="col-md-3 d-flex align-items-center gap-2">
+                    <span class="badge badge-soft">Mostrando: {{ categoria_filtro }}</span>
+                    <a href="{% url 'gestor_lms' %}" class="btn btn-outline-secondary btn-sm btn-pill">Limpiar</a>
                 </div>
                 {% endif %}
             </form>
             {% if cursos %}
                 <div class="d-flex flex-column gap-3">
                     {% for curso in cursos %}
-                    <div class="card border-0 shadow-sm rounded-4 border-start border-primary border-5">
+                    <div class="card lms-card-compact border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="w-75">
-                                    <h5 class="fw-bold mb-1" style="color: var(--rj-azul);">{{ curso.titulo }}</h5>
-                                    <p class="text-muted small mb-2">{{ curso.descripcion }}</p>
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div class="w-100">
+                                    <h5 class="fw-bold mb-2 text-primary">{{ curso.titulo }}</h5>
+                                    <p class="text-muted small mb-3">{{ curso.descripcion }}</p>
                                     {% if curso.categoria %}
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-2">
+                                    <span class="badge badge-soft mb-2">
                                         <i class="bi bi-tags-fill me-1"></i> {{ curso.categoria }}
                                     </span>
                                     {% endif %}
                                     <div class="d-flex flex-wrap gap-2 mt-2">
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                        <span class="badge badge-soft">
                                             <i class="bi bi-play-btn-fill me-1"></i> {{ curso.lecciones.count }} Clases
                                         </span>
                                         {% if curso.evaluacion %}
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <span class="badge badge-soft-success">
                                                 <i class="bi bi-check-circle-fill me-1"></i> Examen Configurado
                                             </span>
                                         {% else %}
@@ -150,29 +152,29 @@
                                         {% endif %}
                                     </div>
                                 </div>
-                                
+
                                 {% if curso.evaluacion %}
                                 <div class="text-end d-flex flex-column gap-2 ms-3">
-                                    <a href="{% url 'resultados_evaluacion' curso.evaluacion.id %}" class="btn btn-sm btn-info text-white fw-bold shadow-sm">
-                                        <i class="bi bi-pie-chart-fill me-1"></i> Ver Analítica
+                                    <a href="{% url 'resultados_evaluacion' curso.evaluacion.id %}" class="btn btn-sm btn-info text-white fw-semibold btn-pill">
+                                        <i class="bi bi-pie-chart-fill me-1"></i> Analítica
                                     </a>
-                                    <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-success fw-bold shadow-sm">
+                                    <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-success fw-semibold btn-pill">
                                         <i class="bi bi-file-earmark-excel me-1"></i> Balotario
                                     </a>
                                 </div>
                                 {% endif %}
                             </div>
 
-                            <div class="mt-3 pt-3 border-top d-flex flex-wrap gap-2">
-                                <button class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalEditarCurso{{ curso.id }}">
-                                    <i class="bi bi-pencil-square"></i> Editar Curso
+                            <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                                <button class="btn btn-sm btn-outline-primary btn-pill fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditarCurso{{ curso.id }}">
+                                    <i class="bi bi-pencil-square"></i> Editar
                                 </button>
                                 
-                                <a href="{% url 'generar_examen_ia' curso.id %}" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm">
-                                    <i class="bi bi-robot"></i> Generar IA
+                                <a href="{% url 'generar_examen_ia' curso.id %}" class="btn btn-sm btn-warning btn-pill fw-semibold">
+                                    <i class="bi bi-robot"></i> IA
                                 </a>
 
-                                <a href="{% url 'eliminar_curso_lms' curso.id %}" class="btn btn-sm btn-outline-danger fw-bold" onclick="return confirm('¿Estás SEGURO de eliminar este curso? Se borrarán todas sus clases, exámenes y el progreso de los colaboradores. Esta acción no se puede deshacer.');">
+                                <a href="{% url 'eliminar_curso_lms' curso.id %}" class="btn btn-sm btn-outline-danger btn-pill fw-semibold" onclick="return confirm('¿Estás SEGURO de eliminar este curso? Se borrarán todas sus clases, exámenes y el progreso de los colaboradores. Esta acción no se puede deshacer.');">
                                     <i class="bi bi-trash-fill"></i> Eliminar
                                 </a>
                             </div>
@@ -182,43 +184,42 @@
 
                     <div class="modal fade" id="modalEditarCurso{{ curso.id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-centered">
-                            <div class="modal-content border-0 shadow">
-                                <div class="modal-header bg-primary text-white">
+                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                <div class="modal-header bg-primary text-white rounded-top-4">
                                     <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Editar Curso</h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <form method="POST" action="{% url 'editar_curso_lms' curso.id %}">
                                     {% csrf_token %}
-                                    <div class="modal-body p-4">
-                                        <div class="row">
-                                            <div class="col-md-12 mb-3">
-                                                <label class="form-label fw-bold small">Título del Curso</label>
+                                    <div class="modal-body p-4 lms-input-soft">
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-semibold text-secondary">Título del Curso</label>
                                                 <input type="text" class="form-control" name="titulo" value="{{ curso.titulo }}" required>
                                             </div>
-                                            <div class="col-md-12 mb-3">
-                                                <label class="form-label fw-bold small">Descripción</label>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-semibold text-secondary">Descripción</label>
                                                 <textarea class="form-control" name="descripcion" rows="2">{{ curso.descripcion }}</textarea>
                                             </div>
-                                            <hr>
-                                            <div class="col-md-12 mb-3">
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" name="publico_general" id="checkPublico{{ curso.id }}" {% if curso.publico_general %}checked{% endif %} onchange="toggleFiltros('{{ curso.id }}')">
-                                                    <label class="form-check-label fw-bold" for="checkPublico{{ curso.id }}">Visible para toda la empresa</label>
+                                            <div class="col-md-12">
+                                                <div class="form-check form-switch bg-white p-3 rounded-4 border border-1 border-light">
+                                                    <input class="form-check-input ms-0 me-3" type="checkbox" name="publico_general" id="checkPublico{{ curso.id }}" {% if curso.publico_general %}checked{% endif %} onchange="toggleFiltros('{{ curso.id }}')">
+                                                    <label class="form-check-label fw-semibold text-secondary" for="checkPublico{{ curso.id }}">Visible para toda la empresa</label>
                                                 </div>
                                             </div>
-                                            <div class="row" id="filtrosSegmentacion{{ curso.id }}" style="{% if curso.publico_general %}display: none;{% else %}display: flex;{% endif %}">
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label fw-bold small text-warning">Filtrar por Rol</label>
-                                                    <select class="form-select border-warning" name="rol_permitido">
+                                            <div class="row g-3" id="filtrosSegmentacion{{ curso.id }}" style="{% if curso.publico_general %}display: none;{% else %}display: flex;{% endif %}">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Filtrar por Rol</label>
+                                                    <select class="form-select" name="rol_permitido">
                                                         <option value="">-- Todos los Roles --</option>
                                                         {% for valor, etiqueta in roles %}
                                                             <option value="{{ valor }}" {% if curso.rol_permitido == valor %}selected{% endif %}>{{ etiqueta }}</option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label fw-bold small text-info">Filtrar por Cartera</label>
-                                                    <select class="form-select border-info" name="cartera_vinculada">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Filtrar por Cartera</label>
+                                                    <select class="form-select" name="cartera_vinculada">
                                                         <option value="">-- Todas las Carteras --</option>
                                                         {% for n in negocios %}
                                                             <option value="{{ n.id }}" {% if curso.cartera_vinculada_id == n.id %}selected{% endif %}>{{ n.nombre }}</option>
@@ -228,8 +229,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="modal-footer bg-light">
-                                        <button type="submit" class="btn btn-primary fw-bold">Actualizar Curso</button>
+                                    <div class="modal-footer bg-light rounded-bottom-4">
+                                        <button type="submit" class="btn btn-primary btn-pill fw-semibold">Actualizar Curso</button>
                                     </div>
                                 </form>
                             </div>
@@ -250,41 +251,40 @@
 
 <div class="modal fade" id="modalCrearCurso" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
                 <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus me-2"></i> Crear Nuevo Curso</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{% url 'gestor_lms' %}">
                 {% csrf_token %}
-                <div class="modal-body p-4">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label fw-bold small">Título del Curso</label>
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-secondary">Título del Curso</label>
                             <input type="text" class="form-control" name="titulo" required>
                         </div>
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label fw-bold small">Descripción</label>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-secondary">Descripción</label>
                             <textarea class="form-control" name="descripcion" rows="2"></textarea>
                         </div>
-                        <hr>
-                        <div class="col-md-12 mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="publico_general" id="checkPublicoNuevo" checked onchange="toggleFiltros('Nuevo')">
-                                <label class="form-check-label fw-bold" for="checkPublicoNuevo">Visible para toda la empresa</label>
+                        <div class="col-md-12">
+                            <div class="form-check form-switch bg-white p-3 rounded-4 border border-1 border-light">
+                                <input class="form-check-input ms-0 me-3" type="checkbox" name="publico_general" id="checkPublicoNuevo" checked onchange="toggleFiltros('Nuevo')">
+                                <label class="form-check-label fw-semibold text-secondary" for="checkPublicoNuevo">Visible para toda la empresa</label>
                             </div>
                         </div>
-                        <div class="row" id="filtrosSegmentacionNuevo" style="display: none;">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold small text-warning">Filtrar por Rol</label>
-                                <select class="form-select border-warning" name="rol_permitido">
+                        <div class="row g-3" id="filtrosSegmentacionNuevo" style="display: none;">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Filtrar por Rol</label>
+                                <select class="form-select" name="rol_permitido">
                                     <option value="">-- Todos los Roles --</option>
                                     {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold small text-info">Filtrar por Cartera</label>
-                                <select class="form-select border-info" name="cartera_vinculada">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Filtrar por Cartera</label>
+                                <select class="form-select" name="cartera_vinculada">
                                     <option value="">-- Todas las Carteras --</option>
                                     {% for n in negocios %}<option value="{{ n.id }}">{{ n.nombre }}</option>{% endfor %}
                                 </select>
@@ -292,8 +292,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" name="crear_curso" class="btn btn-primary fw-bold">Guardar Curso</button>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" name="crear_curso" class="btn btn-primary btn-pill fw-semibold">Guardar Curso</button>
                 </div>
             </form>
         </div>
@@ -302,17 +302,17 @@
 
 <div class="modal fade" id="modalCrearLeccion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-success text-white">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white rounded-top-4">
                 <h5 class="modal-title fw-bold"><i class="bi bi-play-btn-fill me-2"></i> Agregar Clase a un Curso</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{% url 'gestor_lms' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="crear_leccion" value="1">
-                <div class="modal-body p-4">
+                <div class="modal-body p-4 lms-input-soft">
                     <div class="mb-3">
-                        <label class="form-label fw-bold small">Curso al que pertenece:</label>
+                        <label class="form-label fw-semibold text-secondary">Curso al que pertenece</label>
                         <select class="form-select" name="curso_id" required>
                             <option value="">-- Selecciona el curso --</option>
                             {% for c in cursos %}
@@ -321,39 +321,39 @@
                         </select>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-9 mb-3">
-                            <label class="form-label fw-bold small">Título de la Clase:</label>
+                    <div class="row g-3">
+                        <div class="col-md-9">
+                            <label class="form-label fw-semibold text-secondary">Título de la Clase</label>
                             <input type="text" class="form-control" name="titulo" placeholder="Ej: Clase 1: Conceptos Básicos" required>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold small">Orden (N°):</label>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-secondary">Orden (N°)</label>
                             <input type="number" class="form-control" name="orden" value="1" required>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold small">Breve Descripción (Opcional):</label>
+                        <label class="form-label fw-semibold text-secondary">Breve Descripción (Opcional)</label>
                         <textarea class="form-control" name="descripcion" rows="2"></textarea>
                     </div>
 
-                    <hr>
-                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-paperclip"></i> Material Multimedia (Elige una opción)</h6>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small text-danger"><i class="bi bi-youtube"></i> Enlace de Video (YouTube/Vimeo)</label>
-                            <input type="url" class="form-control border-danger" name="url_video" placeholder="Ej: https://www.youtube.com/embed/...">
-                            <small class="text-muted" style="font-size: 0.75rem;">Usa el enlace "Embed" (Incrustar) de YouTube.</small>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> O subir archivo PDF</label>
-                            <input type="file" class="form-control border-primary" name="archivo_pdf" accept=".pdf">
+                    <div class="py-3 border-top mb-3">
+                        <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-paperclip"></i> Material Multimedia</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-danger"><i class="bi bi-youtube"></i> Enlace de Video</label>
+                                <input type="url" class="form-control" name="url_video" placeholder="Ej: https://www.youtube.com/embed/...">
+                                <small class="text-muted d-block mt-1">Usa el enlace "Embed" de YouTube.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> O subir archivo PDF</label>
+                                <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-success fw-bold">Guardar Clase</button>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-success btn-pill fw-semibold">Guardar Clase</button>
                 </div>
             </form>
         </div>

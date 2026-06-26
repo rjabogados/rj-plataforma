@@ -19,75 +19,75 @@
         
         <div class="row">
             <div class="col-md-8">
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-white border-0 pt-4 pb-0">
-                        <h5 class="fw-bold text-dark"><i class="bi bi-info-square-fill text-primary me-2"></i>Información General</h5>
-                    </div>
+                <div class="card lms-form-card mb-4">
                     <div class="card-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-secondary">Título del Módulo</label>
-                            <input type="text" class="form-control form-control-lg" name="titulo" placeholder="Ej: Técnicas de Cobranza Telefónica" required>
+                        <div class="lms-card-hero mb-4 p-4">
+                            <h5 class="fw-bold mb-1">Información General</h5>
+                            <p class="text-secondary mb-0">Define el módulo con título, descripción y una categoría clara para la academia.</p>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-secondary">Descripción</label>
-                            <textarea class="form-control" name="descripcion" rows="3" placeholder="¿Qué aprenderán los asesores en este módulo?"></textarea>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold small text-secondary">Categoría del Módulo</label>
-                                <select class="form-select border-primary" name="categoria" required>
+                        <div class="row g-3 lms-input-soft">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-secondary">Título del Módulo</label>
+                                <input type="text" class="form-control form-control-lg" name="titulo" placeholder="Ej: Técnicas de Cobranza Telefónica" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-secondary">Descripción</label>
+                                <textarea class="form-control" name="descripcion" rows="3" placeholder="¿Qué aprenderán los asesores en este módulo?"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Categoría del Módulo</label>
+                                <select class="form-select" name="categoria" required>
                                     <option value="">-- Selecciona una Categoría --</option>
                                     {% for cat in categorias %}
                                         <option value="{{ cat }}">{{ cat }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold small text-secondary">Imagen de Portada (Opcional)</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Imagen de Portada (Opcional)</label>
                                 <input type="file" class="form-control" name="portada" accept="image/*">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-header bg-white border-0 pt-4 pb-0">
-                        <h5 class="fw-bold text-dark"><i class="bi bi-controller text-warning me-2"></i>Gamificación y Dificultad</h5>
-                    </div>
+                <div class="card lms-form-card mb-4">
                     <div class="card-body p-4">
-                        <p class="text-muted small mb-0">Se omitió la configuración de puntos y nivel porque esos campos no existen en la base de datos actual.</p>
+                        <div class="lms-section-title mb-2">Gamificación y Dificultad</div>
+                        <p class="text-secondary small mb-0">Se omitió la configuración de puntos y nivel porque esos campos no existen en la base de datos actual.</p>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 mb-4 border-top border-success border-4">
-                    <div class="card-header bg-white border-0 pt-4 pb-0">
-                        <h5 class="fw-bold text-dark"><i class="bi bi-people-fill text-success me-2"></i>Segmentación</h5>
-                        <p class="small text-muted mb-0">¿Quién puede ver este curso?</p>
-                    </div>
+                <div class="card lms-form-card mb-4">
                     <div class="card-body p-4">
-                        <div class="form-check form-switch bg-light p-3 rounded-3 mb-4 d-flex align-items-center">
-                            <input class="form-check-input ms-0 me-3" type="checkbox" role="switch" name="publico_general" id="checkPublicoNuevo" checked onchange="toggleFiltros()">
-                            <label class="form-check-label fw-bold text-dark" style="cursor: pointer;" for="checkPublicoNuevo">
-                                Visible para todos
-                            </label>
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <span class="badge bg-primary text-white rounded-pill py-2 px-3">Segmentación</span>
+                                <small class="text-secondary">Define quién puede ver este curso.</small>
+                            </div>
+                            <div class="form-check form-switch mb-4 lms-input-soft p-3 rounded-4">
+                                <input class="form-check-input ms-0 me-3" type="checkbox" role="switch" name="publico_general" id="checkPublicoNuevo" checked onchange="toggleFiltros()">
+                                <label class="form-check-label fw-semibold text-secondary" style="cursor: pointer;" for="checkPublicoNuevo">
+                                    Visible para todos
+                                </label>
+                            </div>
                         </div>
 
                         <div id="filtrosSegmentacionNuevo" style="display: none;">
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-info"><i class="bi bi-briefcase-fill me-1"></i> Dirigido a Cartera (Campaña)</label>
-                                <select class="form-select border-info" name="cartera_vinculada">
+                            <div class="mb-4 lms-input-soft p-3 rounded-4">
+                                <label class="form-label fw-semibold text-info"><i class="bi bi-briefcase-fill me-1"></i> Dirigido a Cartera</label>
+                                <select class="form-select" name="cartera_vinculada">
                                     <option value="">-- Todas las Carteras --</option>
                                     {% for n in negocios %}
                                         <option value="{{ n.id }}">{{ n.nombre }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-primary"><i class="bi bi-person-badge-fill me-1"></i> Dirigido a Cargo/Rol</label>
-                                <select class="form-select border-primary" name="rol_permitido">
+                            <div class="lms-input-soft p-3 rounded-4">
+                                <label class="form-label fw-semibold text-primary"><i class="bi bi-person-badge-fill me-1"></i> Dirigido a Cargo/Rol</label>
+                                <select class="form-select" name="rol_permitido">
                                     <option value="">-- Todos los Roles --</option>
                                     {% for valor, etiqueta in roles %}
                                         <option value="{{ valor }}">{{ etiqueta }}</option>
@@ -98,7 +98,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm rounded-4 py-3">
+                <button type="submit" class="btn btn-primary btn-lg btn-pill w-100 fw-semibold shadow-sm py-3">
                     <i class="bi bi-send-check-fill me-2"></i> Publicar Módulo
                 </button>
             </div>

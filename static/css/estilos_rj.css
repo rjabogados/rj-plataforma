@@ -254,3 +254,72 @@ body {
     background-color: var(--rj-azul) !important;
     color: #ffffff !important;
 }
+
+/* --- ESTILOS LMS PROFESIONAL --- */
+.lms-page-title {
+    color: var(--rj-azul);
+    letter-spacing: 0.04em;
+}
+.lms-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 24px 50px rgba(15, 23, 42, 0.06);
+    border-radius: 1.6rem;
+}
+.lms-card-compact {
+    border-radius: 1.4rem;
+}
+.lms-form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.5rem;
+    box-shadow: 0 18px 35px rgba(15, 23, 42, 0.05);
+}
+.lms-form-card .card-header {
+    background: transparent;
+    border-bottom: none;
+}
+.lms-form-note {
+    background-color: rgba(24, 61, 116, 0.06);
+    border-left: 4px solid var(--rj-azul);
+    padding: 1rem 1.2rem;
+    border-radius: 1rem;
+    color: #334155;
+    margin-bottom: 1rem;
+}
+.lms-input-soft .form-control,
+.lms-input-soft .form-select,
+.lms-input-soft .form-check-input {
+    background-color: #f8fafc;
+    border-color: #dfe3ea;
+    border-radius: 1rem;
+    padding: 1rem 1.1rem;
+}
+.lms-input-soft .form-control:focus,
+.lms-input-soft .form-select:focus {
+    border-color: var(--rj-azul);
+    box-shadow: 0 0 0 0.15rem rgba(24, 61, 116, 0.12);
+}
+.btn-pill {
+    border-radius: 999px !important;
+}
+.badge-soft {
+    background-color: rgba(24, 61, 116, 0.08);
+    color: var(--rj-azul);
+    border: 1px solid rgba(24, 61, 116, 0.14);
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+}
+.badge-soft-success {
+    background-color: rgba(16, 185, 129, 0.14);
+    color: #047857;
+}
+.lms-header-actions .btn {
+    min-width: 170px;
+}
+.lms-card-hero {
+    border-radius: 1.5rem;
+    background: linear-gradient(180deg, rgba(24, 61, 116, 0.08), #ffffff 100%);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+}
