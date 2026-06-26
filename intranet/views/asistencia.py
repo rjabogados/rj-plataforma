@@ -132,4 +132,4 @@ def visor_asistencia(request):
 @solo_directivos
 def modo_televisor(request): 
     """Muestra la cola de asistencia y marcas en tiempo real optimizado para la pantalla de la oficina."""
-    return render(request, 'intranet/televisor.html')
+    return render(request, 'intranet/rrhh/visor_asistencia.html')
