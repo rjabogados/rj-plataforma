@@ -4,6 +4,7 @@ from datetime import date
 from datetime import time
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -301,3 +302,31 @@ class SecurityAccessTests(TestCase):
 		self.assertContains(response, 'ficha_admin')
 		self.assertContains(response, 'Llegó tarde por tráfico')
 		self.assertContains(response, 'Vacaciones')
+
+	def test_perfil_permite_actualizar_descripcion_y_foto(self):
+		self.client.login(username='empleado', password='test12345')
+		foto = SimpleUploadedFile('perfil.png', b'fake-image-bytes', content_type='image/png')
+
+		response = self.client.post(reverse('perfil'), {
+			'accion': 'datos',
+			'descripcion_perfil': 'Perfil actualizado desde la plataforma',
+			'foto_perfil': foto,
+		})
+
+		self.assertEqual(response.status_code, 302)
+		self.user.perfil.refresh_from_db()
+		self.assertEqual(self.user.perfil.descripcion_perfil, 'Perfil actualizado desde la plataforma')
+		self.assertTrue(self.user.perfil.foto_perfil.name.endswith('perfil.png'))
+
+	def test_perfil_permite_cambiar_password(self):
+		self.client.login(username='empleado', password='test12345')
+
+		response = self.client.post(reverse('perfil'), {
+			'accion': 'password',
+			'old_password': 'test12345',
+			'new_password1': 'NuevoPass12345',
+			'new_password2': 'NuevoPass12345',
+		})
+
+		self.assertEqual(response.status_code, 302)
+		self.assertTrue(self.client.login(username='empleado', password='NuevoPass12345'))

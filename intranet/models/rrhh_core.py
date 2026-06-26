@@ -67,6 +67,8 @@ class Colaborador(models.Model):
     banco_pago = models.CharField(max_length=100, default='BCP')
     cuenta_bancaria = models.CharField(max_length=50, blank=True, null=True)
     regimen_laboral = models.CharField(max_length=50, default='Regimen General Mype')
+    foto_perfil = models.ImageField(upload_to='perfiles/fotos/', null=True, blank=True)
+    descripcion_perfil = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.last_name}, {self.user.first_name} ({self.get_rol_display()})"

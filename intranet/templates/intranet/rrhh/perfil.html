@@ -1,62 +1,121 @@
 {% extends 'intranet/base.html' %}
 
 {% block content %}
-<div class="container-fluid" style="max-width: 800px;">
+<div class="container-fluid" style="max-width: 1100px;">
     <h3 class="fw-bold text-dark mb-4"><i class="bi bi-person-gear text-primary"></i> Configuración de Mi Perfil</h3>
-    
-    {% if mensaje %}
-        <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">{{ mensaje }}</div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} border-0 shadow-sm rounded-3 mb-3">{{ message }}</div>
+        {% endfor %}
     {% endif %}
 
-    <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body p-5">
-            <form method="POST">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small fw-bold">Nombres Completos</label>
-                        <input type="text" class="form-control bg-light text-muted" value="{{ user.first_name }} {{ user.last_name }}" readonly>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-body p-4 text-center">
+                    <div class="mx-auto mb-3 rounded-circle overflow-hidden bg-light border d-flex align-items-center justify-content-center" style="width: 160px; height: 160px;">
+                        {% if perfil and perfil.foto_perfil %}
+                            <img src="{{ perfil.foto_perfil.url }}" alt="Foto de perfil" class="w-100 h-100 object-fit-cover">
+                        {% else %}
+                            <i class="bi bi-person-circle display-1 text-muted"></i>
+                        {% endif %}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small fw-bold">Correo de Acceso (Usuario)</label>
-                        <input type="text" class="form-control bg-light text-muted" value="{{ user.email }}" readonly>
+                    <h4 class="fw-bold mb-1">{{ user.first_name }} {{ user.last_name }}</h4>
+                    <div class="text-muted mb-3">{{ user.username }}</div>
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                        <span class="badge bg-primary">{{ perfil.get_rol_display|default:"Administrador" }}</span>
+                        <span class="badge bg-info text-dark">{{ perfil.area.nombre|default:perfil.negocio.nombre|default:"Sin área" }}</span>
+                        <span class="badge bg-light text-dark border">{{ perfil.cargo.nombre|default:"Sin cargo" }}</span>
                     </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label text-muted small fw-bold">Puesto / Rango Asignado</label>
-                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil %}{{ perfil.get_rol_display }}{% else %}Soporte de Sistema (Admin){% endif %}" readonly>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label text-muted small fw-bold">Cartera Operativa / Área</label>
-                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil and perfil.negocio %}{{ perfil.negocio.nombre }}{% elif perfil and perfil.area %}{{ perfil.area.nombre }}{% else %}Central Administrativa{% endif %}" readonly>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label text-muted small fw-bold">Cargo Asignado</label>
-                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil and perfil.cargo %}{{ perfil.cargo.nombre }}{% else %}Sin cargo definido{% endif %}" readonly>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label text-muted small fw-bold">Subcartera</label>
-                        <input type="text" class="form-control bg-light text-muted" value="{% if perfil and perfil.subcartera %}{{ perfil.subcartera }}{% else %}Sin subcartera{% endif %}" readonly>
-                    </div>
-
-                    <hr class="mb-4">
-                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pencil-square"></i> Información Actualizable</h6>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Número de Celular</label>
-                        <input type="text" class="form-control form-control-lg" name="celular" value="{% if perfil %}{{ perfil.celular|default:'' }}{% endif %}" placeholder="Ej: 987654321" {% if not perfil %}disabled{% endif %}>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Fecha de Cumpleaños</label>
-                        <input type="date" class="form-control form-control-lg" name="fecha_nacimiento" value="{% if perfil %}{{ perfil.fecha_nacimiento|date:'Y-m-%d' }}{% endif %}" {% if not perfil %}disabled{% endif %}>
-                    </div>
+                    <p class="text-muted small mb-0">{{ perfil.descripcion_perfil|default:"Agrega una descripción para que el equipo vea tu rol, foco y alcance dentro de la plataforma." }}</p>
                 </div>
-                
-                {% if perfil %}
-                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold rounded-3 mt-4 shadow-sm">Guardar Cambios de Contacto</button>
-                {% else %}
-                    <button type="button" class="btn btn-secondary btn-lg w-100 fw-bold rounded-3 mt-4 shadow-sm" disabled>No editable para el Administrador Base</button>
-                {% endif %}
-            </form>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="fw-bold text-primary mb-4"><i class="bi bi-pencil-square me-2"></i>Editar Información Pública</h5>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="datos">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Nombres Completos</label>
+                                <input type="text" class="form-control bg-light" value="{{ user.first_name }} {{ user.last_name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Correo de Acceso</label>
+                                <input type="text" class="form-control bg-light" value="{{ user.email }}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Puesto / Rango</label>
+                                <input type="text" class="form-control bg-light" value="{% if perfil %}{{ perfil.get_rol_display }}{% else %}Soporte de Sistema (Admin){% endif %}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Cartera / Área</label>
+                                <input type="text" class="form-control bg-light" value="{% if perfil and perfil.negocio %}{{ perfil.negocio.nombre }}{% elif perfil and perfil.area %}{{ perfil.area.nombre }}{% else %}Central Administrativa{% endif %}" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Cargo</label>
+                                <input type="text" class="form-control bg-light" value="{% if perfil and perfil.cargo %}{{ perfil.cargo.nombre }}{% else %}Sin cargo definido{% endif %}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Subcartera</label>
+                                <input type="text" class="form-control bg-light" value="{% if perfil and perfil.subcartera %}{{ perfil.subcartera }}{% else %}Sin subcartera{% endif %}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Foto de perfil</label>
+                                <input type="file" class="form-control" name="foto_perfil" accept="image/*">
+                                <div class="form-text">Sube una imagen JPG o PNG. Se mostrará en tu ficha.</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Descripción breve</label>
+                                <textarea class="form-control" name="descripcion_perfil" rows="4" placeholder="Cuéntale al equipo qué haces, tu foco o cómo prefieres que te contacten.">{% if perfil and perfil.descripcion_perfil %}{{ perfil.descripcion_perfil }}{% endif %}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary fw-bold px-4">Guardar cambios de perfil</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="fw-bold text-primary mb-4"><i class="bi bi-shield-lock me-2"></i>Cambiar Contraseña</h5>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="password">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Contraseña actual</label>
+                                <input type="password" class="form-control" name="old_password" required>
+                                {% if password_form.old_password.errors %}<div class="text-danger small mt-1">{{ password_form.old_password.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Nueva contraseña</label>
+                                <input type="password" class="form-control" name="new_password1" required>
+                                {% if password_form.new_password1.errors %}<div class="text-danger small mt-1">{{ password_form.new_password1.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Confirmar nueva contraseña</label>
+                                <input type="password" class="form-control" name="new_password2" required>
+                                {% if password_form.new_password2.errors %}<div class="text-danger small mt-1">{{ password_form.new_password2.errors.0 }}</div>{% endif %}
+                            </div>
+                            {% if password_form.non_field_errors %}
+                            <div class="col-12">
+                                <div class="alert alert-danger mb-0">{{ password_form.non_field_errors.0 }}</div>
+                            </div>
+                            {% endif %}
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-dark fw-bold px-4">Actualizar contraseña</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

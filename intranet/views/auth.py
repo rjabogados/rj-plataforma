@@ -3,6 +3,9 @@ from datetime import date, datetime, timedelta
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import HttpResponse
 
@@ -27,7 +30,33 @@ def login_view(request):
 
 @login_required
 def perfil(request):
-    return render(request, 'intranet/rrhh/perfil.html')
+    perfil = getattr(request.user, 'perfil', None)
+    password_form = PasswordChangeForm(request.user)
+
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+
+        if accion == 'datos' and perfil:
+            perfil.descripcion_perfil = request.POST.get('descripcion_perfil', '').strip() or None
+            if request.FILES.get('foto_perfil'):
+                perfil.foto_perfil = request.FILES['foto_perfil']
+            perfil.save()
+            messages.success(request, 'Tu perfil se actualizó correctamente.')
+            return redirect('perfil')
+
+        if accion == 'password':
+            password_form = PasswordChangeForm(request.user, request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Tu contraseña se cambió correctamente.')
+                return redirect('perfil')
+            messages.error(request, 'Revisa los campos de contraseña e inténtalo nuevamente.')
+
+    return render(request, 'intranet/rrhh/perfil.html', {
+        'perfil': perfil,
+        'password_form': password_form,
+    })
 
 def salir(request):
     logout(request)
