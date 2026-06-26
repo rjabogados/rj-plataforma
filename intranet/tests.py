@@ -330,3 +330,13 @@ class SecurityAccessTests(TestCase):
 
 		self.assertEqual(response.status_code, 302)
 		self.assertTrue(self.client.login(username='empleado', password='NuevoPass12345'))
+
+	def test_perfil_renderiza_sin_colaborador_asociado(self):
+		admin = User.objects.create_user(username='adminbase', password='test12345', first_name='Admin', last_name='Base')
+
+		self.client.login(username='adminbase', password='test12345')
+		response = self.client.get(reverse('perfil'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Administrador')
+		self.assertContains(response, 'Sin área')

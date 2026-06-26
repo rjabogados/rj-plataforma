@@ -24,9 +24,17 @@
                     <h4 class="fw-bold mb-1">{{ user.first_name }} {{ user.last_name }}</h4>
                     <div class="text-muted mb-3">{{ user.username }}</div>
                     <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                        <span class="badge bg-primary">{{ perfil.get_rol_display|default:"Administrador" }}</span>
-                        <span class="badge bg-info text-dark">{{ perfil.area.nombre|default:perfil.negocio.nombre|default:"Sin área" }}</span>
-                        <span class="badge bg-light text-dark border">{{ perfil.cargo.nombre|default:"Sin cargo" }}</span>
+                        <span class="badge bg-primary">{% if perfil %}{{ perfil.get_rol_display }}{% else %}Administrador{% endif %}</span>
+                        <span class="badge bg-info text-dark">
+                            {% if perfil and perfil.area %}
+                                {{ perfil.area.nombre }}
+                            {% elif perfil and perfil.negocio %}
+                                {{ perfil.negocio.nombre }}
+                            {% else %}
+                                Sin área
+                            {% endif %}
+                        </span>
+                        <span class="badge bg-light text-dark border">{% if perfil and perfil.cargo %}{{ perfil.cargo.nombre }}{% else %}Sin cargo{% endif %}</span>
                     </div>
                     <p class="text-muted small mb-0">{{ perfil.descripcion_perfil|default:"Agrega una descripción para que el equipo vea tu rol, foco y alcance dentro de la plataforma." }}</p>
                 </div>
