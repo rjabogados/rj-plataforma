@@ -9,7 +9,8 @@ from .reclutamiento import (
     actualizar_candidato_ajax, 
     descartar_candidato_ajax,
     metricas_dashboard_ajax,
-    registrar_contacto_ajax
+    registrar_contacto_ajax,
+    exportar_candidatos_csv
 )
 
 from .asistencia import (
