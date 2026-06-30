@@ -204,6 +204,38 @@
             </div>
         </div>
     </div>
+    
+<style>
+.action-card {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+}
+.action-card:hover .d-inline-block {
+    transform: scale(1.1);
+}
+.custom-pills .nav-link {
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+.custom-pills .nav-link.active {
+    background-color: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+    box-shadow: 0 4px 10px rgba(var(--bs-primary-rgb), 0.3);
+}
+.custom-table th {
+    border-bottom: 2px solid #dee2e6;
+}
+.custom-table td {
+    padding: 1.2rem 0.5rem;
+}
+</style>
 {% endblock %}
 
 {% block modals %}
@@ -282,37 +314,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-<style>
-.action-card {
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-}
-.action-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
-}
-.action-card:hover .d-inline-block {
-    transform: scale(1.1);
-}
-.custom-pills .nav-link {
-    color: #6c757d;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    transition: all 0.3s ease;
-}
-.custom-pills .nav-link.active {
-    background-color: var(--bs-primary);
-    color: white;
-    border-color: var(--bs-primary);
-    box-shadow: 0 4px 10px rgba(var(--bs-primary-rgb), 0.3);
-}
-.custom-table th {
-    border-bottom: 2px solid #dee2e6;
-}
-.custom-table td {
-    padding: 1.2rem 0.5rem;
-}
-</style>
 {% endblock %}
