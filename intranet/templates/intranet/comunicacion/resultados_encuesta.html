@@ -1,14 +1,59 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid" style="max-width: 1200px;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-4" style="max-width: 1200px;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
             <a href="{% url 'encuestas_admin' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2"><i class="bi bi-arrow-left"></i> Volver</a>
-            <h4 class="fw-bold mb-0">Resultados del Formulario</h4>
+            <h4 class="fw-bold mb-0">Resultados del formulario</h4>
             <p class="text-muted mb-0">{{ encuesta.titulo }}</p>
         </div>
-        <span class="badge bg-dark">{{ colaboradores_respondieron|length }} colaborador(es) respondieron</span>
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="badge bg-dark px-3 py-2">{{ total_respuestas }} respuesta{{ total_respuestas|pluralize }}</span>
+            <span class="badge bg-success px-3 py-2">{{ respondientes_totales }} colaborador{{ respondientes_totales|pluralize }} respondió</span>
+            <a href="{% url 'exportar_encuesta' encuesta.id %}" class="btn btn-outline-success btn-sm rounded-pill px-3"><i class="bi bi-download me-1"></i> Exportar CSV</a>
+        </div>
     </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Preguntas</div>
+                    <div class="display-6 fw-bold text-dark">{{ encuesta.preguntas.count }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Respuestas</div>
+                    <div class="display-6 fw-bold text-primary">{{ total_respuestas }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Respondientes visibles</div>
+                    <div class="display-6 fw-bold text-success">{{ respondientes_totales }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Modo</div>
+                    <div class="display-6 fw-bold text-warning">{% if encuesta.es_anonima %}Anónima{% else %}Pública{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if encuesta.es_anonima %}
+    <div class="alert alert-light border small mb-4">
+        Esta encuesta es anónima: no se muestran nombres de respondientes, pero sí el volumen total y el detalle agregado.
+    </div>
+    {% endif %}
 
     <div class="row g-4">
         <div class="col-lg-8">
@@ -26,7 +71,7 @@
                     <div class="small text-muted mb-2">Total respuestas: <strong>{{ item.total }}</strong></div>
 
                     {% if item.pregunta.tipo == 'CERRADA' %}
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <span class="badge bg-success">Sí: {{ item.si }}</span>
                         <span class="badge bg-danger">No: {{ item.no }}</span>
                     </div>
@@ -54,9 +99,12 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4">
                     <h6 class="fw-bold mb-3"><i class="bi bi-people-fill me-2"></i>Quién respondió</h6>
+                    {% if encuesta.es_anonima %}
+                    <div class="text-muted small">La lista de personas está oculta por la configuración anónima.</div>
+                    {% else %}
                     <ul class="list-group list-group-flush">
                         {% for colaborador in colaboradores_respondieron %}
                         <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
@@ -70,6 +118,17 @@
                         <li class="list-group-item px-0 text-muted">Aún no hay respuestas registradas.</li>
                         {% endfor %}
                     </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Acciones rápidas</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'encuestas_admin' %}" class="btn btn-outline-secondary rounded-pill">Volver al panel</a>
+                        <a href="{% url 'exportar_encuesta' encuesta.id %}" class="btn btn-success rounded-pill">Descargar CSV</a>
+                    </div>
                 </div>
             </div>
         </div>

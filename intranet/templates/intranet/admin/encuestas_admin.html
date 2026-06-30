@@ -1,34 +1,84 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid px-4">
+    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-file-earmark-medical-fill me-2 text-danger"></i>Panel de Encuestas</h2>
+            <p class="text-muted mb-0">Crea campañas, agrega preguntas condicionales y revisa resultados sin salir del panel.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="#bloque-creacion" class="btn btn-danger btn-pill px-4"><i class="bi bi-plus-circle me-1"></i>Nueva encuesta</a>
+            <a href="#bloque-listado" class="btn btn-outline-secondary btn-pill px-4"><i class="bi bi-grid-3x3-gap me-1"></i>Ver campañas</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Encuestas totales</div>
+                    <div class="display-6 fw-bold text-dark">{{ estadisticas.total }}</div>
+                    <div class="small text-muted">Incluye activas y archivadas.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Activas</div>
+                    <div class="display-6 fw-bold text-success">{{ estadisticas.activas }}</div>
+                    <div class="small text-muted">Disponibles para el personal segmentado.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Preguntas creadas</div>
+                    <div class="display-6 fw-bold text-primary">{{ estadisticas.preguntas }}</div>
+                    <div class="small text-muted">Incluye opciones y condicionales.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-semibold">Respuestas registradas</div>
+                    <div class="display-6 fw-bold text-warning">{{ estadisticas.respuestas }}</div>
+                    <div class="small text-muted">Se notifican a RRHH y directivos.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
-        <div class="col-md-5">
+        <div class="col-lg-5" id="bloque-creacion">
             <div class="card shadow-sm border-0 rounded-4 p-4 mb-4">
-                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-file-earmark-medical-fill text-danger"></i> Nueva Encuesta</h5>
+                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-clipboard-plus me-2 text-danger"></i>Nueva Encuesta</h5>
                 <form method="POST">
                     {% csrf_token %}
                     <input type="hidden" name="crear_encuesta" value="1">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Título de la Campaña</label>
+                        <label class="form-label small fw-bold">Título de la campaña</label>
                         <input type="text" class="form-control" name="titulo" placeholder="Ej: Clima Laboral - RJ Abogados 2026" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Descripción / Objetivo</label>
-                        <textarea class="form-control" name="descripcion" rows="2" placeholder="Explica brevemente a los asesores el fin de esta encuesta..."></textarea>
+                        <textarea class="form-control" name="descripcion" rows="2" placeholder="Explica brevemente el fin de esta encuesta..."></textarea>
                     </div>
-                    <div class="row mb-3">
+                    <div class="row mb-3 g-3">
                         <div class="col-6">
                             <label class="form-label small fw-bold">Privacidad</label>
                             <select class="form-select" name="es_anonima">
-                                <option value="1">Anónima (100% Oculto)</option>
-                                <option value="0">Pública (Ver nombres)</option>
+                                <option value="1">Anónima</option>
+                                <option value="0">Pública</option>
                             </select>
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-bold">Puntaje</label>
                             <select class="form-select" name="con_puntaje">
-                                <option value="0">Sin Puntaje (Opinión)</option>
-                                <option value="1">Con Puntaje (Métrica)</option>
+                                <option value="0">Sin puntaje</option>
+                                <option value="1">Con puntaje</option>
                             </select>
                         </div>
                     </div>
@@ -75,24 +125,55 @@
                     <button type="submit" class="btn btn-danger w-100 fw-bold rounded-pill">Publicar Encuesta</button>
                 </form>
             </div>
+
+            <div class="card shadow-sm border-0 rounded-4 p-4">
+                <h6 class="fw-bold text-dark mb-3">Últimas campañas</h6>
+                <div class="vstack gap-3">
+                    {% for e in encuestas_recientes %}
+                    <div class="border rounded-4 p-3 bg-light">
+                        <div class="d-flex justify-content-between gap-3 align-items-start">
+                            <div>
+                                <div class="fw-bold text-dark">{{ e.titulo }}</div>
+                                <div class="small text-muted">Creada el {{ e.fecha_creacion|date:"d M Y, H:i" }}</div>
+                            </div>
+                            <span class="badge {% if e.activa %}bg-success{% else %}bg-secondary{% endif %}">{{ e.activa|yesno:"Activa,Inactiva" }}</span>
+                        </div>
+                        <div class="small mt-2 text-muted">{{ e.preguntas.count }} pregunta{{ e.preguntas.count|pluralize }}.</div>
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="{% url 'resultados_encuesta' e.id %}" class="btn btn-sm btn-outline-primary rounded-pill">Resultados</a>
+                            <a href="{% url 'exportar_encuesta' e.id %}" class="btn btn-sm btn-outline-success rounded-pill">Exportar</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted small">Aún no hay campañas creadas.</div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
-        <div class="col-md-7">
-            <h5 class="fw-bold text-dark mb-3">Bandeja de Campañas Activas</h5>
+        <div class="col-lg-7" id="bloque-listado">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">Bandeja de campañas</h5>
+                <span class="badge text-bg-light border">{{ encuestas|length }} encuesta{{ encuestas|length|pluralize }}</span>
+            </div>
             {% for e in encuestas %}
             <div class="card shadow-sm border-0 rounded-4 bg-white mb-3 p-4">
-                <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
                     <div>
                         <h6 class="fw-bold text-dark mb-1">{{ e.titulo }}</h6>
-                        <span class="badge bg-light text-dark border small">{% if e.es_anonima %}Anónima{% else %}Identificable{% endif %}</span>
-                        <span class="badge bg-light text-dark border small">{% if e.con_puntaje %}Métrica cuantitativa{% else %}Cualitativa{% endif %}</span>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-light text-dark border small">{% if e.es_anonima %}Anónima{% else %}Identificable{% endif %}</span>
+                            <span class="badge bg-light text-dark border small">{% if e.con_puntaje %}Métrica cuantitativa{% else %}Cualitativa{% endif %}</span>
+                            <span class="badge {% if e.activa %}bg-success{% else %}bg-secondary{% endif %}">{% if e.activa %}Activa{% else %}Archivada{% endif %}</span>
+                        </div>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <a href="{% url 'resultados_encuesta' e.id %}" class="btn btn-sm btn-outline-primary rounded-pill"><i class="bi bi-bar-chart-fill"></i> Resultados</a>
+                        <a href="{% url 'exportar_encuesta' e.id %}" class="btn btn-sm btn-outline-success rounded-pill"><i class="bi bi-download"></i> Exportar</a>
                         <button class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalPregunta{{ e.id }}"><i class="bi bi-plus-lg"></i> Pregunta</button>
                     </div>
                 </div>
-                <p class="small text-muted">{{ e.descripcion }}</p>
+                <p class="small text-muted mb-3">{{ e.descripcion }}</p>
                 <div class="d-flex flex-wrap gap-2 mb-2">
                     {% if not e.publico_general %}<span class="badge bg-warning text-dark">Segmentada</span>{% endif %}
                     {% if e.rol_permitido %}<span class="badge bg-info text-dark">Rol: {{ e.get_rol_permitido_display }}</span>{% endif %}
@@ -103,7 +184,7 @@
                 </div>
 
                 <hr class="opacity-25 my-2">
-                <div class="small fw-bold mb-2 text-secondary">Estructura de la Encuesta ({{ e.preguntas.count }} preguntas):</div>
+                <div class="small fw-bold mb-2 text-secondary">Estructura de la encuesta ({{ e.preguntas.count }} preguntas):</div>
                 <ul class="list-group list-group-flush">
                     {% for p in e.preguntas.all %}
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent py-2">
@@ -126,7 +207,7 @@
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content rounded-4 border-0">
                         <div class="modal-header bg-dark text-white border-0">
-                            <h6 class="modal-title fw-bold">Inyectar Pregunta</h6>
+                            <h6 class="modal-title fw-bold">Nueva Pregunta</h6>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <form method="POST">
@@ -135,19 +216,19 @@
                             <input type="hidden" name="encuesta_id" value="{{ e.id }}">
                             <div class="modal-body bg-light p-4">
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Enunciado de la Pregunta</label>
+                                    <label class="form-label small fw-bold">Enunciado de la pregunta</label>
                                     <input type="text" class="form-control" name="texto" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Texto de ayuda (opcional)</label>
+                                    <label class="form-label small fw-bold">Texto de ayuda</label>
                                     <input type="text" class="form-control" name="descripcion_ayuda" placeholder="Ej: Responde según tu experiencia del último mes">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Tipo de Respuesta Exigida</label>
+                                    <label class="form-label small fw-bold">Tipo de respuesta</label>
                                     <select class="form-select" name="tipo" id="tipoPregunta{{ e.id }}" onchange="toggleOpcionesPregunta('{{ e.id }}')">
-                                        <option value="ABIERTA">Abierta (Texto libre de opinión)</option>
-                                        <option value="CERRADA">Cerrada (Botones interactivos Sí / No)</option>
-                                        <option value="OPCION_UNICA">Selección única (Lista de alternativas)</option>
+                                        <option value="ABIERTA">Abierta</option>
+                                        <option value="CERRADA">Cerrada Sí / No</option>
+                                        <option value="OPCION_UNICA">Selección única</option>
                                         <option value="ESCALA_1_5">Escala 1 a 5</option>
                                         <option value="FECHA">Fecha</option>
                                     </select>
@@ -162,7 +243,7 @@
                                 </div>
                                 <div class="row g-2 mb-3">
                                     <div class="col-md-7">
-                                        <label class="form-label small fw-bold">Condicional: depende de pregunta</label>
+                                        <label class="form-label small fw-bold">Depende de pregunta</label>
                                         <select class="form-select" name="depende_de">
                                             <option value="">-- Sin condición --</option>
                                             {% for preg_ref in e.preguntas.all %}
@@ -178,12 +259,12 @@
                                 {% if e.con_puntaje %}
                                 <div class="mb-2">
                                     <label class="form-label small fw-bold">Puntos si responde SÍ</label>
-                                    <input type="number" class="form-control" name="puntos_si" default="0">
+                                    <input type="number" class="form-control" name="puntos_si" value="0">
                                 </div>
                                 {% endif %}
                             </div>
                             <div class="modal-footer border-0 bg-white">
-                                <button type="submit" class="btn btn-dark fw-bold rounded-pill w-100">Guardar e Integrar</button>
+                                <button type="submit" class="btn btn-dark fw-bold rounded-pill w-100">Guardar pregunta</button>
                             </div>
                         </form>
                     </div>

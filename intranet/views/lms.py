@@ -1,4 +1,5 @@
 import traceback
+import csv
 import openpyxl
 import uuid
 import json
@@ -19,7 +20,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Q, Prefetch, Avg, Count
+from django.db.models import Q, Prefetch, Avg, Count, Max
 from django.utils import timezone
 from django.http import HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_http_methods
@@ -65,6 +66,31 @@ def ruta_compatible_con_colaborador(ruta, colaborador):
     if ruta.subcartera_objetivo and (ruta.subcartera_objetivo.lower() != (colaborador.subcartera or '').lower()):
         return False
     return True
+
+
+def _usuarios_notificacion_encuestas():
+    return User.objects.filter(
+        perfil__rol__in=['RRHH', 'ADMINISTRATIVO', 'GERENCIA']
+    ).distinct()
+
+
+def _notificar_respuesta_encuesta(encuesta, perfil):
+    if not perfil:
+        return
+
+    if encuesta.es_anonima:
+        detalle = f'Se registró una respuesta anónima en "{encuesta.titulo}".'
+    else:
+        detalle = f'{perfil.user.get_full_name() or perfil.user.username} respondió "{encuesta.titulo}".'
+
+    for usuario in _usuarios_notificacion_encuestas():
+        Notificacion.objects.create(
+            usuario=usuario,
+            tipo='ENCUESTA',
+            titulo=f'Nueva respuesta de encuesta: {encuesta.titulo}',
+            detalle=detalle,
+            url_destino='/encuestas-control/',
+        )
 
 
 def generar_codigo_certificado(matricula):
@@ -1153,6 +1179,8 @@ def encuestas_personal(request):
                     valor_fecha=item.get('valor_fecha'),
                 )
 
+        _notificar_respuesta_encuesta(encuesta, perfil)
+
         messages.success(request, 'Formulario enviado correctamente. Tus datos se asociaron automáticamente a tu usuario.')
         return redirect('encuestas_personal')
 
@@ -1169,7 +1197,40 @@ def encuestas_personal(request):
             publico_general=encuesta.publico_general,
         ):
             visibles.append(encuesta)
-    return render(request, 'intranet/comunicacion/encuestas_personal.html', {'encuestas': visibles, 'perfil': perfil})
+
+    ids_visibles = [encuesta.id for encuesta in visibles]
+    respuestas_personal = {}
+    encuestas_respondidas = []
+    encuestas_pendientes = []
+
+    if perfil and ids_visibles:
+        respuestas_personal = {
+            item['pregunta__encuesta_id']: item['ultima_respuesta']
+            for item in RespuestaEncuesta.objects.filter(
+                colaborador=perfil,
+                pregunta__encuesta_id__in=ids_visibles,
+            ).values('pregunta__encuesta_id').annotate(ultima_respuesta=Max('fecha_respuesta'))
+        }
+
+    for encuesta in visibles:
+        ultima_respuesta = respuestas_personal.get(encuesta.id)
+        if ultima_respuesta:
+            encuestas_respondidas.append((encuesta, ultima_respuesta))
+        else:
+            encuestas_pendientes.append(encuesta)
+
+    encuestas_respondidas.sort(key=lambda item: item[1], reverse=True)
+    total_respondidas = len(encuestas_respondidas)
+
+    return render(request, 'intranet/comunicacion/encuestas_personal.html', {
+        'encuestas': visibles,
+        'encuestas_pendientes': encuestas_pendientes,
+        'encuestas_respondidas': encuestas_respondidas,
+        'total_visibles': len(visibles),
+        'total_pendientes': len(encuestas_pendientes),
+        'total_respondidas': total_respondidas,
+        'perfil': perfil,
+    })
 @login_required(login_url='login')
 @solo_directivos
 def encuestas_admin(request):
@@ -1216,12 +1277,28 @@ def encuestas_admin(request):
             messages.success(request, 'Pregunta agregada a la encuesta.')
             return redirect('encuestas_admin')
 
+    encuestas = Encuesta.objects.all().select_related('area_permitida', 'cargo_permitido', 'cartera_vinculada').prefetch_related('preguntas__opciones')
     return render(request, 'intranet/admin/encuestas_admin.html', {
-        'encuestas': Encuesta.objects.all().select_related('area_permitida', 'cargo_permitido', 'cartera_vinculada').prefetch_related('preguntas__opciones'),
+        'encuestas': encuestas,
         'negocios': Negocio.objects.all(),
         'areas': Area.objects.filter(activa=True).order_by('nombre'),
         'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('nombre'),
         'roles': Colaborador.ROLES,
+        'estadisticas': {
+            'total': encuestas.count(),
+            'activas': encuestas.filter(activa=True).count(),
+            'segmentadas': encuestas.exclude(
+                publico_general=True,
+                rol_permitido__isnull=True,
+                area_permitida__isnull=True,
+                cargo_permitido__isnull=True,
+                cartera_vinculada__isnull=True,
+                subcartera_vinculada__isnull=True,
+            ).count(),
+            'preguntas': Pregunta.objects.filter(encuesta__in=encuestas).count(),
+            'respuestas': RespuestaEncuesta.objects.filter(pregunta__encuesta__in=encuestas).count(),
+        },
+        'encuestas_recientes': encuestas.order_by('-fecha_creacion')[:4],
     })
 @login_required(login_url='login')
 @solo_directivos
@@ -1233,6 +1310,8 @@ def resultados_encuesta(request, pk):
     colaboradores_respondieron = Colaborador.objects.filter(
         respuestaencuesta__pregunta__encuesta=encuesta
     ).select_related('user').distinct().order_by('user__last_name', 'user__first_name')
+    total_respuestas = respuestas_qs.count()
+    total_respondientes = colaboradores_respondieron.count()
 
     resumen = []
     for pregunta in preguntas:
@@ -1256,11 +1335,52 @@ def resultados_encuesta(request, pk):
     return render(request, 'intranet/comunicacion/resultados_encuesta.html', {
         'encuesta': encuesta,
         'resumen': resumen,
-        'colaboradores_respondieron': colaboradores_respondieron,
+        'colaboradores_respondieron': [] if encuesta.es_anonima else colaboradores_respondieron,
+        'respondientes_totales': total_respondientes,
+        'total_respuestas': total_respuestas,
     })
 @login_required(login_url='login')
 @solo_directivos
-def exportar_encuesta(request, pk): return HttpResponse("Exportar")
+def exportar_encuesta(request, pk):
+    encuesta = get_object_or_404(Encuesta.objects.prefetch_related('preguntas__opciones'), id=pk)
+    respuestas = RespuestaEncuesta.objects.filter(pregunta__encuesta=encuesta).select_related('pregunta', 'colaborador__user', 'valor_opcion').order_by('pregunta__orden', 'fecha_respuesta')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="encuesta_{encuesta.id}_{encuesta.titulo[:40].replace(" ", "_")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Encuesta', 'Pregunta', 'Tipo', 'Respondiente', 'Usuario', 'Respuesta', 'Fecha'])
+
+    for respuesta in respuestas:
+        if encuesta.es_anonima:
+            respondiente = 'Anónimo'
+            usuario = ''
+        else:
+            respondiente = respuesta.colaborador.user.get_full_name() if respuesta.colaborador and respuesta.colaborador.user else ''
+            usuario = respuesta.colaborador.user.username if respuesta.colaborador and respuesta.colaborador.user else ''
+
+        valor = ''
+        if respuesta.valor_texto not in (None, ''):
+            valor = respuesta.valor_texto
+        elif respuesta.valor_si_no is not None:
+            valor = 'Sí' if respuesta.valor_si_no else 'No'
+        elif respuesta.valor_opcion_id:
+            valor = respuesta.valor_opcion.texto
+        elif respuesta.valor_numero is not None:
+            valor = str(respuesta.valor_numero)
+        elif respuesta.valor_fecha:
+            valor = respuesta.valor_fecha.isoformat()
+
+        writer.writerow([
+            encuesta.titulo,
+            respuesta.pregunta.texto,
+            respuesta.pregunta.get_tipo_display(),
+            respondiente,
+            usuario,
+            valor,
+            timezone.localtime(respuesta.fecha_respuesta).strftime('%Y-%m-%d %H:%M'),
+        ])
+
+    return response
 @login_required(login_url='login')
 def mensajeria(request):
     perfil = getattr(request.user, 'perfil', None)
