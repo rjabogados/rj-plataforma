@@ -371,13 +371,210 @@ def metricas_dashboard_ajax(request):
     return JsonResponse({
         'success': True,
         'kpis': {
+        
+@login_required(login_url='login')
+@require_http_methods(["GET"])
+def obtener_candidato_ajax(request, candidato_id):
+    try:
+        # Verificar permisos
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
+        
+        # Validar ID
+        try:
+            candidato_id = int(candidato_id)
+        except (ValueError, TypeError):
+            return JsonResponse({'success': False, 'error': 'ID inválido'}, status=400)
+        
+        candidato = CandidatoReclutamiento.objects.prefetch_related('historial_estados', 'contactos').get(id=candidato_id)
+        
+        data = {
+            'success': True,
+            'id': candidato.id,
+            'nombre': candidato.nombre or '',
+            'documento': candidato.documento or '',
+            'telefono': candidato.telefono or '',
+            'estado': candidato.estado_candidato or '',
+            'sede': getattr(candidato, 'sede', 'No Asignado'),
+            'canal': getattr(candidato, 'canal', 'No Asignado'),
+            'observaciones': getattr(candidato, 'observaciones', '') or '',
+            'historial': _serializar_historial_estado(candidato),
+        }
+        return JsonResponse(data)
+    except CandidatoReclutamiento.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Candidato no encontrado'}, status=404)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def actualizar_candidato_ajax(request):
+    try:
+        data = json.loads(request.body)
+        
+        # Validar permiso
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
+        
+        candidato_id = data.get('id')
+        if not candidato_id:
+            return JsonResponse({'success': False, 'error': 'ID requerido'}, status=400)
+        
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        
+        # Capturar estado anterior
+        estado_viejo = candidato.estado_candidato
+        
+        # Actualizar con validación
+        candidato.nombre = _limpiar_texto(data.get('nombre', candidato.nombre)) or candidato.nombre
+        candidato.documento = _limpiar_documento(data.get('documento', candidato.documento)) or candidato.documento
+        candidato.telefono = _limpiar_telefono(data.get('telefono', candidato.telefono)) or candidato.telefono
+        candidato.observaciones = _limpiar_texto(data.get('observaciones', candidato.observaciones or '')) or candidato.observaciones
+        
+        estado_nuevo = _normalizar_estado(data.get('estado', estado_viejo))
+        if estado_nuevo:
+            candidato.estado_candidato = estado_nuevo
+        
+        candidato.sede = _limpiar_texto(data.get('sede', 'No Asignado')) or 'No Asignado'
+        candidato.canal = _limpiar_texto(data.get('canal', 'Por Definir')) or 'Por Definir'
+
+        if candidato.documento:
+            duplicado = CandidatoReclutamiento.objects.exclude(id=candidato.id).filter(documento=candidato.documento).first()
+            if duplicado:
+                if len(_limpiar_texto(candidato.nombre)) > len(_limpiar_texto(duplicado.nombre or '')):
+                    duplicado.nombre = candidato.nombre
+                if len(_limpiar_telefono(candidato.telefono)) > len(_limpiar_telefono(duplicado.telefono or '')):
+                    duplicado.telefono = candidato.telefono
+                duplicado.estado_candidato = candidato.estado_candidato
+                duplicado.sede = candidato.sede
+                duplicado.canal = candidato.canal
+                duplicado.save()
+                candidato.delete()
+                return JsonResponse({'success': True, 'mensaje': 'Registro consolidado con un duplicado existente', 'estado': candidato.estado_candidato})
+        
+        candidato.save()
+        
+        # Registrar cambio de estado
+        if estado_viejo != candidato.estado_candidato:
+            HistorialEstado.objects.create(
+                candidato=candidato,
+                estado_anterior=estado_viejo,
+                estado_nuevo=candidato.estado_candidato
+            )
+        
+        return JsonResponse({'success': True, 'mensaje': 'Actualizado correctamente', 'estado': candidato.estado_candidato})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+
+
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def registrar_contacto_ajax(request):
+    try:
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
+
+        data = json.loads(request.body)
+        candidato_id = data.get('id')
+        asesor = _limpiar_texto(data.get('asesor'))
+        tipo = _limpiar_texto(data.get('tipo'))
+        detalle = _limpiar_texto(data.get('detalle'))
+
+        if not candidato_id or not asesor or not tipo or not detalle:
+            return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
+
+        if tipo not in dict(RegistroContacto.TIPOS_CONTACTO):
+            return JsonResponse({'success': False, 'error': 'Tipo de contacto inválido'}, status=400)
+
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        RegistroContacto.objects.create(
+            candidato=candidato,
+            asesor=asesor[:100],
+            tipo=tipo,
+            detalle=detalle,
+        )
+
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Comunicación registrada',
+            'historial': _serializar_historial_estado(candidato),
+        })
+    except CandidatoReclutamiento.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Candidato no encontrado'}, status=404)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+        
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def descartar_candidato_ajax(request):
+    try:
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
+        
+        data = json.loads(request.body)
+        candidato_id = data.get('id')
+        
+        if not candidato_id:
+            return JsonResponse({'success': False, 'error': 'ID requerido'}, status=400)
+        
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        estado_viejo = candidato.estado_candidato
+        
+        candidato.estado_candidato = 'No interesados'
+        candidato.save()
+        
+        HistorialEstado.objects.create(
+            candidato=candidato,
+            estado_anterior=estado_viejo,
+            estado_nuevo='No interesados'
+        )
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+        
+@login_required(login_url='login')
+@require_http_methods(["GET"])
+def metricas_dashboard_ajax(request):
+    """Devuelve los datos procesados para los gráficos del dashboard"""
+    if not usuario_puede_reclutamiento(request.user):
+        return respuesta_no_autorizado()
+
+    candidatos = CandidatoReclutamiento.objects.all()
+
+    # 1. Filtros de Período (Fechas)
+    fecha_inicio = request.GET.get('inicio')
+    fecha_fin = request.GET.get('fin')
+
+    if fecha_inicio:
+        candidatos = candidatos.filter(fecha_registro__date__gte=parse_date(fecha_inicio))
+    if fecha_fin:
+        candidatos = candidatos.filter(fecha_registro__date__lte=parse_date(fecha_fin))
+
+    # 2. KPIs Generales
+    total_candidatos = candidatos.count()
+    agendados = candidatos.filter(estado_candidato='Entrevista agendada').count()
+    no_aptos = candidatos.filter(estado_candidato__in=['No apto', 'No interesados']).count()
+
+    # 3. Agrupación de Datos para los Gráficos
+    # ¿Cuántos por Sede?
+    data_sede = list(candidatos.exclude(sede__isnull=True).exclude(sede='').values('sede').annotate(total=Count('id')).order_by('-total', 'sede'))
+    
+    # ¿Cuántos por Estado del Embudo?
+    data_estado = list(candidatos.values('estado_candidato').annotate(total=Count('id')).order_by('-total', 'estado_candidato'))
+
+    return JsonResponse({
+        'success': True,
+        'kpis': {
             'total': total_candidatos,
             'agendados': agendados,
             'descartados': no_aptos
         },
         'grafico_sedes': data_sede,
         'grafico_estados': data_estado
-    })import csv
+    })
+
+import csv
 from django.http import HttpResponse
 
 @login_required
