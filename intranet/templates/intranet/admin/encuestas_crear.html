@@ -2,14 +2,30 @@
 {% load static %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container py-4" style="max-width: 900px;">
     <div class="d-flex align-items-center mb-4 gap-3">
         <a href="{% url 'encuestas_admin' %}" class="btn btn-light rounded-circle shadow-sm" style="width:45px; height:45px; display:flex; align-items:center; justify-content:center;">
             <i class="bi bi-arrow-left fs-5"></i>
         </a>
         <div>
             <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Creador de Encuestas</h2>
-            <p class="text-secondary mb-0">Diseña formularios y encuestas interactivos de forma sencilla.</p>
+            <p class="text-secondary mb-0">Diseña formularios interactivos en 3 sencillos pasos.</p>
+        </div>
+    </div>
+
+    <!-- Barra de Progreso Stepper -->
+    <div class="stepper-wrapper mb-5">
+        <div class="stepper-item active" id="step-indicator-1">
+            <div class="step-counter">1</div>
+            <div class="step-name">Configuración General</div>
+        </div>
+        <div class="stepper-item" id="step-indicator-2">
+            <div class="step-counter">2</div>
+            <div class="step-name">Público Objetivo</div>
+        </div>
+        <div class="stepper-item" id="step-indicator-3">
+            <div class="step-counter">3</div>
+            <div class="step-name">Constructor de Preguntas</div>
         </div>
     </div>
 
@@ -17,54 +33,77 @@
         {% csrf_token %}
         <input type="hidden" name="preguntas_data" id="preguntas_data">
 
-        <div class="row g-4">
-            <!-- Configuración General -->
-            <div class="col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 20px;">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-4"><i class="bi bi-gear-fill text-primary me-2"></i>Configuración Global</h5>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary small">Título de la Encuesta</label>
-                            <input type="text" class="form-control bg-light border-0" name="titulo" required placeholder="Ej: Clima Laboral 2026">
+        <!-- PASO 1: Configuración General -->
+        <div class="step-content active-step" id="step-1">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-gear-fill text-primary me-2"></i>Información Base</h5>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary">Título de la Encuesta <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg bg-light border-0" id="inpTitulo" name="titulo" required placeholder="Ej: Encuesta de Clima Laboral 2026">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary">Descripción / Instrucciones</label>
+                        <textarea class="form-control bg-light border-0" name="descripcion" rows="4" placeholder="Detalla las instrucciones o el propósito de esta evaluación..."></textarea>
+                    </div>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch bg-light p-3 rounded-3 border">
+                                <input class="form-check-input ms-0 me-3 mt-1" type="checkbox" name="es_anonima" id="es_anonima" checked style="transform: scale(1.2);">
+                                <label class="form-check-label fw-semibold" for="es_anonima">Respuestas Anónimas</label>
+                                <small class="d-block text-muted ms-4 mt-1">Nadie verá quién respondió qué.</small>
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary small">Descripción / Instrucciones</label>
-                            <textarea class="form-control bg-light border-0" name="descripcion" rows="3" placeholder="Instrucciones para el colaborador..."></textarea>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch bg-light p-3 rounded-3 border">
+                                <input class="form-check-input ms-0 me-3 mt-1" type="checkbox" name="con_puntaje" id="con_puntaje" style="transform: scale(1.2);">
+                                <label class="form-check-label fw-semibold" for="con_puntaje">Evaluación con Puntaje</label>
+                                <small class="d-block text-muted ms-4 mt-1">Si es un examen o test de conocimientos.</small>
+                            </div>
                         </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="es_anonima" id="es_anonima" checked>
-                            <label class="form-check-label small fw-semibold" for="es_anonima">Respuestas Anónimas</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-4">
-                            <input class="form-check-input" type="checkbox" name="con_puntaje" id="con_puntaje">
-                            <label class="form-check-label small fw-semibold" for="con_puntaje">Evaluación con Puntaje</label>
-                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-primary px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="nextStep(2)">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
+            </div>
+        </div>
 
-                        <hr class="opacity-25 mb-4">
-                        <h6 class="fw-bold mb-3"><i class="bi bi-people-fill text-success me-2"></i>Público Objetivo</h6>
+        <!-- PASO 2: Público Objetivo -->
+        <div class="step-content d-none" id="step-2">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-people-fill text-success me-2"></i>Público Objetivo</h5>
+                    <p class="text-secondary mb-4">¿Quiénes podrán ver y responder esta encuesta?</p>
 
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" name="publico_general" id="publico_general" checked onchange="toggleSegmentacion()">
-                            <label class="form-check-label small fw-semibold text-success" for="publico_general">General (Toda la Empresa)</label>
+                    <div class="form-check form-switch p-4 rounded-4 bg-light border mb-4">
+                        <input class="form-check-input ms-0 me-3 mt-1" type="checkbox" role="switch" name="publico_general" id="publico_general" checked onchange="toggleSegmentacion()" style="transform: scale(1.2);">
+                        <label class="form-check-label fw-bold text-dark" style="cursor: pointer; font-size: 1.1rem;" for="publico_general">
+                            Para toda la Empresa (Público General)
+                        </label>
+                        <small class="d-block text-muted mt-2 ms-5">Cualquier colaborador podrá participar libremente.</small>
+                    </div>
+
+                    <div id="panelSegmentacion" style="display: none;">
+                        <div class="alert alert-info border-0 bg-info bg-opacity-10 fw-semibold mb-4">
+                            <i class="bi bi-funnel-fill me-2"></i>La encuesta solo será visible para los filtros que selecciones abajo.
                         </div>
-
-                        <div id="panelSegmentacion" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Filtrar por Rol</label>
-                                <select class="form-select bg-light border-0" name="rol_permitido">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Filtrar por Rol Específico</label>
+                                <select class="form-select form-select-lg bg-light border-0" name="rol_permitido">
                                     <option value="">-- Cualquier Rol --</option>
                                     {% for valor, texto in roles %}
                                         <option value="{{ valor }}">{{ texto }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold text-secondary small">Filtrar por Área</label>
-                                <select class="form-select bg-light border-0" name="area_permitida">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Filtrar por Área</label>
+                                <select class="form-select form-select-lg bg-light border-0" name="area_permitida">
                                     <option value="">-- Cualquier Área --</option>
                                     {% for area in areas %}
                                         <option value="{{ area.id }}">{{ area.nombre }}</option>
@@ -72,61 +111,138 @@
                                 </select>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold" onclick="prevStep(1)"><i class="bi bi-arrow-left me-2"></i> Atrás</button>
+                <button type="button" class="btn btn-primary px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="nextStep(3)">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
+            </div>
+        </div>
 
-                        <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 fw-bold shadow-sm mt-4">
-                            <i class="bi bi-cloud-check-fill me-2"></i>Guardar y Publicar
+        <!-- PASO 3: Constructor de Preguntas -->
+        <div class="step-content d-none" id="step-3">
+            <div class="card border-0 shadow-sm rounded-4 mb-4" style="background: #f8f9fa;">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                        <div>
+                            <h5 class="fw-bold mb-1"><i class="bi bi-ui-radios text-danger me-2"></i>Diseñador de Preguntas</h5>
+                            <p class="text-secondary small mb-0">Construye el cuerpo de tu encuesta modularmente.</p>
+                        </div>
+                        <button type="button" class="btn btn-danger fw-bold rounded-pill shadow-sm" onclick="agregarPregunta()">
+                            <i class="bi bi-plus-lg me-1"></i>Añadir Pregunta
+                        </button>
+                    </div>
+
+                    <!-- Contenedor dinámico -->
+                    <div id="preguntasContainer" class="d-flex flex-column gap-3 mb-4">
+                        <!-- Las preguntas se renderizan aquí mediante JS -->
+                    </div>
+
+                    <!-- Estado vacío -->
+                    <div id="emptyState" class="text-center py-5 bg-white rounded-4 border">
+                        <div class="mb-3">
+                            <i class="bi bi-clipboard-x text-muted opacity-25" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-muted fw-bold">El lienzo está en blanco</h5>
+                        <p class="small text-muted mb-4">Añade tu primera pregunta para comenzar a armar el formulario.</p>
+                        <button type="button" class="btn btn-outline-danger btn-pill fw-bold px-4 rounded-pill" onclick="agregarPregunta()">
+                            <i class="bi bi-plus-lg me-2"></i>Comenzar
                         </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Constructor de Preguntas -->
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm rounded-4 h-100" style="background: #f8f9fa;">
-                    <div class="card-body p-4 p-md-5">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-ui-radios text-danger me-2"></i>Preguntas</h5>
-                            <button type="button" class="btn btn-outline-danger btn-sm fw-bold rounded-pill" onclick="agregarPregunta()">
-                                <i class="bi bi-plus-lg me-1"></i>Añadir Pregunta
-                            </button>
-                        </div>
-
-                        <!-- Contenedor dinámico -->
-                        <div id="preguntasContainer" class="d-flex flex-column gap-3">
-                            <!-- Las preguntas se renderizan aquí mediante JS -->
-                        </div>
-
-                        <!-- Estado vacío -->
-                        <div id="emptyState" class="text-center py-5">
-                            <div class="mb-3">
-                                <i class="bi bi-clipboard-x text-muted opacity-50" style="font-size: 3rem;"></i>
-                            </div>
-                            <h6 class="text-muted fw-bold">Aún no hay preguntas</h6>
-                            <p class="small text-muted mb-4">Añade tu primera pregunta para construir la encuesta.</p>
-                            <button type="button" class="btn btn-danger btn-pill fw-bold shadow-sm px-4" onclick="agregarPregunta()">
-                                <i class="bi bi-plus-lg me-2"></i>Crear Primera Pregunta
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold" onclick="prevStep(2)"><i class="bi bi-arrow-left me-2"></i> Atrás</button>
+                <button type="submit" class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow-sm" id="btnSubmit"><i class="bi bi-cloud-check-fill me-2"></i>Publicar Encuesta</button>
             </div>
         </div>
     </form>
 </div>
 
 <style>
+/* Estilos Stepper */
+.stepper-wrapper {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+.stepper-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background-color: #e9ecef;
+  z-index: 0;
+}
+.stepper-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  z-index: 1;
+}
+.step-counter {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  color: #6c757d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  border: 3px solid white;
+}
+.step-name {
+  color: #6c757d;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+.stepper-item.active .step-counter {
+  background-color: var(--rj-primary);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(30, 60, 114, 0.2);
+}
+.stepper-item.active .step-name {
+  color: var(--rj-primary);
+}
+.stepper-item.completed .step-counter {
+  background-color: var(--rj-success);
+  color: white;
+}
+.stepper-item.completed .step-name {
+  color: var(--rj-success);
+}
+
+/* Animaciones Step */
+.step-content {
+    animation: fadeIn 0.4s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Preguntas */
 .pregunta-card {
     background: white;
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: 1rem;
-    padding: 1.5rem;
+    padding: 1.8rem;
     position: relative;
     box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .pregunta-card:hover {
-    box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.06);
 }
 .btn-eliminar-pregunta {
     position: absolute;
@@ -160,6 +276,54 @@
 </style>
 
 <script>
+// --- LÓGICA DEL STEPPER ---
+let currentStep = 1;
+
+function nextStep(step) {
+    if(step === 2) {
+        // Validar paso 1
+        const titulo = document.getElementById('inpTitulo').value.trim();
+        if(!titulo) {
+            alert('Por favor ingresa un Título para la encuesta.');
+            document.getElementById('inpTitulo').focus();
+            return;
+        }
+    }
+    
+    document.getElementById('step-1').classList.add('d-none');
+    document.getElementById('step-2').classList.add('d-none');
+    document.getElementById('step-3').classList.add('d-none');
+    
+    document.getElementById(`step-${step}`).classList.remove('d-none');
+    
+    updateStepperUI(step);
+    currentStep = step;
+}
+
+function prevStep(step) {
+    document.getElementById('step-1').classList.add('d-none');
+    document.getElementById('step-2').classList.add('d-none');
+    document.getElementById('step-3').classList.add('d-none');
+    
+    document.getElementById(`step-${step}`).classList.remove('d-none');
+    
+    updateStepperUI(step);
+    currentStep = step;
+}
+
+function updateStepperUI(step) {
+    for(let i=1; i<=3; i++) {
+        const item = document.getElementById(`step-indicator-${i}`);
+        item.classList.remove('active', 'completed');
+        if(i < step) {
+            item.classList.add('completed');
+        } else if(i === step) {
+            item.classList.add('active');
+        }
+    }
+}
+
+// --- LÓGICA DE PREGUNTAS Y SEGMENTACIÓN ---
 let preguntas = [];
 let nextId = 1;
 
@@ -167,11 +331,9 @@ function toggleSegmentacion() {
     const isGeneral = document.getElementById('publico_general').checked;
     const panel = document.getElementById('panelSegmentacion');
     if(isGeneral) {
-        panel.style.opacity = '0';
-        setTimeout(() => panel.style.display = 'none', 300);
+        panel.style.display = 'none';
     } else {
         panel.style.display = 'block';
-        setTimeout(() => panel.style.opacity = '1', 10);
     }
 }
 
@@ -232,57 +394,60 @@ function renderPreguntas() {
     preguntas.forEach((p, index) => {
         const div = document.createElement('div');
         div.className = 'pregunta-card';
-        div.innerHTML = \`
-            <button type="button" class="btn-eliminar-pregunta shadow-sm" onclick="eliminarPregunta(\${p.id})">
+        div.innerHTML = `
+            <button type="button" class="btn-eliminar-pregunta shadow-sm" onclick="eliminarPregunta(${p.id})">
                 <i class="bi bi-trash-fill"></i>
             </button>
-            <div class="row pe-5">
+            <div class="row pe-md-5">
                 <div class="col-md-8 mb-3">
-                    <input type="text" class="form-control fs-5 fw-semibold border-0 border-bottom bg-transparent rounded-0 px-0 mb-2" 
-                           placeholder="Pregunta \${index + 1}..." 
-                           value="\${p.texto}" 
-                           oninput="actualizarPregunta(\${p.id}, 'texto', this.value)" required>
+                    <input type="text" class="form-control fs-5 fw-bold border-0 border-bottom bg-transparent rounded-0 px-0 mb-2" 
+                           placeholder="Escribe tu pregunta aquí..." 
+                           value="${p.texto}" 
+                           oninput="actualizarPregunta(${p.id}, 'texto', this.value)" required>
                     <input type="text" class="form-control form-control-sm text-muted border-0 bg-transparent px-0" 
                            placeholder="Descripción o ayuda (opcional)..." 
-                           value="\${p.ayuda}" 
-                           oninput="actualizarPregunta(\${p.id}, 'ayuda', this.value)">
+                           value="${p.ayuda}" 
+                           oninput="actualizarPregunta(${p.id}, 'ayuda', this.value)">
                 </div>
                 <div class="col-md-4 mb-3">
-                    <select class="form-select bg-light border-0 fw-semibold text-secondary" onchange="actualizarPregunta(\${p.id}, 'tipo', this.value)">
-                        <option value="ABIERTA" \${p.tipo === 'ABIERTA' ? 'selected' : ''}>📝 Texto Abierto</option>
-                        <option value="OPCION_UNICA" \${p.tipo === 'OPCION_UNICA' ? 'selected' : ''}>🔘 Opción Múltiple</option>
-                        <option value="ESCALA_1_5" \${p.tipo === 'ESCALA_1_5' ? 'selected' : ''}>⭐ Escala 1 al 5</option>
-                        <option value="FECHA" \${p.tipo === 'FECHA' ? 'selected' : ''}>📅 Fecha</option>
+                    <label class="small text-secondary fw-semibold mb-1">Tipo de Respuesta</label>
+                    <select class="form-select bg-light border-0 fw-semibold text-primary" onchange="actualizarPregunta(${p.id}, 'tipo', this.value)">
+                        <option value="ABIERTA" ${p.tipo === 'ABIERTA' ? 'selected' : ''}>📝 Texto Libre</option>
+                        <option value="CERRADA" ${p.tipo === 'CERRADA' ? 'selected' : ''}>👍👎 Sí / No</option>
+                        <option value="OPCION_UNICA" ${p.tipo === 'OPCION_UNICA' ? 'selected' : ''}>🔘 Opción Múltiple</option>
+                        <option value="ESCALA_1_5" ${p.tipo === 'ESCALA_1_5' ? 'selected' : ''}>⭐ Escala 1 al 5</option>
+                        <option value="FECHA" ${p.tipo === 'FECHA' ? 'selected' : ''}>📅 Selector de Fecha</option>
                     </select>
                 </div>
             </div>
             
-            \${(p.tipo === 'OPCION_UNICA' || p.tipo === 'CERRADA') ? \`
-                <div class="mt-3 ps-3 border-start border-3 border-primary">
-                    <label class="small fw-bold text-muted mb-2">Opciones:</label>
+            ${(p.tipo === 'OPCION_UNICA') ? `
+                <div class="mt-3 ps-3 border-start border-3 border-primary bg-light p-3 rounded-end-3">
+                    <label class="small fw-bold text-muted mb-2">Configurar Alternativas:</label>
                     <div class="d-flex flex-column gap-2 mb-2">
-                        \${p.opciones.map((op, opIdx) => \`
+                        ${p.opciones.map((op, opIdx) => `
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-circle text-muted"></i>
                                 <input type="text" class="form-control form-control-sm opcion-input" 
-                                       value="\${op}" oninput="actualizarOpcion(\${p.id}, \${opIdx}, this.value)">
-                                <button type="button" class="btn btn-sm text-danger" onclick="eliminarOpcion(\${p.id}, \${opIdx})"><i class="bi bi-x-lg"></i></button>
+                                       value="${op}" oninput="actualizarOpcion(${p.id}, ${opIdx}, this.value)">
+                                <button type="button" class="btn btn-sm text-danger" onclick="eliminarOpcion(${p.id}, ${opIdx})"><i class="bi bi-x-lg"></i></button>
                             </div>
-                        \`).join('')}
+                        `).join('')}
                     </div>
-                    <button type="button" class="btn btn-sm btn-light fw-semibold text-primary mt-1 rounded-pill" onclick="agregarOpcion(\${p.id})">
+                    <button type="button" class="btn btn-sm btn-outline-primary fw-semibold mt-1 rounded-pill" onclick="agregarOpcion(${p.id})">
                         <i class="bi bi-plus me-1"></i>Añadir Opción
                     </button>
                 </div>
-            \` : ''}
+            ` : ''}
             
-            <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+            <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                <span class="badge bg-light text-secondary border">Pregunta ${index + 1}</span>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="ob_\${p.id}" \${p.obligatoria ? 'checked' : ''} onchange="actualizarPregunta(\${p.id}, 'obligatoria', this.checked)">
-                    <label class="form-check-label small fw-semibold text-muted" for="ob_\${p.id}">Obligatoria</label>
+                    <input class="form-check-input" type="checkbox" id="ob_${p.id}" ${p.obligatoria ? 'checked' : ''} onchange="actualizarPregunta(${p.id}, 'obligatoria', this.checked)" style="transform: scale(1.1);">
+                    <label class="form-check-label small fw-bold text-dark ms-1" for="ob_${p.id}">Respuesta Obligatoria</label>
                 </div>
             </div>
-        \`;
+        `;
         container.appendChild(div);
     });
 }
@@ -290,10 +455,18 @@ function renderPreguntas() {
 function prepararEnvio(e) {
     if(preguntas.length === 0) {
         e.preventDefault();
-        alert('Debes añadir al menos una pregunta a la encuesta.');
+        alert('Debes añadir al menos una pregunta a la encuesta para poder publicarla.');
         return;
     }
     document.getElementById('preguntas_data').value = JSON.stringify(preguntas);
+    document.getElementById('btnSubmit').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Publicando...';
+    document.getElementById('btnSubmit').disabled = true;
 }
+
+// Inicializar la vista
+document.addEventListener('DOMContentLoaded', () => {
+    // Si queremos que arranque con una pregunta por defecto
+    // agregarPregunta(); 
+});
 </script>
 {% endblock %}
