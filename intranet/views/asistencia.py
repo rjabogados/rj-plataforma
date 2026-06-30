@@ -8,6 +8,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.conf import settings
+from django.views.decorators.http import require_http_methods
 
 # Importamos los modelos y las herramientas de permisos compartidas
 from intranet.models import Colaborador, Asistencia
