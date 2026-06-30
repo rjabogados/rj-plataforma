@@ -1300,6 +1300,64 @@ def encuestas_admin(request):
         },
         'encuestas_recientes': encuestas.order_by('-fecha_creacion')[:4],
     })
+
+@login_required(login_url='login')
+@solo_directivos
+def crear_encuesta_view(request):
+    import json
+    if request.method == 'POST':
+        # Procesar Survey Builder de una sola vez
+        titulo = request.POST.get('titulo', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        publico_general = request.POST.get('publico_general') == 'on'
+        rol_permitido = request.POST.get('rol_permitido') or None
+        area_permitida_id = request.POST.get('area_permitida')
+        cargo_permitido_id = request.POST.get('cargo_permitido')
+        cartera_id = request.POST.get('cartera_vinculada')
+
+        encuesta = Encuesta.objects.create(
+            titulo=titulo,
+            descripcion=descripcion,
+            es_anonima=request.POST.get('es_anonima') == 'on',
+            con_puntaje=request.POST.get('con_puntaje') == 'on',
+            publico_general=publico_general,
+            rol_permitido=rol_permitido,
+            area_permitida=Area.objects.filter(id=area_permitida_id).first() if area_permitida_id else None,
+            cargo_permitido=Cargo.objects.filter(id=cargo_permitido_id).first() if cargo_permitido_id else None,
+            cartera_vinculada=Negocio.objects.filter(id=cartera_id).first() if cartera_id else None,
+        )
+
+        # Procesar JSON de preguntas
+        preguntas_data = request.POST.get('preguntas_data')
+        if preguntas_data:
+            try:
+                preguntas = json.loads(preguntas_data)
+                for i, p_data in enumerate(preguntas, 1):
+                    pregunta = Pregunta.objects.create(
+                        encuesta=encuesta,
+                        texto=p_data.get('texto', ''),
+                        descripcion_ayuda=p_data.get('ayuda', ''),
+                        tipo=p_data.get('tipo', 'ABIERTA'),
+                        obligatoria=p_data.get('obligatoria', True),
+                        orden=i
+                    )
+                    # Opciones si es cerrada u opcion unica
+                    if pregunta.tipo in ['OPCION_UNICA', 'CERRADA'] and 'opciones' in p_data:
+                        for j, op_text in enumerate(p_data['opciones'], 1):
+                            if op_text.strip():
+                                OpcionPregunta.objects.create(pregunta=pregunta, texto=op_text.strip(), orden=j)
+            except Exception as e:
+                pass # Manejo simple de error
+
+        messages.success(request, f"¡Encuesta '{titulo}' creada exitosamente!")
+        return redirect('encuestas_admin')
+
+    return render(request, 'intranet/admin/encuestas_crear.html', {
+        'negocios': Negocio.objects.all(),
+        'areas': Area.objects.filter(activa=True).order_by('nombre'),
+        'cargos': Cargo.objects.filter(activa=True).order_by('nombre'),
+        'roles': Colaborador.ROLES,
+    })
 @login_required(login_url='login')
 @solo_directivos
 def resultados_encuesta(request, pk):
@@ -2416,4 +2474,63 @@ def crear_curso_avanzado(request):
         'categorias_lms': CategoriaModuloLMS.objects.filter(activa=True).order_by('nombre'),
         'negocios': Negocio.objects.all(),
         'roles': Colaborador.ROLES
+    })
+
+@login_required(login_url='login')
+@solo_directivos
+def crear_ruta_induccion_view(request):
+    from intranet.models.rrhh_core import Negocio, Area, Cargo, Colaborador
+    from intranet.models.lms import CursoInduccion, RutaInduccion, RutaInduccionModulo
+    import json
+
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        rol_objetivo = request.POST.get('rol_objetivo') or None
+        area_objetivo_id = request.POST.get('area_objetivo')
+        cartera_objetivo_id = request.POST.get('cartera_objetivo')
+
+        ruta = RutaInduccion.objects.create(
+            nombre=nombre,
+            descripcion=descripcion,
+            rol_objetivo=rol_objetivo,
+            area_objetivo=Area.objects.filter(id=area_objetivo_id).first() if area_objetivo_id else None,
+            cartera_objetivo=Negocio.objects.filter(id=cartera_objetivo_id).first() if cartera_objetivo_id else None
+        )
+
+        cursos_seleccionados = request.POST.get('cursos_seleccionados')
+        if cursos_seleccionados:
+            try:
+                curso_ids = json.loads(cursos_seleccionados)
+                for index, curso_id in enumerate(curso_ids, start=1):
+                    curso = CursoInduccion.objects.filter(id=curso_id).first()
+                    if curso:
+                        RutaInduccionModulo.objects.create(
+                            ruta=ruta,
+                            modulo=curso,
+                            orden=index
+                        )
+            except Exception as e:
+                pass
+        
+        messages.success(request, f"¡Ruta '{nombre}' creada exitosamente!")
+        return redirect('gestor_lms')
+
+    # Pasar cursos al frontend para el buscador JS
+    cursos_qs = CursoInduccion.objects.filter(estado_publicacion='PUBLICADO').select_related('categoria_lms')
+    cursos_json = []
+    for c in cursos_qs:
+        cursos_json.append({
+            'id': c.id,
+            'titulo': c.titulo,
+            'categoria': c.categoria_lms.nombre if c.categoria_lms else 'General',
+            'publico_general': c.publico_general,
+            'rol_permitido': c.rol_permitido or ''
+        })
+
+    return render(request, 'intranet/lms/rutas_crear.html', {
+        'roles': Colaborador.ROLES,
+        'areas': Area.objects.filter(activa=True).order_by('nombre'),
+        'negocios': Negocio.objects.all(),
+        'cursos_json': json.dumps(cursos_json)
     })

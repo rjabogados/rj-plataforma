@@ -76,6 +76,7 @@ urlpatterns = [
     path('academia/certificado/verificar/<str:codigo>/', lms.verificar_certificado, name='verificar_certificado'),
     path('lms/dashboard/', dashboard_resultados, name='dashboard_resultados'),
     path('lms/crear-curso/', crear_curso_avanzado, name='crear_curso_avanzado'),
+    path('induccion/rutas/crear/', views.crear_ruta_induccion_view, name='crear_ruta_induccion'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS
@@ -115,6 +116,7 @@ urlpatterns = [
     # ==========================================
     path('encuestas/', views.encuestas_personal, name='encuestas_personal'),
     path('encuestas-control/', views.encuestas_admin, name='encuestas_admin'),
+    path('encuestas/crear/', views.crear_encuesta_view, name='crear_encuesta'),
     path('encuestas/resultados/<int:pk>/', views.resultados_encuesta, name='resultados_encuesta'),
     path('encuestas/exportar/<int:pk>/', views.exportar_encuesta, name='exportar_encuesta'),
 

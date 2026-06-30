@@ -51,80 +51,20 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-lg-5" id="bloque-creacion">
-            <div class="card shadow-sm border-0 rounded-4 p-4 mb-4">
-                <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-clipboard-plus me-2 text-danger"></i>Nueva Encuesta</h5>
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="crear_encuesta" value="1">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Título de la campaña</label>
-                        <input type="text" class="form-control" name="titulo" placeholder="Ej: Clima Laboral - RJ Abogados 2026" required>
+    <div class="row g-4">        <div class="col-lg-4" id="bloque-creacion">
+            <div class="card shadow-sm border-0 rounded-4 p-4 text-center h-100" style="background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-magic text-danger opacity-75" style="font-size: 4rem;"></i>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Descripción / Objetivo</label>
-                        <textarea class="form-control" name="descripcion" rows="2" placeholder="Explica brevemente el fin de esta encuesta..."></textarea>
-                    </div>
-                    <div class="row mb-3 g-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Privacidad</label>
-                            <select class="form-select" name="es_anonima">
-                                <option value="1">Anónima</option>
-                                <option value="0">Pública</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Puntaje</label>
-                            <select class="form-select" name="con_puntaje">
-                                <option value="0">Sin puntaje</option>
-                                <option value="1">Con puntaje</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-12">
-                            <div class="form-check form-switch bg-light p-3 rounded-3 border">
-                                <input class="form-check-input me-2" type="checkbox" name="publico_general" checked>
-                                <label class="form-check-label fw-bold">Visible para toda la empresa</label>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Rol</label>
-                            <select class="form-select" name="rol_permitido">
-                                <option value="">-- Todos --</option>
-                                {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Área</label>
-                            <select class="form-select" name="area_permitida">
-                                <option value="">-- Todas --</option>
-                                {% for area in areas %}<option value="{{ area.id }}">{{ area.nombre }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Cargo</label>
-                            <select class="form-select" name="cargo_permitido">
-                                <option value="">-- Todos --</option>
-                                {% for cargo in cargos %}<option value="{{ cargo.id }}">{{ cargo.nombre }}{% if cargo.area %} - {{ cargo.area.nombre }}{% endif %}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Cartera</label>
-                            <select class="form-select" name="cartera_vinculada">
-                                <option value="">-- Todas --</option>
-                                {% for n in negocios %}<option value="{{ n.id }}">{{ n.nombre }}</option>{% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-bold">Subcartera</label>
-                            <input type="text" class="form-control" name="subcartera_vinculada" placeholder="Ej: Mora Temprana">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-danger w-100 fw-bold rounded-pill">Publicar Encuesta</button>
-                </form>
+                    <h4 class="fw-bold mb-3">Nuevo Creador Inteligente</h4>
+                    <p class="text-muted mb-4 px-3">Hemos mejorado la experiencia. Ahora puedes crear la encuesta, segmentarla y añadir todas sus preguntas dinámicamente desde una sola interfaz profesional.</p>
+                    <a href="{% url 'crear_encuesta' %}" class="btn btn-danger btn-lg rounded-pill fw-bold shadow-sm px-5">
+                        <i class="bi bi-plus-lg me-2"></i>Ir al Creador
+                    </a>
+                </div>
             </div>
+        </div>
 
             <div class="card shadow-sm border-0 rounded-4 p-4">
                 <h6 class="fw-bold text-dark mb-3">Últimas campañas</h6>
