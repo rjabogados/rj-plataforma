@@ -62,6 +62,7 @@ class Colaborador(models.Model):
     hora_ingreso = models.TimeField(null=True, blank=True)
     hora_salida = models.TimeField(null=True, blank=True)
     fecha_ingreso = models.DateField(null=True, blank=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
     
     sueldo_base = models.DecimalField(max_digits=10, decimal_places=2, default=1025.00)
     banco_pago = models.CharField(max_length=100, default='BCP')

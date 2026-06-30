@@ -68,3 +68,32 @@ class Notificacion(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username} - {self.titulo}"
+
+class FelicitacionCumpleaños(models.Model):
+    remitente = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='felicitaciones_enviadas')
+    destinatario = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='felicitaciones_recibidas')
+    mensaje = models.TextField()
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+    privado = models.BooleanField(default=False, help_text="Si es true, solo el destinatario lo ve. Si es false, aparece en el muro.")
+
+    def __str__(self):
+        return f"De {self.remitente.user.first_name} para {self.destinatario.user.first_name}"
+
+
+class Reconocimiento(models.Model):
+    TIPOS_MEDALLA = [
+        ('ESTRELLA', 'Estrella de Desempeño 🌟'),
+        ('COMPAÑERO', 'Gran Compañero 🤝'),
+        ('INNOVADOR', 'Idea Innovadora 💡'),
+        ('LIDERAZGO', 'Liderazgo Inspirador 👑'),
+        ('SOLUCIONADOR', 'Solucionador de Problemas 🛠️'),
+    ]
+
+    emisor = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='reconocimientos_dados')
+    receptor = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='reconocimientos_recibidos')
+    tipo = models.CharField(max_length=50, choices=TIPOS_MEDALLA)
+    mensaje = models.TextField()
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} para {self.receptor.user.first_name}"

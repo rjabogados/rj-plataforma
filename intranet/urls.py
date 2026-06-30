@@ -60,6 +60,13 @@ urlpatterns = [
     path('academia/gestor/', views.gestor_lms, name='gestor_lms'),
     path('academia/evaluacion/<int:evaluacion_id>/importar/', lms.importar_excel_balotario, name='importar_excel_balotario'),
     path('academia/evaluacion/previsualizar/', lms.previsualizar_y_guardar_balotario, name='previsualizar_balotario'),
+
+    # ==========================================
+    # CULTURA Y RECONOCIMIENTOS
+    # ==========================================
+    path('cultura/cumpleanos/', views.muro_celebraciones, name='muro_celebraciones'),
+    path('cultura/kudos/', views.muro_kudos, name='muro_kudos'),
+
     path('academia/rendir/<int:matricula_id>/', lms.rendir_evaluacion, name='rendir_evaluacion'),
     path('academia/curso/<int:curso_id>/editar/', lms.editar_curso_lms, name='editar_curso_lms'),
     path('academia/curso/<int:curso_id>/eliminar/', lms.eliminar_curso_lms, name='eliminar_curso_lms'),

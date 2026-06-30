@@ -41,3 +41,5 @@ from .lms import (
     activos, gestor_lms, academia, beneficios, ver_leccion_pdf,
     ver_adjunto_mensaje, ver_adjunto_comunicado
 )
+
+from .cultura import muro_celebraciones, muro_kudos

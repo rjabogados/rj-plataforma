@@ -273,12 +273,19 @@ def dashboard_supervisor(request):
         equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
     elif perfil and perfil.cargo_id:
         equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+    elif perfil and perfil.negocio_id:
+        equipo_qs = equipo_qs.filter(negocio_id=perfil.negocio_id)
     else:
         equipo_qs = equipo_qs.none()
 
     tickets_equipo = Ticket.objects.filter(colaborador__in=equipo_qs).select_related('colaborador__user', 'colaborador__cargo').order_by('-fecha_registro')
     vacaciones_equipo = SolicitudVacaciones.objects.filter(colaborador__in=equipo_qs).select_related('colaborador__user', 'colaborador__cargo').order_by('-fecha_solicitud')
     asistencias_hoy_qs = Asistencia.objects.filter(colaborador__in=equipo_qs, fecha=date.today()).select_related('colaborador__user', 'colaborador__area', 'colaborador__cargo')
+
+    from intranet.models.lms import MatriculaCurso
+    cursos_equipo = MatriculaCurso.objects.filter(colaborador__in=equipo_qs)
+    cursos_completados = cursos_equipo.filter(estado='COMPLETADO').count()
+    cursos_pendientes = cursos_equipo.exclude(estado='COMPLETADO').count()
 
     atrasos_equipo = []
     sin_marca_equipo = []
@@ -299,6 +306,8 @@ def dashboard_supervisor(request):
         'tickets_pendientes': tickets_equipo.filter(estado='PENDIENTE').count(),
         'vacaciones_pendientes': vacaciones_equipo.filter(estado='PENDIENTE').count(),
         'asistencias_hoy': asistencias_hoy_qs.count(),
+        'cursos_completados': cursos_completados,
+        'cursos_pendientes': cursos_pendientes,
         'atrasos_equipo': atrasos_equipo[:8],
         'sin_marca_equipo': sin_marca_equipo[:8],
         'equipo_qs': equipo_qs.order_by('user__last_name', 'user__first_name')[:10],

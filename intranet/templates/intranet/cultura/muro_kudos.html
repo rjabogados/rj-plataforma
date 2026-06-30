@@ -1,0 +1,169 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-stars me-2"></i> Muro de la Fama (Kudos)
+            </h2>
+            <p class="text-secondary mb-0">Reconoce el esfuerzo y dedicación de tus compañeros de equipo.</p>
+        </div>
+        <div>
+            <button class="btn btn-warning fw-bold shadow-sm rounded-pill px-4 text-dark" data-bs-toggle="modal" data-bs-target="#modalKudo">
+                <i class="bi bi-award-fill me-2"></i> Otorgar Kudo
+            </button>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Lado Izquierdo: Top Ranking -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i> Top Reconocidos</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_reconocidos %}
+                        <div class="list-group list-group-flush">
+                            {% for colab in top_reconocidos %}
+                            <div class="list-group-item bg-transparent border-0 d-flex align-items-center px-0 py-3">
+                                <h4 class="fw-bold mb-0 me-3 {% if forloop.counter == 1 %}text-warning{% elif forloop.counter == 2 %}text-secondary{% elif forloop.counter == 3 %}text-danger{% else %}text-muted{% endif %}" style="width: 25px; text-align: center;">
+                                    #{{ forloop.counter }}
+                                </h4>
+                                <div class="avatar-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold me-3" style="width: 45px; height: 45px; font-size: 1rem;">
+                                    {% if colab.foto_perfil %}
+                                        <img src="{{ colab.foto_perfil.url }}" alt="Foto" class="rounded-circle w-100 h-100 object-fit-cover">
+                                    {% else %}
+                                        {{ colab.user.first_name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 fw-bold text-dark">{{ colab.user.first_name }} {{ colab.user.last_name }}</h6>
+                                    <small class="text-secondary">{{ colab.get_rol_display }}</small>
+                                </div>
+                                <span class="badge rounded-pill bg-warning text-dark fw-bold px-3 py-2 shadow-sm">
+                                    {{ colab.total_kudos }} <i class="bi bi-star-fill"></i>
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-secondary text-center py-4">Aún no hay reconocimientos otorgados. ¡Sé el primero!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Lado Derecho: Feed de Kudos -->
+        <div class="col-lg-8 mb-4">
+            <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-activity me-2 text-primary"></i> Actividad Reciente</h5>
+            <div class="d-flex flex-column gap-3">
+                {% for kudo in feed_kudos %}
+                    <div class="card border-0 shadow-sm rounded-4 bg-white hover-lift">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-light text-secondary d-flex align-items-center justify-content-center fw-bold me-3 border border-2 border-white shadow-sm" style="width: 50px; height: 50px;">
+                                        {{ kudo.receptor.user.first_name|first|upper }}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark">{{ kudo.receptor.user.first_name }} {{ kudo.receptor.user.last_name }}</h6>
+                                        <small class="text-muted">ha recibido: <span class="fw-bold text-dark">{{ kudo.get_tipo_display }}</span></small>
+                                    </div>
+                                </div>
+                                <span class="text-secondary small">{{ kudo.fecha|timesince }}</span>
+                            </div>
+                            <div class="p-3 rounded-3" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+                                <p class="mb-0 fst-italic text-dark">"{{ kudo.mensaje }}"</p>
+                            </div>
+                            <div class="mt-3 text-end">
+                                <small class="text-muted fw-medium">— Otorgado por {{ kudo.emisor.user.first_name }} {{ kudo.emisor.user.last_name }}</small>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+                        <i class="bi bi-award opacity-25" style="font-size: 4rem; color: #6c757d;"></i>
+                        <h5 class="text-secondary mt-3">No hay actividad reciente.</h5>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Otorgar Kudo -->
+<div class="modal fade" id="modalKudo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0 bg-warning rounded-top-4 p-4">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-award-fill me-2"></i> Otorgar un Kudo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">¿A quién deseas reconocer?</label>
+                        <select name="receptor_id" class="form-select rounded-3 shadow-sm border-0 bg-light" required>
+                            <option value="">Selecciona a un compañero...</option>
+                            {% for colab in colaboradores %}
+                                <option value="{{ colab.id }}">{{ colab.user.first_name }} {{ colab.user.last_name }} ({{ colab.get_rol_display }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">Tipo de Reconocimiento</label>
+                        <div class="row row-cols-2 g-2">
+                            {% for key, name in tipos_medalla %}
+                            <div class="col">
+                                <input type="radio" class="btn-check" name="tipo" id="tipo_{{ key }}" value="{{ key }}" required>
+                                <label class="btn btn-outline-primary w-100 rounded-3 text-start px-3 py-2 text-truncate" for="tipo_{{ key }}">
+                                    {{ name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-dark">Motivo del reconocimiento</label>
+                        <textarea name="mensaje" class="form-control rounded-3 shadow-sm border-0 bg-light" rows="3" placeholder="Ej: Gracias por apoyarme siempre con mis dudas de las cuentas nuevas..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-5 fw-bold shadow">Publicar <i class="bi bi-send-fill ms-2"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+.btn-check:checked + .btn-outline-primary {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}

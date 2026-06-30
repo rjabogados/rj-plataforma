@@ -1,0 +1,176 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-calendar-heart-fill me-2"></i> Cumpleaños del Mes
+            </h2>
+            <p class="text-secondary mb-0">Celebra junto a tu equipo y deja un mensaje especial.</p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Lado Izquierdo: Lista de Cumpleañeros -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4" style="background: linear-gradient(180deg, #fff 0%, #fff0f5 100%);">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
+                    <h5 class="fw-bold text-danger"><i class="bi bi-gift-fill me-2"></i> Cumpleañeros de {{ hoy|date:"F"|title }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if cumpleañeros %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for c in cumpleañeros %}
+                            <div class="d-flex align-items-center p-3 bg-white rounded-3 shadow-sm border border-light position-relative" style="{% if c.fecha_nacimiento.day == hoy.day %}border: 2px solid #ff6b6b !important;{% endif %}">
+                                {% if c.fecha_nacimiento.day == hoy.day %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
+                                    ¡HOY!
+                                </span>
+                                {% endif %}
+                                <div class="avatar-circle bg-danger text-white d-flex align-items-center justify-content-center fw-bold me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                                    {% if c.foto_perfil %}
+                                        <img src="{{ c.foto_perfil.url }}" alt="Foto" class="rounded-circle w-100 h-100 object-fit-cover">
+                                    {% else %}
+                                        {{ c.user.first_name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 fw-bold text-dark">{{ c.user.first_name }} {{ c.user.last_name }}</h6>
+                                    <small class="text-secondary"><i class="bi bi-calendar2-event me-1"></i> {{ c.fecha_nacimiento|date:"d" }} de {{ c.fecha_nacimiento|date:"F" }}</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#modalFelicitacion-{{ c.id }}" title="Dejar un saludo">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+
+                            <!-- Modal para Enviar Felicitación -->
+                            <div class="modal fade" id="modalFelicitacion-{{ c.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 rounded-4 shadow">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold text-danger">Felicitar a {{ c.user.first_name }} 🎂</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form method="POST">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <input type="hidden" name="destinatario_id" value="{{ c.id }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label text-secondary fw-medium">Escribe tu mensaje</label>
+                                                    <textarea name="mensaje" class="form-control rounded-3" rows="3" placeholder="¡Que pases un lindo día lleno de bendiciones!" required></textarea>
+                                                </div>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch" id="privado-{{ c.id }}" name="privado">
+                                                    <label class="form-check-label text-secondary small" for="privado-{{ c.id }}">Mensaje Privado (No saldrá en el muro público)</label>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0">
+                                                <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">Enviar Saludo <i class="bi bi-envelope-heart ms-1"></i></button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-emoji-smile text-secondary opacity-50" style="font-size: 3rem;"></i>
+                            <p class="text-secondary mt-3">No hay cumpleaños registrados este mes.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Lado Derecho: Muro de Felicitaciones -->
+        <div class="col-lg-8 mb-4">
+            <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-chat-quote-fill me-2 text-danger"></i> Muro de Celebraciones</h5>
+            <div class="row row-cols-1 row-cols-md-2 g-3">
+                {% for nota in notas %}
+                    <div class="col">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 bg-white sticky-note">
+                            <div class="card-body position-relative">
+                                <i class="bi bi-pin-angle-fill position-absolute text-danger opacity-75" style="top: 10px; right: 15px; font-size: 1.5rem;"></i>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-circle bg-light text-secondary d-flex align-items-center justify-content-center fw-bold me-2" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                                        {{ nota.remitente.user.first_name|first|upper }}
+                                    </div>
+                                    <div>
+                                        <p class="mb-0 fw-bold" style="font-size: 0.85rem;">{{ nota.remitente.user.first_name }} {{ nota.remitente.user.last_name }}</p>
+                                        <p class="mb-0 text-muted" style="font-size: 0.7rem;">Para {{ nota.destinatario.user.first_name }}</p>
+                                    </div>
+                                </div>
+                                <p class="card-text fst-italic text-dark fw-medium" style="font-size: 0.95rem;">"{{ nota.mensaje }}"</p>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 text-end py-2">
+                                <small class="text-muted" style="font-size: 0.7rem;">{{ nota.fecha_envio|timesince }}</small>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <p class="text-secondary">Sé el primero en dejar un saludo en el muro.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.sticky-note {
+    background-color: #fff9e6 !important;
+    border-left: 5px solid #ffd43b !important;
+    transition: transform 0.2s ease;
+}
+.sticky-note:hover {
+    transform: translateY(-5px) rotate(-1deg);
+}
+</style>
+
+<!-- Canvas Confetti Library -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    {% if es_su_cumple %}
+    // Disparar confeti si es su cumpleaños
+    var duration = 15 * 1000;
+    var animationEnd = Date.now() + duration;
+    var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    var interval = setInterval(function() {
+      var timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      var particleCount = 50 * (timeLeft / duration);
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+    }, 250);
+
+    // Mostrar modal sorpresa
+    setTimeout(() => {
+        alert("🎉 ¡FELIZ CUMPLEAÑOS! 🎉\nDe parte de toda la familia RJ Abogados, te deseamos un día espectacular.");
+    }, 1000);
+    {% endif %}
+});
+</script>
+{% endblock %}
