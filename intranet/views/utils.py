@@ -19,7 +19,7 @@ def requiere_rol(roles_permitidos):
 
 solo_directivos = requiere_rol(['ADMINISTRATIVO', 'RRHH', 'GERENCIA'])
 solo_calidad = requiere_rol(['CALIDAD', 'SUPERVISOR', 'GERENCIA'])
-solo_supervisores = requiere_rol(['SUPERVISOR'])
+solo_supervisores = requiere_rol(['SUPERVISOR', 'GERENCIA', 'ADMINISTRATIVO'])
 
 
 def _perfil_scope(perfil):

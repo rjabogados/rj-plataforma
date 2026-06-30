@@ -269,14 +269,26 @@ def dashboard_supervisor(request):
     perfil = getattr(request.user, 'perfil', None)
     equipo_qs = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').all()
 
-    if perfil and perfil.area_id:
-        equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
-    elif perfil and perfil.cargo_id:
-        equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
-    elif perfil and perfil.negocio_id:
-        equipo_qs = equipo_qs.filter(negocio_id=perfil.negocio_id)
+    es_directivo = perfil and perfil.rol in ['GERENCIA', 'ADMINISTRATIVO']
+    negocios = None
+    cartera_id = None
+
+    if es_directivo:
+        from intranet.models.rrhh_core import Negocio
+        negocios = Negocio.objects.filter(activo=True).order_by('nombre')
+        cartera_id = request.GET.get('cartera')
+        if cartera_id:
+            equipo_qs = equipo_qs.filter(negocio_id=cartera_id)
     else:
-        equipo_qs = equipo_qs.none()
+        # Lógica original para supervisores puros
+        if perfil and perfil.area_id:
+            equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
+        elif perfil and perfil.cargo_id:
+            equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+        elif perfil and perfil.negocio_id:
+            equipo_qs = equipo_qs.filter(negocio_id=perfil.negocio_id)
+        else:
+            equipo_qs = equipo_qs.none()
 
     tickets_equipo = Ticket.objects.filter(colaborador__in=equipo_qs).select_related('colaborador__user', 'colaborador__cargo').order_by('-fecha_registro')
     vacaciones_equipo = SolicitudVacaciones.objects.filter(colaborador__in=equipo_qs).select_related('colaborador__user', 'colaborador__cargo').order_by('-fecha_solicitud')
@@ -301,6 +313,9 @@ def dashboard_supervisor(request):
 
     return render(request, 'intranet/rrhh/dashboard_supervisor.html', {
         'perfil': perfil,
+        'es_directivo': es_directivo,
+        'negocios': negocios,
+        'cartera_id': int(cartera_id) if cartera_id else None,
         'equipo_total': equipo_qs.count(),
         'equipo_activo': equipo_qs.filter(user__is_active=True).count(),
         'tickets_pendientes': tickets_equipo.filter(estado='PENDIENTE').count(),
