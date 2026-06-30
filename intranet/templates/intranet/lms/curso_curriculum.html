@@ -1,0 +1,333 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header de Retorno y Título -->
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <a href="{% url 'gestor_lms' %}" class="btn btn-sm btn-outline-secondary btn-pill shadow-sm mb-3">
+                <i class="bi bi-arrow-left me-1"></i> Volver al Gestor
+            </a>
+            <h2 class="fw-bold mb-1"><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Currículum: {{ curso.titulo }}</h2>
+            <p class="text-secondary mb-0">{{ curso.descripcion|truncatechars:120 }}</p>
+        </div>
+        <div class="text-end">
+            <span class="badge badge-soft fs-6 mb-2"><i class="bi bi-play-btn-fill me-1"></i> {{ lecciones.count }} Clases</span><br>
+            {% if curso.evaluacion %}
+                <span class="badge badge-soft-success fs-6"><i class="bi bi-check-circle-fill me-1"></i> Evaluación Activa</span>
+            {% else %}
+                <span class="badge bg-warning-subtle text-warning-emphasis fs-6"><i class="bi bi-exclamation-triangle-fill me-1"></i> Sin Examen</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Columna Izquierda: Clases y Lecciones -->
+        <div class="col-lg-7 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-collection-play-fill me-2"></i>Contenido del Curso</h5>
+                    <button class="btn btn-success btn-sm btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearLeccion">
+                        <i class="bi bi-plus-lg me-1"></i> Nueva Clase
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    {% if lecciones %}
+                        <div class="list-group list-group-flush gap-3">
+                            {% for leccion in lecciones %}
+                            <div class="list-group-item border rounded-4 p-3 shadow-sm lms-input-soft transition-hover">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <span class="badge bg-primary rounded-pill">Clase {{ leccion.orden }}</span>
+                                            <h6 class="fw-bold mb-0 text-dark">{{ leccion.titulo }}</h6>
+                                        </div>
+                                        <p class="text-muted small mb-2">{{ leccion.descripcion|default:"Sin descripción." }}</p>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% if leccion.url_video %}
+                                            <span class="badge badge-soft text-danger"><i class="bi bi-youtube me-1"></i>Video</span>
+                                            {% endif %}
+                                            {% if leccion.archivo_pdf %}
+                                            <span class="badge badge-soft text-primary"><i class="bi bi-file-pdf-fill me-1"></i>PDF Adjunto</span>
+                                            {% endif %}
+                                            {% if leccion.url_simulador %}
+                                            <span class="badge badge-soft text-success"><i class="bi bi-controller me-1"></i>Simulador</span>
+                                            {% endif %}
+                                            {% if leccion.paquete_scorm_url %}
+                                            <span class="badge badge-soft text-dark"><i class="bi bi-box-seam me-1"></i>SCORM</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light btn-pill text-secondary" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                            <li>
+                                                <button class="dropdown-item fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditarLeccion{{ leccion.id }}">
+                                                    <i class="bi bi-pencil-square me-2 text-primary"></i> Editar Clase
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item fw-semibold text-danger" href="{% url 'eliminar_leccion_lms' leccion.id %}" onclick="return confirm('¿Seguro que deseas eliminar la clase \'{{ leccion.titulo }}\'?');">
+                                                    <i class="bi bi-trash-fill me-2"></i> Eliminar
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Editar Lección -->
+                            <div class="modal fade" id="modalEditarLeccion{{ leccion.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg rounded-4">
+                                        <div class="modal-header bg-primary text-white rounded-top-4">
+                                            <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Editar Clase</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{% url 'editar_leccion_lms' leccion.id %}" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="modal-body p-4 lms-input-soft">
+                                                <div class="row g-3">
+                                                    <div class="col-md-9">
+                                                        <label class="form-label fw-semibold text-secondary">Título de la Clase</label>
+                                                        <input type="text" class="form-control" name="titulo" value="{{ leccion.titulo }}" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label fw-semibold text-secondary">Orden (N°)</label>
+                                                        <input type="number" class="form-control" name="orden" value="{{ leccion.orden }}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3 mt-3">
+                                                    <label class="form-label fw-semibold text-secondary">Breve Descripción</label>
+                                                    <textarea class="form-control" name="descripcion" rows="2">{{ leccion.descripcion|default:"" }}</textarea>
+                                                </div>
+                                                <div class="py-3 border-top mb-3 mt-4">
+                                                    <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-paperclip"></i> Enlaces Multimedia</h6>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold text-danger"><i class="bi bi-youtube"></i> Enlace de Video</label>
+                                                            <input type="url" class="form-control" name="url_video" value="{{ leccion.url_video|default:'' }}">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> Actualizar PDF</label>
+                                                            <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold text-success"><i class="bi bi-controller"></i> URL Simulador</label>
+                                                            <input type="url" class="form-control" name="url_simulador" value="{{ leccion.url_simulador|default:'' }}">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold text-dark"><i class="bi bi-box-seam"></i> URL SCORM</label>
+                                                            <input type="url" class="form-control" name="paquete_scorm_url" value="{{ leccion.paquete_scorm_url|default:'' }}">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer bg-light rounded-bottom-4">
+                                                <button type="submit" class="btn btn-primary btn-pill fw-semibold">Guardar Cambios</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted p-5 bg-light rounded-4 border mt-3">
+                            <i class="bi bi-camera-video fs-1 mb-3 text-secondary"></i>
+                            <h5 class="fw-semibold">Sin Contenido</h5>
+                            <p class="mb-0">Agrega la primera clase usando el botón de arriba.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Configuración de Examen -->
+        <div class="col-lg-5 col-xl-4">
+            <div class="card lms-form-card position-relative border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    {% if curso.evaluacion %}
+                        <div class="text-center mb-4 pt-3">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle shadow mb-3" style="width: 70px; height: 70px;">
+                                <i class="bi bi-check2-all fs-1"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1">Evaluación Configurada</h5>
+                            <p class="text-muted small">Los parámetros del examen están establecidos.</p>
+                        </div>
+                        <ul class="list-group list-group-flush mb-4 small text-secondary">
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                <span><i class="bi bi-card-text me-2"></i>Título</span>
+                                <span class="fw-semibold text-dark">{{ curso.evaluacion.titulo }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                <span><i class="bi bi-patch-check me-2"></i>Aprobación</span>
+                                <span class="fw-semibold text-dark">{{ curso.evaluacion.puntaje_aprobatorio }} / {{ curso.evaluacion.puntaje_maximo }} pts</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                <span><i class="bi bi-stopwatch me-2"></i>Tiempo</span>
+                                <span class="fw-semibold text-dark">{% if curso.evaluacion.tiempo_limite_minutos %}{{ curso.evaluacion.tiempo_limite_minutos }} min{% else %}Ilimitado{% endif %}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
+                                <span><i class="bi bi-shuffle me-2"></i>Preguntas</span>
+                                <span class="fw-semibold text-dark">{{ curso.evaluacion.preguntas_a_mostrar }} al azar</span>
+                            </li>
+                        </ul>
+                        <div class="d-flex flex-column gap-2 mt-auto">
+                            <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-success fw-semibold btn-pill shadow-sm">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Gestionar Balotario
+                            </a>
+                            <a href="{% url 'resultados_evaluacion' curso.evaluacion.id %}" class="btn btn-info text-white fw-semibold btn-pill shadow-sm">
+                                <i class="bi bi-pie-chart-fill me-1"></i> Analítica de Resultados
+                            </a>
+                            <a href="{% url 'eliminar_evaluacion_lms' curso.evaluacion.id %}" class="btn btn-outline-danger fw-semibold btn-pill mt-2" onclick="return confirm('¿Seguro que deseas eliminar la evaluación? Se perderán las preguntas y respuestas.');">
+                                <i class="bi bi-trash me-1"></i> Eliminar Evaluación
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="lms-card-hero mb-4 p-4 position-relative rounded-4 text-center">
+                            <i class="bi bi-journal-check fs-1 text-primary mb-2"></i>
+                            <h5 class="fw-bold mb-1">Examen Final</h5>
+                            <p class="text-secondary mb-0 small">Este curso aún no tiene evaluación.</p>
+                        </div>
+                        <form method="POST" action="{% url 'curso_curriculum' curso.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="crear_evaluacion" value="1">
+
+                            <div class="mb-3 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Título del Examen</label>
+                                <input type="text" class="form-control" name="titulo" value="Evaluación Final: {{ curso.titulo }}" required>
+                            </div>
+
+                            <div class="mb-3 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Instrucciones</label>
+                                <textarea class="form-control" name="instrucciones" rows="2">Lee detenidamente cada pregunta antes de responder.</textarea>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6 lms-input-soft">
+                                    <label class="form-label small fw-semibold text-secondary">Pts. Máx</label>
+                                    <input type="number" class="form-control" name="puntaje_maximo" value="20" step="1" required>
+                                </div>
+                                <div class="col-6 lms-input-soft">
+                                    <label class="form-label small fw-semibold text-secondary">Nota Aprobatoria</label>
+                                    <input type="number" class="form-control" name="puntaje_aprobatorio" value="14" step="1" required>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6 lms-input-soft">
+                                    <label class="form-label small fw-semibold text-secondary">Tiempo (min)</label>
+                                    <input type="number" class="form-control" name="tiempo_limite_minutos" value="15" required>
+                                </div>
+                                <div class="col-6 lms-input-soft">
+                                    <label class="form-label small fw-semibold text-secondary">Puntos Gamific.</label>
+                                    <input type="number" class="form-control" name="puntos_premio" value="50" required>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6 lms-input-soft">
+                                    <label class="form-label small fw-semibold text-secondary">Preguntas a Mostrar</label>
+                                    <input type="number" class="form-control" name="preguntas_a_mostrar" value="10" required>
+                                </div>
+                                <div class="col-6 lms-input-soft">
+                                    <label class="form-label small fw-semibold text-secondary">Intentos Max.</label>
+                                    <input type="number" class="form-control" name="intentos_maximos" value="1" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mb-3 mt-4 lms-input-soft p-3 rounded-3 border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="orden_aleatorio" id="orden_aleatorio" checked>
+                                <label class="form-check-label small fw-semibold text-secondary" for="orden_aleatorio">Mezclar preguntas</label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-4 lms-input-soft p-3 rounded-3 border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="mostrar_resultado_inmediato" id="mostrar_resultado_inmediato" checked>
+                                <label class="form-check-label small fw-semibold text-secondary" for="mostrar_resultado_inmediato">Resultado inmediato</label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 btn-pill fw-semibold py-2 shadow-sm">
+                                <i class="bi bi-save me-1"></i> Guardar Evaluación
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Clase Nueva -->
+<div class="modal fade" id="modalCrearLeccion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-play-btn-fill me-2"></i> Agregar Nueva Clase</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'curso_curriculum' curso.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="crear_leccion" value="1">
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="row g-3">
+                        <div class="col-md-9">
+                            <label class="form-label fw-semibold text-secondary">Título de la Clase</label>
+                            <input type="text" class="form-control" name="titulo" placeholder="Ej: Clase 1: Conceptos Básicos" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-secondary">Orden (N°)</label>
+                            <input type="number" class="form-control" name="orden" value="{{ lecciones.count|add:1 }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <label class="form-label fw-semibold text-secondary">Breve Descripción (Opcional)</label>
+                        <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                    </div>
+
+                    <div class="py-3 border-top mb-3 mt-4">
+                        <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-paperclip"></i> Material Multimedia</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-danger"><i class="bi bi-youtube"></i> Enlace de Video</label>
+                                <input type="url" class="form-control" name="url_video" placeholder="Ej: https://www.youtube.com/embed/...">
+                                <small class="text-muted d-block mt-1">Usa el enlace "Embed" de YouTube.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> O subir archivo PDF</label>
+                                <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-success"><i class="bi bi-controller"></i> URL Simulador</label>
+                                <input type="url" class="form-control" name="url_simulador" placeholder="https://...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark"><i class="bi bi-box-seam"></i> URL SCORM</label>
+                                <input type="url" class="form-control" name="paquete_scorm_url" placeholder="https://...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-success btn-pill fw-semibold">Guardar Clase</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

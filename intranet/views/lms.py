@@ -1747,7 +1747,8 @@ def gestor_lms(request):
         'negocios': Negocio.objects.all(),
         'areas': Area.objects.filter(activa=True).order_by('nombre'),
         'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('nombre'),
-        'roles': Colaborador.ROLES
+        'roles': Colaborador.ROLES,
+        'rutas': RutaInduccion.objects.all()
     })
 
 @login_required(login_url='login')
@@ -2550,4 +2551,113 @@ def eliminar_encuesta(request, pk):
     encuesta = get_object_or_404(Encuesta, id=pk)
     encuesta.delete()
     messages.success(request, f"La encuesta ha sido eliminada permanentemente.")
-    return redirect('encuestas_admin')
+    return redirect('encuestas_admin')
+
+# ==========================================
+# GESTIÓN DETALLADA LMS (CURRÍCULUM Y CATEGORÍAS)
+# ==========================================
+@login_required(login_url='login')
+@solo_directivos
+def editar_categoria_lms(request, pk):
+    categoria = get_object_or_404(CategoriaModuloLMS, id=pk)
+    if request.method == 'POST':
+        categoria.nombre = request.POST.get('nombre_categoria')
+        categoria.descripcion = request.POST.get('descripcion_categoria')
+        categoria.icono = request.POST.get('icono_categoria')
+        categoria.color = request.POST.get('color_categoria')
+        categoria.save()
+        messages.success(request, f"Categoría '{categoria.nombre}' actualizada.")
+    return redirect('gestor_lms')
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_categoria_lms(request, pk):
+    categoria = get_object_or_404(CategoriaModuloLMS, id=pk)
+    nombre = categoria.nombre
+    categoria.delete()
+    messages.success(request, f"Categoría '{nombre}' eliminada correctamente.")
+    return redirect('gestor_lms')
+
+@login_required(login_url='login')
+@solo_directivos
+def curso_curriculum(request, pk):
+    curso = get_object_or_404(CursoInduccion, id=pk)
+    
+    if request.method == 'POST':
+        if 'crear_leccion' in request.POST:
+            LeccionCurso.objects.create(
+                curso=curso,
+                titulo=request.POST.get('titulo'),
+                descripcion=request.POST.get('descripcion'),
+                url_video=request.POST.get('url_video'),
+                url_simulador=request.POST.get('url_simulador') or None,
+                paquete_scorm_url=request.POST.get('paquete_scorm_url') or None,
+                archivo_pdf=request.FILES.get('archivo_pdf'),
+                orden=request.POST.get('orden', 1)
+            )
+            messages.success(request, f"¡Clase agregada correctamente al curso!")
+            return redirect('curso_curriculum', pk=curso.id)
+            
+        elif 'crear_evaluacion' in request.POST:
+            if hasattr(curso, 'evaluacion'):
+                messages.error(request, "Este curso ya tiene una evaluación.")
+            else:
+                EvaluacionCurso.objects.create(
+                    curso=curso,
+                    titulo=request.POST.get('titulo'),
+                    instrucciones=request.POST.get('instrucciones', ''),
+                    puntaje_maximo=request.POST.get('puntaje_maximo', 20.00),
+                    puntaje_aprobatorio=request.POST.get('puntaje_aprobatorio', 14.00),
+                    preguntas_a_mostrar=request.POST.get('preguntas_a_mostrar', 10),
+                    orden_aleatorio=request.POST.get('orden_aleatorio') == 'on',
+                    tiempo_limite_minutos=request.POST.get('tiempo_limite_minutos', 0),
+                    puntos_premio=request.POST.get('puntos_premio', 50),
+                    intentos_maximos=request.POST.get('intentos_maximos') or 0,
+                    mostrar_resultado_inmediato=request.POST.get('mostrar_resultado_inmediato') == 'on',
+                    permitir_revision_respuestas=request.POST.get('permitir_revision_respuestas') == 'on',
+                    retroalimentacion_final=request.POST.get('retroalimentacion_final', '').strip(),
+                )
+                messages.success(request, "¡Examen creado correctamente!")
+            return redirect('curso_curriculum', pk=curso.id)
+
+    return render(request, 'intranet/lms/curso_curriculum.html', {
+        'curso': curso,
+        'lecciones': curso.lecciones.all().order_by('orden')
+    })
+
+@login_required(login_url='login')
+@solo_directivos
+def editar_leccion_lms(request, pk):
+    leccion = get_object_or_404(LeccionCurso, id=pk)
+    curso_id = leccion.curso.id
+    if request.method == 'POST':
+        leccion.titulo = request.POST.get('titulo')
+        leccion.descripcion = request.POST.get('descripcion')
+        leccion.url_video = request.POST.get('url_video')
+        leccion.url_simulador = request.POST.get('url_simulador') or None
+        leccion.paquete_scorm_url = request.POST.get('paquete_scorm_url') or None
+        leccion.orden = request.POST.get('orden', leccion.orden)
+        if request.FILES.get('archivo_pdf'):
+            leccion.archivo_pdf = request.FILES.get('archivo_pdf')
+        leccion.save()
+        messages.success(request, f"Lección '{leccion.titulo}' actualizada.")
+    return redirect('curso_curriculum', pk=curso_id)
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_leccion_lms(request, pk):
+    leccion = get_object_or_404(LeccionCurso, id=pk)
+    curso_id = leccion.curso.id
+    titulo = leccion.titulo
+    leccion.delete()
+    messages.success(request, f"Lección '{titulo}' eliminada.")
+    return redirect('curso_curriculum', pk=curso_id)
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_evaluacion_lms(request, pk):
+    evaluacion = get_object_or_404(EvaluacionCurso, id=pk)
+    curso_id = evaluacion.curso.id
+    evaluacion.delete()
+    messages.success(request, "Evaluación eliminada correctamente.")
+    return redirect('curso_curriculum', pk=curso_id)

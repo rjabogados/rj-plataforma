@@ -63,6 +63,14 @@ urlpatterns = [
     path('academia/curso/<int:curso_id>/eliminar/', lms.eliminar_curso_lms, name='eliminar_curso_lms'),
     path('academia/curso/<int:curso_id>/versionar/', lms.duplicar_version_curso, name='duplicar_version_curso'),
     
+    # --- NUEVAS RUTAS DE GESTIÓN DETALLADA LMS ---
+    path('academia/gestor/categoria/<int:pk>/editar/', lms.editar_categoria_lms, name='editar_categoria_lms'),
+    path('academia/gestor/categoria/<int:pk>/eliminar/', lms.eliminar_categoria_lms, name='eliminar_categoria_lms'),
+    path('academia/curso/<int:pk>/curriculum/', lms.curso_curriculum, name='curso_curriculum'),
+    path('academia/leccion/<int:pk>/editar/', lms.editar_leccion_lms, name='editar_leccion_lms'),
+    path('academia/leccion/<int:pk>/eliminar/', lms.eliminar_leccion_lms, name='eliminar_leccion_lms'),
+    path('academia/evaluacion/<int:pk>/eliminar/', lms.eliminar_evaluacion_lms, name='eliminar_evaluacion_lms'),
+    
     # --- RUTAS DE APRENDIZAJE: CLASES Y VIDEOS (NUEVAS) ---
     path('academia/curso/<int:curso_id>/', lms.detalle_curso, name='detalle_curso'),
     path('academia/leccion/<int:leccion_id>/', lms.ver_leccion, name='ver_leccion'),
