@@ -330,3 +330,9 @@ def leer_notificacion(request, pk):
     if notificacion.url_destino:
         return redirect(notificacion.url_destino)
     return redirect('notificaciones')
+
+
+@login_required(login_url='login')
+def marcar_todas_leidas(request):
+    request.user.notificaciones.filter(leida=False).update(leida=True)
+    return redirect(request.META.get('HTTP_REFERER', 'inicio'))

@@ -1,4 +1,4 @@
-from .auth import login_view, salir, inicio, perfil, dashboard, dashboard_rrhh, exportar_directorio_rrhh, dashboard_supervisor, exportar_equipo_supervisor, perfil_admin, notificaciones, leer_notificacion
+from .auth import login_view, salir, inicio, perfil, dashboard, dashboard_rrhh, exportar_directorio_rrhh, dashboard_supervisor, exportar_equipo_supervisor, perfil_admin, notificaciones, leer_notificacion, marcar_todas_leidas
 
 from .api import webhook_receptor
 
@@ -19,7 +19,7 @@ from .asistencia import (
 
 from .solicitudes import (
     tickets, tickets_admin, revisar_ticket, 
-    vacaciones, vacaciones_admin, eliminar_vacaciones, ver_adjunto_ticket
+    vacaciones, vacaciones_admin, eliminar_vacaciones, ver_adjunto_ticket, centro_ayuda
 )
 
 from .documentos import (

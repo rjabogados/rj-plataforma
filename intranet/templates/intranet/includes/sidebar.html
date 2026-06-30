@@ -37,8 +37,6 @@
                     <li><a href="{% url 'documentos_personal' %}" class="nav-link submenu-link"><i class="bi bi-folder-check me-2"></i> Mis Documentos</a></li>
                     <li><a href="{% url 'mensajeria' %}" class="nav-link submenu-link"><i class="bi bi-chat-left-dots-fill me-2"></i> Bandeja de Entrada</a></li>
                     <li><a href="{% url 'notificaciones' %}" class="nav-link submenu-link"><i class="bi bi-bell-fill me-2"></i> Notificaciones</a></li>
-                    <li><a href="{% url 'vacaciones' %}" class="nav-link submenu-link"><i class="bi bi-airplane-engines-fill me-2"></i> Vacaciones</a></li>
-                    <li><a href="{% url 'tickets' %}" class="nav-link submenu-link"><i class="bi bi-ticket-detailed-fill me-2"></i> Tickets / Faltas</a></li>
                 </ul>
             </div>
         </li>
@@ -53,6 +51,7 @@
                     <li><a href="{% url 'comunicados' %}" class="nav-link submenu-link"><i class="bi bi-newspaper me-2"></i> Anuncios</a></li>
                     <li><a href="{% url 'encuestas_personal' %}" class="nav-link submenu-link"><i class="bi bi-ui-radios-grid me-2"></i> Encuestas y Formularios</a></li>
                     <li><a href="{% url 'beneficios' %}" class="nav-link submenu-link"><i class="bi bi-gift-fill me-2"></i> Beneficios</a></li>
+                    <li><a href="#" class="nav-link submenu-link text-muted"><i class="bi bi-people-fill me-2"></i> Directorio (Próximamente)</a></li>
                 </ul>
             </div>
         </li>
@@ -77,6 +76,19 @@
             <div class="collapse submenu" id="menuAcademia">
                 <ul class="nav flex-column gap-1 py-1">
                     <li><a href="{% url 'academia' %}" class="nav-link submenu-link"><i class="bi bi-journal-text me-2"></i> Mis Cursos y Exámenes</a></li>
+                </ul>
+            </div>
+        </li>
+
+        <li class="nav-item mt-2">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuSoporte" role="button" aria-expanded="false">
+                <div><i class="bi bi-life-preserver menu-icon me-3"></i><span>Soporte y Ayuda</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuSoporte">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'centro_ayuda' %}" class="nav-link submenu-link"><i class="bi bi-headset me-2"></i> Centro de Solicitudes</a></li>
+                    <li><a href="#" class="nav-link submenu-link text-muted"><i class="bi bi-question-circle me-2"></i> Preguntas Frecuentes</a></li>
                 </ul>
             </div>
         </li>
@@ -118,22 +130,52 @@
         {% endif %}
 
         <li class="nav-item">
-            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAdmin" role="button" aria-expanded="false">
-                <div><i class="bi bi-briefcase-fill menu-icon me-3"></i><span>Panel Administrativo</span></div>
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAdminRRHH" role="button" aria-expanded="false">
+                <div><i class="bi bi-people-fill menu-icon me-3"></i><span>Admin RRHH</span></div>
                 <i class="bi bi-chevron-down arrow-icon"></i>
             </a>
-            <div class="collapse submenu" id="menuAdmin">
+            <div class="collapse submenu" id="menuAdminRRHH">
                 <ul class="nav flex-column gap-1 py-1">
                     <li><a href="{% url 'colaboradores' %}" class="nav-link submenu-link"><i class="bi bi-person-lines-fill me-2"></i> Directorio y Accesos</a></li>
                     <li><a href="{% url 'asistencia' %}" class="nav-link submenu-link"><i class="bi bi-fingerprint me-2"></i> Biometría Asistencia</a></li>
-                    <li><a href="{% url 'documentos_admin' %}" class="nav-link submenu-link"><i class="bi bi-cloud-arrow-up-fill me-2"></i> Despachar Documentos</a></li>
-                    <li><a href="{% url 'tickets_admin' %}" class="nav-link submenu-link"><i class="bi bi-inboxes-fill me-2"></i> Bandeja Tickets</a></li>
                     <li><a href="{% url 'vacaciones_admin' %}" class="nav-link submenu-link"><i class="bi bi-airplane-engines me-2"></i> Control Vacaciones</a></li>
-                    <li><a href="{% url 'gestor_comunicados' %}" class="nav-link submenu-link"><i class="bi bi-megaphone-fill me-2"></i> Gestor de Anuncios</a></li>
-                    <li><a href="{% url 'encuestas_admin' %}" class="nav-link submenu-link"><i class="bi bi-file-earmark-medical-fill me-2"></i> Panel Encuestas / Formularios</a></li>
-                    <li><a href="{% url 'activos' %}" class="nav-link submenu-link"><i class="bi bi-pc-display-horizontal me-2"></i> Control de Activos</a></li>
-                    <li><a href="{% url 'gestor_lms' %}" class="nav-link submenu-link"><i class="bi bi-sliders me-2"></i> Gestor LMS</a></li>
                     <li><a href="{% url 'onboarding_admin' %}" class="nav-link submenu-link"><i class="bi bi-journal-bookmark-fill me-2"></i> Onboarding Admin</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAdminTI" role="button" aria-expanded="false">
+                <div><i class="bi bi-pc-display menu-icon me-3"></i><span>Admin TI</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuAdminTI">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'activos' %}" class="nav-link submenu-link"><i class="bi bi-pc-display-horizontal me-2"></i> Control de Activos</a></li>
+                    <li><a href="{% url 'tickets_admin' %}" class="nav-link submenu-link"><i class="bi bi-inboxes-fill me-2"></i> Bandeja Tickets</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAdminEducacion" role="button" aria-expanded="false">
+                <div><i class="bi bi-mortarboard menu-icon me-3"></i><span>Admin Educación</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuAdminEducacion">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'gestor_lms' %}" class="nav-link submenu-link"><i class="bi bi-sliders me-2"></i> Gestor LMS</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAdminCultura" role="button" aria-expanded="false">
+                <div><i class="bi bi-folder-fill menu-icon me-3"></i><span>Admin Cultura & Docs</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuAdminCultura">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'gestor_comunicados' %}" class="nav-link submenu-link"><i class="bi bi-megaphone-fill me-2"></i> Gestor de Anuncios</a></li>
+                    <li><a href="{% url 'encuestas_admin' %}" class="nav-link submenu-link"><i class="bi bi-file-earmark-medical-fill me-2"></i> Panel Encuestas</a></li>
+                    <li><a href="{% url 'documentos_admin' %}" class="nav-link submenu-link"><i class="bi bi-cloud-arrow-up-fill me-2"></i> Despachar Documentos</a></li>
                 </ul>
             </div>
         </li>

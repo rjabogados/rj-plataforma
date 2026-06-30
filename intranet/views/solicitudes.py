@@ -219,3 +219,55 @@ def eliminar_vacaciones(request, pk):
     get_object_or_404(SolicitudVacaciones, pk=pk).delete()
     messages.success(request, 'Solicitud eliminada correctamente.')
     return redirect('vacaciones_admin')
+
+
+# ==========================================
+# CENTRO DE AYUDA (MESA DE AYUDA UNIFICADA)
+# ==========================================
+@login_required(login_url='login')
+def centro_ayuda(request):
+    """Portal unificado para creación y seguimiento de tickets y vacaciones."""
+    perfil = getattr(request.user, 'perfil', None)
+    
+    if request.method == 'POST' and perfil:
+        if 'crear_ticket' in request.POST:
+            adjunto = request.FILES.get('adjunto')
+            if not ticket_adjunto_valido(adjunto):
+                messages.error(request, 'El adjunto debe ser PDF, imagen o Word y no superar 10 MB.')
+                return redirect('centro_ayuda')
+            Ticket.objects.create(
+                colaborador=perfil, 
+                tipo=request.POST.get('tipo'), 
+                motivo=request.POST.get('motivo'), 
+                adjunto_comprobante=adjunto
+            )
+            messages.success(request, 'Ticket enviado correctamente.')
+            return redirect('centro_ayuda')
+            
+        elif 'solicitar_vac' in request.POST:
+            f_ini, f_fin = request.POST.get('fecha_inicio'), request.POST.get('fecha_fin')
+            if f_ini and f_fin:
+                try:
+                    fecha_inicio = datetime.strptime(f_ini, '%Y-%m-%d').date()
+                    fecha_fin = datetime.strptime(f_fin, '%Y-%m-%d').date()
+                    if fecha_fin < fecha_inicio:
+                        messages.error(request, 'La fecha de fin no puede ser anterior a la fecha de inicio.')
+                        return redirect('centro_ayuda')
+                    SolicitudVacaciones.objects.create(
+                        colaborador=perfil, 
+                        fecha_inicio=fecha_inicio, 
+                        fecha_fin=fecha_fin
+                    )
+                    messages.success(request, 'Solicitud de vacaciones enviada correctamente.')
+                except ValueError:
+                    messages.error(request, 'Formato de fecha inválido.')
+            return redirect('centro_ayuda')
+
+    lista_tickets = Ticket.objects.filter(colaborador=perfil).order_by('-fecha_registro') if perfil else []
+    lista_vacaciones = SolicitudVacaciones.objects.filter(colaborador=perfil).order_by('-fecha_solicitud') if perfil else []
+    
+    return render(request, 'intranet/solicitudes/centro_ayuda.html', {
+        'tickets': lista_tickets,
+        'solicitudes_vacaciones': lista_vacaciones,
+        'page_title': 'Centro de Solicitudes'
+    })

@@ -21,6 +21,7 @@ urlpatterns = [
     path('perfil-admin/', views.perfil_admin, name='perfil_admin'),
     path('notificaciones/', views.notificaciones, name='notificaciones'),
     path('notificaciones/leer/<int:pk>/', views.leer_notificacion, name='leer_notificacion'),
+    path('notificaciones/marcar-todas/', views.marcar_todas_leidas, name='marcar_todas_leidas'),
     path('salir/', views.salir, name='salir'),
     path('login/', views.login_view, name='login'),
 
@@ -88,8 +89,9 @@ urlpatterns = [
     path('mis-documentos/firmar/<int:doc_id>/', views.firmar_documento, name='firmar_documento'),
 
     # ==========================================
-    # GESTIÓN DE TICKETS Y VACACIONES
+    # CENTRO DE AYUDA, TICKETS Y VACACIONES
     # ==========================================
+    path('centro-ayuda/', views.centro_ayuda, name='centro_ayuda'),
     path('tickets/', views.tickets, name='tickets'),
     path('tickets-admin/', views.tickets_admin, name='tickets_admin'),
     path('tickets/adjunto/<int:pk>/', views.ver_adjunto_ticket, name='ver_adjunto_ticket'),
