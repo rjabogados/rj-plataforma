@@ -100,7 +100,18 @@ def inicio(request):
     perfil = getattr(request.user, 'perfil', None)
     notificaciones_no_leidas = request.user.notificaciones.filter(leida=False).count()
 
-    # 3. Enviar las variables al HTML
+    # 3. Atajos configurables
+    mis_atajos = []
+    if user_has_special_permissions(request.user, perfil):
+        # Verificar en base de datos
+        configurados = request.user.atajos_configurados.all().order_by('orden')
+        if configurados.exists():
+            mis_atajos = configurados
+        else:
+            # Por defecto mostrar algunos
+            mis_atajos = [] # El template puede manejar vacíos si queremos
+
+    # 4. Enviar las variables al HTML
     context = {
         'comunicados': comunicados,
         'total_colaboradores': total_colaboradores,
@@ -109,9 +120,62 @@ def inicio(request):
         'mis_documentos': mis_documentos,
         'perfil': perfil,
         'notificaciones_no_leidas': notificaciones_no_leidas,
+        'mis_atajos': mis_atajos,
+        'tiene_permisos_especiales': user_has_special_permissions(request.user, perfil)
     }
     
     return render(request, 'intranet/dashboard/inicio.html', context)
+
+def user_has_special_permissions(user, perfil):
+    if user.is_superuser: return True
+    if not perfil: return False
+    return perfil.es_directivo or perfil.es_supervisor or perfil.es_calidad
+
+from django.http import JsonResponse
+import json
+
+@login_required(login_url='login')
+def guardar_atajos(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            atajos = data.get('atajos', [])
+            
+            # Borrar atajos antiguos
+            request.user.atajos_configurados.all().delete()
+            
+            # Crear nuevos
+            from intranet.models.rrhh_core import AtajoUsuario
+            
+            # Mapeo de info para seguridad
+            diccionario_rutas = {
+                'colaboradores': ('Directorio Personal', 'bi-people-fill', 'info'),
+                'asistencia': ('Control Asistencias', 'bi-fingerprint', 'warning'),
+                'documentos_admin': ('Bóveda Documental', 'bi-folder-fill', 'success'),
+                'vacaciones_admin': ('Gestión Vacaciones', 'bi-airplane-engines-fill', 'primary'),
+                'encuestas_admin': ('Gestor de Encuestas', 'bi-bar-chart-fill', 'danger'),
+                'induccion_admin': ('Rutas Inducción', 'bi-map-fill', 'info'),
+                'gestor_lms': ('Academia LMS', 'bi-mortarboard-fill', 'warning'),
+                'dashboard_rrhh': ('Métricas RRHH', 'bi-graph-up', 'success'),
+                'dashboard_supervisor': ('Panel de Equipo', 'bi-diagram-3-fill', 'primary'),
+            }
+            
+            for index, url_name in enumerate(atajos):
+                if url_name in diccionario_rutas:
+                    nombre, icono, color = diccionario_rutas[url_name]
+                    AtajoUsuario.objects.create(
+                        user=request.user,
+                        nombre=nombre,
+                        url_name=url_name,
+                        icono=icono,
+                        color=color,
+                        orden=index
+                    )
+            
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'invalid_method'})
 
 @login_required(login_url='login')
 @solo_directivos

@@ -17,6 +17,7 @@ urlpatterns = [
     # NAVEGACIÓN BÁSICA E INICIO
     # ==========================================
     path('', views.inicio, name='inicio'),
+    path('configurar-atajos/', views.guardar_atajos, name='guardar_atajos'),
     path('buscar/', views.buscador_global, name='buscar'),
     path('perfil/', views.perfil, name='perfil'),
     path('perfil-admin/', views.perfil_admin, name='perfil_admin'),

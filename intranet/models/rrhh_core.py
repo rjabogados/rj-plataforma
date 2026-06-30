@@ -130,3 +130,20 @@ class Asistencia(models.Model):
 
     class Meta:
         unique_together = ('colaborador', 'fecha')
+
+class AtajoUsuario(models.Model):
+    """
+    Guarda la configuración de accesos rápidos para líderes en el dashboard inicial.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='atajos_configurados')
+    nombre = models.CharField(max_length=100)
+    url_name = models.CharField(max_length=100)
+    icono = models.CharField(max_length=50, default='bi-star-fill')
+    color = models.CharField(max_length=30, default='primary')
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['orden']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.nombre}"

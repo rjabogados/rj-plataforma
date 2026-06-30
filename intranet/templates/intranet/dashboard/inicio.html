@@ -95,7 +95,44 @@
     <div class="row g-4">
         
         <div class="col-lg-7">
-            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Mis Accesos Rápidos</h5>
+            {% if tiene_permisos_especiales %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-star-fill text-warning me-2"></i>Mis Atajos de Gestión</h5>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalConfigurarAtajos">
+                    <i class="bi bi-gear-fill me-1"></i> Personalizar
+                </button>
+            </div>
+            
+            {% if mis_atajos %}
+            <div class="row g-3 mb-5">
+                {% for atajo in mis_atajos %}
+                <div class="col-md-4">
+                    <a href="{% url atajo.url_name %}" class="text-decoration-none">
+                        <div class="card card-buk border-0 shadow-sm h-100 card-hover-effect">
+                            <div class="card-body p-3 d-flex align-items-center">
+                                <div class="bg-{{ atajo.color }} bg-opacity-10 text-{{ atajo.color }} rounded p-2 me-3">
+                                    <i class="bi {{ atajo.icono }} fs-4"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-0 lh-sm" style="font-size: 0.85rem;">{{ atajo.nombre }}</h6>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-light border shadow-sm rounded-4 text-center mb-5 p-4">
+                <i class="bi bi-grid-1x2 text-muted opacity-25 display-6 d-block mb-2"></i>
+                <h6 class="fw-bold text-dark mb-1">Panel de Atajos Vacío</h6>
+                <p class="text-muted small mb-3">Configura accesos directos a las áreas que más utilizas como líder.</p>
+                <button class="btn btn-primary btn-sm rounded-pill fw-bold px-4" data-bs-toggle="modal" data-bs-target="#modalConfigurarAtajos">
+                    <i class="bi bi-plus-circle me-1"></i> Añadir Accesos
+                </button>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <h5 class="fw-bold mb-3 text-dark mt-2"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Mis Accesos Personales</h5>
             <div class="row g-3">
                 
                 <div class="col-md-6">
@@ -256,4 +293,106 @@
         </div>
     </div>
 </div>
+
+{% if tiene_permisos_especiales %}
+<!-- Modal Configuración Atajos -->
+<div class="modal fade" id="modalConfigurarAtajos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0 p-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2 text-warning"></i>Personalizar Accesos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <p class="text-muted small mb-4">Selecciona los módulos a los que deseas tener acceso rápido desde tu pantalla de inicio.</p>
+                
+                <form id="formAtajos">
+                    <div class="list-group shadow-sm rounded-4 overflow-hidden border-0">
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="colaboradores" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'colaboradores' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-people-fill text-info me-2"></i>Directorio Personal</strong>
+                                <small class="text-muted d-block">Gestionar empleados, altas y ceses.</small>
+                            </span>
+                        </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="asistencia" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'asistencia' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-fingerprint text-warning me-2"></i>Control Asistencias</strong>
+                                <small class="text-muted d-block">Marcar faltas y leer huellero.</small>
+                            </span>
+                        </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="documentos_admin" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'documentos_admin' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-folder-fill text-success me-2"></i>Bóveda Documental</strong>
+                                <small class="text-muted d-block">Subir plantillas y memorándums.</small>
+                            </span>
+                        </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="vacaciones_admin" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'vacaciones_admin' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-airplane-engines-fill text-primary me-2"></i>Gestión Vacaciones</strong>
+                                <small class="text-muted d-block">Aprobar o rechazar días libres.</small>
+                            </span>
+                        </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="encuestas_admin" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'encuestas_admin' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-bar-chart-fill text-danger me-2"></i>Gestor de Encuestas</strong>
+                                <small class="text-muted d-block">Crear y evaluar formularios.</small>
+                            </span>
+                        </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="induccion_admin" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'induccion_admin' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-map-fill text-info me-2"></i>Rutas de Inducción</strong>
+                                <small class="text-muted d-block">Configurar onboarding.</small>
+                            </span>
+                        </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="gestor_lms" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'gestor_lms' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-mortarboard-fill text-warning me-2"></i>Academia LMS</strong>
+                                <small class="text-muted d-block">Administrar cursos de capacitación.</small>
+                            </span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-white border-0 p-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-dark rounded-pill px-5 fw-bold shadow-sm hover-grow" onclick="guardarAtajos()">
+                    <i class="bi bi-save2-fill me-2"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function guardarAtajos() {
+    const checkboxes = document.querySelectorAll('input[name="atajo"]:checked');
+    const seleccionados = Array.from(checkboxes).map(cb => cb.value);
+
+    fetch("{% url 'guardar_atajos' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ atajos: seleccionados })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === 'success') {
+            location.reload();
+        } else {
+            alert('Error al guardar: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endif %}
 {% endblock %}
