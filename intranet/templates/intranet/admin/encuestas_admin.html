@@ -87,7 +87,10 @@
                         <span class="badge bg-light text-dark border small">{% if e.es_anonima %}Anónima{% else %}Identificable{% endif %}</span>
                         <span class="badge bg-light text-dark border small">{% if e.con_puntaje %}Métrica cuantitativa{% else %}Cualitativa{% endif %}</span>
                     </div>
-                    <button class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalPregunta{{ e.id }}"><i class="bi bi-plus-lg"></i> Pregunta</button>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'resultados_encuesta' e.id %}" class="btn btn-sm btn-outline-primary rounded-pill"><i class="bi bi-bar-chart-fill"></i> Resultados</a>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalPregunta{{ e.id }}"><i class="bi bi-plus-lg"></i> Pregunta</button>
+                    </div>
                 </div>
                 <p class="small text-muted">{{ e.descripcion }}</p>
                 <div class="d-flex flex-wrap gap-2 mb-2">
@@ -104,9 +107,15 @@
                 <ul class="list-group list-group-flush">
                     {% for p in e.preguntas.all %}
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent py-2">
-                        <span class="small text-dark">{{ forloop.counter }}. {{ p.texto }}</span>
+                        <span class="small text-dark">{{ forloop.counter }}. {{ p.texto }} {% if p.obligatoria %}<span class="text-danger">*</span>{% endif %}</span>
                         <span class="badge bg-dark rounded-pill">{{ p.get_tipo_display }}</span>
                     </li>
+                    {% if p.descripcion_ayuda %}<li class="list-group-item px-0 py-1 border-0"><small class="text-muted">{{ p.descripcion_ayuda }}</small></li>{% endif %}
+                    {% if p.tipo == 'OPCION_UNICA' and p.opciones.count > 0 %}
+                    <li class="list-group-item px-0 py-1 border-0">
+                        <small class="text-muted">Opciones: {% for op in p.opciones.all %}{% if not forloop.first %} | {% endif %}{{ op.texto }}{% endfor %}</small>
+                    </li>
+                    {% endif %}
                     {% empty %}
                     <li class="text-muted small py-2">No se han añadido preguntas a esta encuesta corporativa.</li>
                     {% endfor %}
@@ -130,11 +139,41 @@
                                     <input type="text" class="form-control" name="texto" required>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label small fw-bold">Texto de ayuda (opcional)</label>
+                                    <input type="text" class="form-control" name="descripcion_ayuda" placeholder="Ej: Responde según tu experiencia del último mes">
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label small fw-bold">Tipo de Respuesta Exigida</label>
-                                    <select class="form-select" name="tipo">
+                                    <select class="form-select" name="tipo" id="tipoPregunta{{ e.id }}" onchange="toggleOpcionesPregunta('{{ e.id }}')">
                                         <option value="ABIERTA">Abierta (Texto libre de opinión)</option>
                                         <option value="CERRADA">Cerrada (Botones interactivos Sí / No)</option>
+                                        <option value="OPCION_UNICA">Selección única (Lista de alternativas)</option>
+                                        <option value="ESCALA_1_5">Escala 1 a 5</option>
+                                        <option value="FECHA">Fecha</option>
                                     </select>
+                                </div>
+                                <div class="mb-3" id="opcionesPregunta{{ e.id }}" style="display: none;">
+                                    <label class="form-label small fw-bold">Opciones (una por línea)</label>
+                                    <textarea class="form-control" name="opciones_texto" rows="3" placeholder="Muy satisfecho&#10;Satisfecho&#10;Neutral&#10;Insatisfecho"></textarea>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" name="obligatoria" checked>
+                                    <label class="form-check-label small fw-bold">Respuesta obligatoria</label>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-7">
+                                        <label class="form-label small fw-bold">Condicional: depende de pregunta</label>
+                                        <select class="form-select" name="depende_de">
+                                            <option value="">-- Sin condición --</option>
+                                            {% for preg_ref in e.preguntas.all %}
+                                            <option value="{{ preg_ref.id }}">{{ preg_ref.orden }}. {{ preg_ref.texto|truncatechars:45 }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label small fw-bold">Valor disparador</label>
+                                        <input type="text" class="form-control" name="valor_disparador" placeholder="Ej: SI / 5 / Alto">
+                                    </div>
                                 </div>
                                 {% if e.con_puntaje %}
                                 <div class="mb-2">
@@ -154,4 +193,12 @@
         </div>
     </div>
 </div>
+<script>
+    function toggleOpcionesPregunta(encuestaId) {
+        const selector = document.getElementById('tipoPregunta' + encuestaId);
+        const bloqueOpciones = document.getElementById('opcionesPregunta' + encuestaId);
+        if (!selector || !bloqueOpciones) return;
+        bloqueOpciones.style.display = selector.value === 'OPCION_UNICA' ? 'block' : 'none';
+    }
+</script>
 {% endblock %}

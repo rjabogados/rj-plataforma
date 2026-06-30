@@ -68,14 +68,9 @@
                     <div class="col-md-6">
                         <label class="form-label small fw-bold text-muted">Rol en la empresa</label>
                         <select class="form-select border-secondary" name="rol" required>
-                            <option value="ASESOR" {% if colab.rol == 'ASESOR' %}selected{% endif %}>Asesor</option>
-                            <option value="BACKOFFICE" {% if colab.rol == 'BACKOFFICE' %}selected{% endif %}>Backoffice</option>
-                            <option value="CALIDAD" {% if colab.rol == 'CALIDAD' %}selected{% endif %}>Calidad</option>
-                            <option value="SUPERVISOR" {% if colab.rol == 'SUPERVISOR' %}selected{% endif %}>Supervisor</option>
-                            <option value="SISTEMAS" {% if colab.rol == 'SISTEMAS' %}selected{% endif %}>Sistemas</option>
-                            <option value="ADMINISTRATIVO" {% if colab.rol == 'ADMINISTRATIVO' %}selected{% endif %}>Administrativo</option>
-                            <option value="RRHH" {% if colab.rol == 'RRHH' %}selected{% endif %}>Recursos Humanos</option>
-                            <option value="GERENCIA" {% if colab.rol == 'GERENCIA' %}selected{% endif %}>Gerencia</option>
+                            {% for key, value in roles %}
+                            <option value="{{ key }}" {% if colab.rol == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -98,15 +93,14 @@
                     </div>
                     <div class="col-md-12">
                         <label class="form-label small fw-bold text-muted">Subcartera</label>
-                        <input type="text" class="form-control border-secondary" name="subcartera" value="{{ colab.subcartera|default:'' }}" placeholder="Ej: Mora Temprana / Especiales">
+                        <input type="text" class="form-control border-secondary" name="subcartera" value="{{ colab.subcartera|default:'' }}" placeholder="Ej: Mora Temprana / Especiales" list="subcarterasSugeridasEditar">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label small fw-bold text-muted">Tipo Horario</label>
                         <select class="form-select border-secondary" name="tipo_horario" required>
-                            <option value="T1" {% if colab.tipo_horario == 'T1' %}selected{% endif %}>Turno Mañana</option>
-                            <option value="T2" {% if colab.tipo_horario == 'T2' %}selected{% endif %}>Turno Tarde</option>
-                            <option value="TC" {% if colab.tipo_horario == 'TC' %}selected{% endif %}>Turno Completo</option>
-                            <option value="PT" {% if colab.tipo_horario == 'PT' %}selected{% endif %}>Part Time</option>
+                            {% for key, value in tipos_horario %}
+                            <option value="{{ key }}" {% if colab.tipo_horario == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -143,4 +137,10 @@
         </form>
     </div>
 </div>
+
+<datalist id="subcarterasSugeridasEditar">
+    {% for s in subcarteras %}
+    <option value="{{ s }}"></option>
+    {% endfor %}
+</datalist>
 {% endblock %}

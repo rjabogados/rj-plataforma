@@ -26,6 +26,19 @@
 
                 <h6 class="fw-bold text-secondary mb-3" style="font-size: 0.9rem;">Selecciona los cursos obligatorios para su puesto:</h6>
 
+                {% if rutas %}
+                <div class="mb-3 p-3 bg-light rounded-3 border">
+                    <label class="form-label small fw-bold text-secondary">Aplicar ruta predefinida (opcional)</label>
+                    <select class="form-select" name="ruta_id">
+                        <option value="">-- Sin ruta, asignación manual --</option>
+                        {% for ruta in rutas %}
+                        <option value="{{ ruta.id }}">{{ ruta.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted d-block mt-1">Si seleccionas una ruta, se usarán los módulos de esa ruta y su orden.</small>
+                </div>
+                {% endif %}
+
                 <div class="list-group rounded-3 border border-secondary border-opacity-25">
                     {% for m in modulos_disponibles %}
                     <label class="list-group-item d-flex gap-3 py-3 px-4 align-items-center justify-content-between style-label-hover" style="cursor: pointer;">

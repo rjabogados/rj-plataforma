@@ -2,17 +2,21 @@ import shutil
 import tempfile
 from datetime import date
 from datetime import time
+from datetime import timedelta
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
-from intranet.models import Colaborador, Comunicado, DocumentoGenerado, CursoInduccion, MatriculaCurso, MensajeInterno, Ticket, SolicitudVacaciones, Area, Cargo, Negocio, Notificacion
-from intranet.models.lms import Encuesta, Pregunta
-from intranet.models.lms import LeccionCurso
+from intranet.models import Colaborador, Comunicado, DocumentoGenerado, CursoInduccion, MatriculaCurso, MensajeInterno, Ticket, SolicitudVacaciones, Area, Cargo, Negocio, Notificacion, CategoriaModuloLMS
+from intranet.models.lms import Encuesta, Pregunta, OpcionPregunta, RespuestaEncuesta, RutaInduccion, RutaInduccionModulo
+from intranet.models.lms import LeccionCurso, EvaluacionCurso
 from intranet.models import Asistencia
+from intranet.models import CandidatoReclutamiento
 
 
 TEST_MEDIA_ROOT = tempfile.mkdtemp()
@@ -399,3 +403,172 @@ class SecurityAccessTests(TestCase):
 		self.assertIn('/tickets-admin/', response.url)
 		notificacion.refresh_from_db()
 		self.assertTrue(notificacion.leida)
+
+	def test_gestor_lms_crea_categoria_dinamica(self):
+		self.client.login(username='rrhh', password='test12345')
+
+		response = self.client.post(reverse('gestor_lms'), {
+			'crear_categoria_lms': '1',
+			'nombre_categoria': 'Normativas Internas',
+			'descripcion_categoria': 'Politicas y cumplimiento',
+			'icono_categoria': 'bi-shield-check',
+			'color_categoria': '#1259A6',
+		})
+
+		self.assertEqual(response.status_code, 302)
+		self.assertTrue(CategoriaModuloLMS.objects.filter(nombre='Normativas Internas', activa=True).exists())
+
+	def test_rendir_evaluacion_bloquea_cuando_alcanza_limite_intentos(self):
+		curso = CursoInduccion.objects.create(titulo='Curso Límite', descripcion='Test', tipo='GENERAL')
+		EvaluacionCurso.objects.create(
+			curso=curso,
+			titulo='Examen Límite',
+			puntaje_maximo=20,
+			puntaje_aprobatorio=14,
+			preguntas_a_mostrar=1,
+			intentos_maximos=1,
+		)
+		matricula = MatriculaCurso.objects.create(
+			colaborador=self.user.perfil,
+			curso=curso,
+			estado='REPROBADO',
+			intentos_realizados=1,
+		)
+
+		self.client.login(username='empleado', password='test12345')
+		response = self.client.get(reverse('rendir_evaluacion', args=[matricula.id]))
+
+		self.assertEqual(response.status_code, 302)
+		self.assertIn(reverse('detalle_curso', args=[curso.id]), response.url)
+
+	def test_encuesta_guarda_respuesta_con_usuario_logueado(self):
+		encuesta = Encuesta.objects.create(titulo='Formulario interno', activa=True, publico_general=True)
+		pregunta = Pregunta.objects.create(encuesta=encuesta, texto='Nivel de satisfacción', tipo='OPCION_UNICA', obligatoria=True)
+		opcion = OpcionPregunta.objects.create(pregunta=pregunta, texto='Alto', orden=1)
+
+		self.client.login(username='empleado', password='test12345')
+		response = self.client.post(reverse('encuestas_personal'), {
+			'enviar_encuesta': '1',
+			'encuesta_id': encuesta.id,
+			f'pregunta_{pregunta.id}': str(opcion.id),
+		})
+
+		self.assertEqual(response.status_code, 302)
+		respuesta = RespuestaEncuesta.objects.get(pregunta=pregunta)
+		self.assertEqual(respuesta.colaborador_id, self.user.perfil.id)
+		self.assertEqual(respuesta.valor_opcion_id, opcion.id)
+
+	def test_asignar_modulos_induccion_aplica_ruta(self):
+		curso_1 = CursoInduccion.objects.create(titulo='Induccion 1', descripcion='Base', tipo='INDUCCION', activo=True)
+		curso_2 = CursoInduccion.objects.create(titulo='Induccion 2', descripcion='Base', tipo='INDUCCION', activo=True)
+		ruta = RutaInduccion.objects.create(nombre='Ruta Operativa', activa=True)
+		RutaInduccionModulo.objects.create(ruta=ruta, modulo=curso_1, orden=1)
+		RutaInduccionModulo.objects.create(ruta=ruta, modulo=curso_2, orden=2)
+
+		self.client.login(username='rrhh', password='test12345')
+		response = self.client.post(reverse('asignar_modulos_induccion', args=[self.user.perfil.id]), {
+			'ruta_id': ruta.id,
+		})
+
+		self.assertEqual(response.status_code, 302)
+		matriculas = MatriculaCurso.objects.filter(colaborador=self.user.perfil).order_by('curso__titulo')
+		self.assertEqual(matriculas.count(), 2)
+		self.assertTrue(all(m.fecha_limite is not None for m in matriculas))
+
+	def test_mi_induccion_bloquea_modulo_con_prerequisito(self):
+		curso_base = CursoInduccion.objects.create(
+			titulo='Modulo Base', descripcion='Base', tipo='INDUCCION', activo=True, publico_general=True
+		)
+		curso_avanzado = CursoInduccion.objects.create(
+			titulo='Modulo Avanzado', descripcion='Avanzado', tipo='INDUCCION', activo=True, publico_general=True,
+			prerequisito_curso=curso_base,
+		)
+
+		self.client.login(username='empleado', password='test12345')
+		response = self.client.get(reverse('mi_induccion'))
+		self.assertEqual(response.status_code, 200)
+
+		matricula_avanzado = MatriculaCurso.objects.get(colaborador=self.user.perfil, curso=curso_avanzado)
+		self.assertIn(matricula_avanzado.id, response.context['bloqueados_ids'])
+
+		matricula_base = MatriculaCurso.objects.get(colaborador=self.user.perfil, curso=curso_base)
+		matricula_base.estado = 'COMPLETADO'
+		matricula_base.fecha_finalizacion = timezone.now()
+		matricula_base.save(update_fields=['estado', 'fecha_finalizacion'])
+
+		response = self.client.get(reverse('mi_induccion'))
+		self.assertEqual(response.status_code, 200)
+		self.assertNotIn(matricula_avanzado.id, response.context['bloqueados_ids'])
+
+	def test_duplicar_version_curso_crea_borrador_nuevo(self):
+		curso = CursoInduccion.objects.create(
+			titulo='LMS Ventas', descripcion='v1', tipo='ACADEMIA', version=2, estado_publicacion='PUBLICADO', activo=True
+		)
+
+		self.client.login(username='rrhh', password='test12345')
+		response = self.client.get(reverse('duplicar_version_curso', args=[curso.id]))
+
+		self.assertEqual(response.status_code, 302)
+		nueva_version = CursoInduccion.objects.exclude(id=curso.id).get(titulo='LMS Ventas', version=3)
+		self.assertEqual(nueva_version.estado_publicacion, 'BORRADOR')
+		self.assertEqual(nueva_version.curso_origen_id, curso.id)
+
+	def test_verificar_certificado_responde_valido_e_invalido(self):
+		curso = CursoInduccion.objects.create(titulo='Certificacion QA', descripcion='QA', tipo='ACADEMIA', activo=True)
+		MatriculaCurso.objects.create(
+			colaborador=self.user.perfil,
+			curso=curso,
+			estado='COMPLETADO',
+			certificado_codigo='CERT-TEST-001',
+			certificado_vigente_hasta=date.today() + timedelta(days=30),
+		)
+
+		response = self.client.get(reverse('verificar_certificado', args=['CERT-TEST-001']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Certificado válido')
+
+		response = self.client.get(reverse('verificar_certificado', args=['NO-EXISTE']))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Certificado no encontrado')
+
+	def test_comando_recordatorios_lms_no_duplica_notificacion_diaria(self):
+		curso = CursoInduccion.objects.create(titulo='Modulo Pendiente', descripcion='Pendiente', tipo='ACADEMIA', activo=True)
+		MatriculaCurso.objects.create(
+			colaborador=self.user.perfil,
+			curso=curso,
+			estado='PENDIENTE',
+			fecha_limite=date.today() - timedelta(days=1),
+		)
+
+		call_command('recordatorios_lms')
+		call_command('recordatorios_lms')
+
+		notificaciones = Notificacion.objects.filter(usuario=self.user, titulo='Recordatorio: modulo vencido')
+		self.assertEqual(notificaciones.count(), 1)
+
+	def test_limpieza_matriz_reclutamiento_consolida_duplicados(self):
+		CandidatoReclutamiento.objects.create(
+			documento=' 123-456 ',
+			nombre='Juan   Perez',
+			telefono=' 999-888-777 ',
+			estado_candidato='entrevista',
+			sede=' Lima ',
+			canal=' Meta Ads ',
+		)
+		CandidatoReclutamiento.objects.create(
+			documento='123456',
+			nombre='Juan Perez Gomez',
+			telefono='999888777',
+			estado_candidato='No interesado',
+			sede='LIMA',
+			canal='Web',
+		)
+
+		from django.core.management import call_command
+		call_command('limpiar_matriz_reclutamiento')
+
+		self.assertEqual(CandidatoReclutamiento.objects.filter(documento='123456').count(), 1)
+		candidato = CandidatoReclutamiento.objects.get(documento='123456')
+		self.assertEqual(candidato.estado_candidato, 'No interesados')
+		self.assertEqual(candidato.sede, 'LIMA')
+		self.assertEqual(candidato.canal, 'Web')

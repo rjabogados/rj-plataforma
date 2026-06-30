@@ -59,6 +59,16 @@
             <h5 class="fw-bold text-dark mb-3"><i class="bi bi-award-fill text-warning me-2"></i>Evaluación Final</h5>
             
             <div class="card border-0 shadow-sm rounded-4 text-center p-4">
+                {% if evaluacion %}
+                    <div class="small text-muted mb-3">
+                        Intentos: <strong>{{ intentos_realizados }}</strong>
+                        {% if intentos_maximos == 0 %}
+                            / ilimitados
+                        {% else %}
+                            / {{ intentos_maximos }}
+                        {% endif %}
+                    </div>
+                {% endif %}
                 {% if matricula.estado == 'COMPLETADO' %}
                     <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
                         <i class="bi bi-check-lg fs-1"></i>
@@ -72,7 +82,12 @@
                         <i class="bi bi-x-lg fs-1"></i>
                     </div>
                     <h5 class="fw-bold text-danger">Examen Reprobado</h5>
-                    <p class="text-muted small">Comunícate con tu supervisor para solicitar un nuevo intento.</p>
+                    {% if intentos_maximos == 0 or intentos_restantes > 0 %}
+                        <p class="text-muted small">Aun tienes intentos disponibles. Refuerza contenidos y vuelve a rendir el examen.</p>
+                        <a href="{% url 'rendir_evaluacion' matricula.id %}" class="btn btn-outline-primary w-100 fw-bold shadow-sm">Reintentar Examen</a>
+                    {% else %}
+                        <p class="text-muted small">Alcanzaste el limite de intentos. Comunicate con tu supervisor para una reapertura.</p>
+                    {% endif %}
                 
                 {% else %}
                     {% if examen_desbloqueado %}

@@ -62,7 +62,7 @@
                     </div>
                     <div class="col-lg-2">
                         <label class="form-label small fw-semibold text-muted">Subcartera</label>
-                        <input type="text" name="subcartera" class="form-control bg-light" value="{{ request.GET.subcartera|default:'' }}" placeholder="Ej: Mora Temprana">
+                        <input type="text" name="subcartera" class="form-control bg-light" value="{{ request.GET.subcartera|default:'' }}" placeholder="Ej: Mora Temprana" list="subcarterasSugeridasFiltro">
                     </div>
                     {% endif %}
                     <div class="col-lg-12 d-flex gap-2 pt-2">
@@ -230,7 +230,7 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label small fw-bold text-dark">Subcartera</label>
-                            <input type="text" class="form-control" name="subcartera" placeholder="Ej: Mora Temprana / Especiales / Castigada">
+                            <input type="text" class="form-control" name="subcartera" placeholder="Ej: Mora Temprana / Especiales / Castigada" list="subcarterasSugeridasForm">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-dark">Tipo Horario</label>
@@ -282,4 +282,16 @@
         </div>
     </div>
 </div>
+
+<datalist id="subcarterasSugeridasFiltro">
+    {% for s in subcarteras %}
+    <option value="{{ s }}"></option>
+    {% endfor %}
+</datalist>
+
+<datalist id="subcarterasSugeridasForm">
+    {% for s in subcarteras %}
+    <option value="{{ s }}"></option>
+    {% endfor %}
+</datalist>
 {% endblock %}

@@ -129,6 +129,9 @@
         <div class="position-relative z-index-2">
             <h1 class="fw-bold text-dark mb-2" style="font-size: 2.5rem;">¡Hola, {{ request.user.first_name }}! 👋</h1>
             <p class="text-secondary fs-5 mb-4">Bienvenido(a) a la familia RJ Abogados. Esta es tu ruta de despegue.</p>
+            {% if ruta_activa %}
+            <span class="badge bg-dark-subtle text-dark border border-dark-subtle mb-3">Ruta activa: {{ ruta_activa.nombre }}</span>
+            {% endif %}
             
             <div class="mx-auto" style="max-width: 600px;">
                 <div class="d-flex justify-content-between mb-2">
@@ -171,6 +174,10 @@
                     <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-completed text-white">
                         <i class="bi bi-star-fill"></i>
                     </a>
+                {% elif matricula.id in bloqueados_ids %}
+                    <div class="step-node node-pending">
+                        <i class="bi bi-lock-fill"></i>
+                    </div>
                 {% elif matricula.estado == 'PENDIENTE' or matricula.estado == 'EN_CURSO' or matricula.estado == 'EVALUANDO' %}
                     <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-active text-white">
                         <i class="bi bi-play-fill" style="margin-left: 5px;"></i>
@@ -198,6 +205,11 @@
                             <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-light text-success fw-bold border-success w-100 rounded-pill">
                                 <i class="bi bi-arrow-repeat me-1"></i> Repasar
                             </a>
+                        {% elif matricula.id in bloqueados_ids %}
+                            <div class="alert alert-warning small py-2 mb-2">Debes completar el módulo prerequisito para desbloquear esta parada.</div>
+                            <button class="btn btn-sm btn-secondary fw-bold w-100 rounded-pill" disabled>
+                                <i class="bi bi-lock-fill me-1"></i> Bloqueado
+                            </button>
                         {% else %}
                             <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-primary fw-bold w-100 rounded-pill shadow-sm" style="background-color: #183D74; border: none;">
                                 <i class="bi bi-door-open-fill me-1"></i> Entrar al Módulo

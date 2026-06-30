@@ -31,6 +31,7 @@ urlpatterns = [
     path('colaboradores/editar/<int:pk>/', views.editar_colaborador, name='editar_colaborador'),
     path('colaboradores/eliminar/<int:pk>/', views.eliminar_colaborador, name='eliminar_colaborador'),
     path('colaboradores/mapear-excel/', views.mapear_excel, name='mapear_excel'),
+    path('colaboradores/procesar-mapeado-personal/', lms.procesar_mapeo_personal, name='procesar_mapeo_personal'),
     path('colaboradores/procesar-mapeado/', lms.procesar_mapeo_balotario, name='procesar_mapeo_balotario'),
 
     # ==========================================
@@ -57,6 +58,7 @@ urlpatterns = [
     path('academia/rendir/<int:matricula_id>/', lms.rendir_evaluacion, name='rendir_evaluacion'),
     path('academia/curso/<int:curso_id>/editar/', lms.editar_curso_lms, name='editar_curso_lms'),
     path('academia/curso/<int:curso_id>/eliminar/', lms.eliminar_curso_lms, name='eliminar_curso_lms'),
+    path('academia/curso/<int:curso_id>/versionar/', lms.duplicar_version_curso, name='duplicar_version_curso'),
     
     # --- RUTAS DE APRENDIZAJE: CLASES Y VIDEOS (NUEVAS) ---
     path('academia/curso/<int:curso_id>/', lms.detalle_curso, name='detalle_curso'),
@@ -69,6 +71,7 @@ urlpatterns = [
     path('academia/matricula/<int:matricula_id>/reabrir/', lms.reabrir_examen, name='reabrir_examen'),
     path('academia/evaluacion/<int:evaluacion_id>/exportar/', lms.exportar_resultados_lms, name='exportar_resultados_lms'),
     path('academia/certificado/<int:matricula_id>/', lms.generar_certificado, name='generar_certificado'),
+    path('academia/certificado/verificar/<str:codigo>/', lms.verificar_certificado, name='verificar_certificado'),
     path('lms/dashboard/', dashboard_resultados, name='dashboard_resultados'),
     path('lms/crear-curso/', crear_curso_avanzado, name='crear_curso_avanzado'),
 

@@ -37,7 +37,7 @@
                 <div class="card-body p-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="card-title text-uppercase text-success mb-1">Exámenes Rendidos</h6>
-                        <h2 class="mb-0 text-dark">0</h2>
+                        <h2 class="mb-0 text-dark">{{ total_rendidas }}</h2>
                     </div>
                     <i class="bi bi-clipboard2-check fs-1 text-success opacity-50"></i>
                 </div>
@@ -48,7 +48,7 @@
                 <div class="card-body p-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="card-title text-uppercase text-warning mb-1">Nota Promedio</h6>
-                        <h2 class="mb-0 text-dark">0</h2>
+                        <h2 class="mb-0 text-dark">{{ nota_promedio }}</h2>
                     </div>
                     <i class="bi bi-bar-chart-line fs-1 text-warning opacity-50"></i>
                 </div>
@@ -56,7 +56,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
         <div class="col-md-6">
             <div class="panel-shell overflow-hidden">
                 <div class="card-header bg-white fw-bold p-4">
@@ -64,6 +64,67 @@
                 </div>
                 <div class="card-body p-4">
                     <canvas id="graficoAprobacion"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel-shell h-100">
+                <div class="card-header bg-white fw-bold p-4">Módulos con retraso</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light"><tr><th>Colaborador</th><th>Módulo</th><th>Fecha límite</th></tr></thead>
+                            <tbody>
+                                {% for m in modulos_retrasados %}
+                                <tr>
+                                    <td>{{ m.colaborador.user.get_full_name|default:m.colaborador.user.username }}</td>
+                                    <td>{{ m.curso.titulo }}</td>
+                                    <td>{{ m.fecha_limite|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">Sin retrasos críticos.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel-shell h-100">
+                <div class="card-header bg-white fw-bold p-4">Rendimiento por Área</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light"><tr><th>Área</th><th>Exámenes</th><th>Promedio</th></tr></thead>
+                            <tbody>
+                                {% for row in rendimiento_area %}
+                                <tr><td>{{ row.colaborador__area__nombre|default:"Sin área" }}</td><td>{{ row.total }}</td><td>{{ row.promedio|floatformat:2 }}</td></tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">Sin data aún.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel-shell h-100">
+                <div class="card-header bg-white fw-bold p-4">Rendimiento por Cargo</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light"><tr><th>Cargo</th><th>Exámenes</th><th>Promedio</th></tr></thead>
+                            <tbody>
+                                {% for row in rendimiento_cargo %}
+                                <tr><td>{{ row.colaborador__cargo__nombre|default:"Sin cargo" }}</td><td>{{ row.total }}</td><td>{{ row.promedio|floatformat:2 }}</td></tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">Sin data aún.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -76,8 +137,8 @@
         const ctx = document.getElementById('graficoAprobacion').getContext('2d');
         
         // Estos valores los cambiaremos por las variables de Django luego
-        const aprobados = 15; // {{ aprobados }}
-        const reprobados = 5; // {{ reprobados }}
+        const aprobados = {{ aprobados }};
+        const reprobados = {{ reprobados }};
 
         new Chart(ctx, {
             type: 'doughnut',

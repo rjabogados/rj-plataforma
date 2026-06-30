@@ -17,6 +17,7 @@
                 {% if e.es_anonima %}
                 <div class="alert alert-light border small py-2 text-secondary"><i class="bi bi-incognito"></i> Tus respuestas serán 100% anónimas.</div>
                 {% endif %}
+                <div class="alert alert-info border small py-2 text-secondary"><i class="bi bi-person-check-fill"></i> No necesitas ingresar tus datos personales: el sistema vincula automáticamente tu respuesta a tu usuario.</div>
                 
                 <form method="POST" class="mt-3">
                     {% csrf_token %}
@@ -24,19 +25,38 @@
                     <input type="hidden" name="encuesta_id" value="{{ e.id }}">
                     
                     {% for p in e.preguntas.all %}
-                    <div class="mb-3 p-3 bg-light rounded-3">
-                        <label class="fw-bold small d-block mb-2">{{ forloop.counter }}. {{ p.texto }}</label>
+                    <div class="mb-3 p-3 bg-light rounded-3 pregunta-bloque" data-pregunta-id="{{ p.id }}" data-depende-de="{{ p.depende_de_id|default:'' }}" data-valor-disparador="{{ p.valor_disparador|default:''|upper }}">
+                        <label class="fw-bold small d-block mb-2">{{ forloop.counter }}. {{ p.texto }} {% if p.obligatoria %}<span class="text-danger">*</span>{% endif %}</label>
+                        {% if p.descripcion_ayuda %}<small class="text-muted d-block mb-2">{{ p.descripcion_ayuda }}</small>{% endif %}
                         {% if p.tipo == 'ABIERTA' %}
-                            <textarea class="form-control form-control-sm border-secondary" name="pregunta_{{ p.id }}" rows="2" required placeholder="Escribe tu respuesta aquí..."></textarea>
-                        {% else %}
+                            <textarea class="form-control form-control-sm border-secondary" name="pregunta_{{ p.id }}" rows="2" {% if p.obligatoria %}required{% endif %} placeholder="Escribe tu respuesta aquí..."></textarea>
+                        {% elif p.tipo == 'CERRADA' %}
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="pregunta_{{ p.id }}" value="SI" required>
+                                <input class="form-check-input" type="radio" name="pregunta_{{ p.id }}" value="SI" {% if p.obligatoria %}required{% endif %}>
                                 <label class="form-check-label small">Sí</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="pregunta_{{ p.id }}" value="NO" required>
+                                <input class="form-check-input" type="radio" name="pregunta_{{ p.id }}" value="NO" {% if p.obligatoria %}required{% endif %}>
                                 <label class="form-check-label small">No</label>
                             </div>
+                        {% elif p.tipo == 'OPCION_UNICA' %}
+                            <select class="form-select form-select-sm" name="pregunta_{{ p.id }}" {% if p.obligatoria %}required{% endif %}>
+                                <option value="">Selecciona una opción</option>
+                                {% for op in p.opciones.all %}
+                                <option value="{{ op.id }}">{{ op.texto }}</option>
+                                {% endfor %}
+                            </select>
+                        {% elif p.tipo == 'ESCALA_1_5' %}
+                            <div class="d-flex gap-2">
+                                {% for i in '12345' %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="pregunta_{{ p.id }}" value="{{ i }}" {% if p.obligatoria %}required{% endif %}>
+                                    <label class="form-check-label small">{{ i }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% elif p.tipo == 'FECHA' %}
+                            <input type="date" class="form-control form-control-sm" name="pregunta_{{ p.id }}" {% if p.obligatoria %}required{% endif %}>
                         {% endif %}
                     </div>
                     {% empty %}
@@ -54,4 +74,45 @@
         {% endfor %}
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const bloques = document.querySelectorAll('.pregunta-bloque');
+
+    function obtenerValorPregunta(preguntaId) {
+        const radios = document.querySelectorAll(`input[name="pregunta_${preguntaId}"]:checked`);
+        if (radios.length > 0) return radios[0].value;
+        const input = document.querySelector(`[name="pregunta_${preguntaId}"]`);
+        return input ? (input.value || '') : '';
+    }
+
+    function reevaluarCondiciones() {
+        bloques.forEach(bloque => {
+            const dependeDe = bloque.dataset.dependeDe;
+            const valorDisparador = (bloque.dataset.valorDisparador || '').trim().toUpperCase();
+            if (!dependeDe) {
+                bloque.style.display = 'block';
+                return;
+            }
+            const valorActual = (obtenerValorPregunta(dependeDe) || '').toString().trim().toUpperCase();
+            const visible = valorDisparador && valorActual === valorDisparador;
+            bloque.style.display = visible ? 'block' : 'none';
+            if (!visible) {
+                bloque.querySelectorAll('input, textarea, select').forEach(el => {
+                    if (el.type === 'radio' || el.type === 'checkbox') {
+                        el.checked = false;
+                    } else {
+                        el.value = '';
+                    }
+                });
+            }
+        });
+    }
+
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.addEventListener('change', reevaluarCondiciones);
+        el.addEventListener('input', reevaluarCondiciones);
+    });
+    reevaluarCondiciones();
+});
+</script>
 {% endblock %}

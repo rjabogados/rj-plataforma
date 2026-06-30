@@ -1,13 +1,82 @@
 import json
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from intranet.models import CandidatoReclutamiento , HistorialEstado, RegistroContacto
 from django.views.decorators.http import require_http_methods
 from django.utils.dateparse import parse_date
+import re
+
+
+def _limpiar_texto(valor):
+    return ' '.join(str(valor or '').strip().split())
+
+
+def _limpiar_documento(valor):
+    return ''.join(ch for ch in str(valor or '') if ch.isalnum())[:20]
+
+
+def _limpiar_telefono(valor):
+    return ''.join(ch for ch in str(valor or '') if ch.isdigit() or ch == '+')[:20]
+
+
+def _normalizar_estado(valor):
+    texto = _limpiar_texto(valor).lower()
+    mapa = {
+        'nuevo': 'Nuevo',
+        'pendiente': 'Pendiente',
+        'entrevista': 'Entrevista agendada',
+        'entrevista agendada': 'Entrevista agendada',
+        'apto': 'Apto',
+        'no apto': 'No apto',
+        'no interesado': 'No interesados',
+        'no interesados': 'No interesados',
+        'contratado': 'Contratado',
+    }
+    return mapa.get(texto, _limpiar_texto(valor)[:50] or 'Nuevo')
+
+
+def _partes_estructura(valor):
+    texto = _limpiar_texto(valor)
+    if not texto:
+        return []
+    return [parte.strip() for parte in re.split(r'[\|/;,:>-]+', texto) if parte and parte.strip()]
+
+
+def _resolver_estructura_desde_texto(texto_combinado):
+    partes = _partes_estructura(texto_combinado)
+    negocio = None
+    area = None
+    cargo = None
+    subcartera = None
+
+    from intranet.models.rrhh_core import Negocio, Area, Cargo
+
+    negocios = list(Negocio.objects.all().order_by('nombre'))
+    areas = list(Area.objects.filter(activa=True).order_by('nombre'))
+    cargos = list(Cargo.objects.filter(activa=True).select_related('area').order_by('area__nombre', 'nombre'))
+
+    for parte in partes:
+        limpio = parte.casefold()
+        if not negocio:
+            negocio = next((n for n in negocios if n.nombre.casefold() in limpio or limpio in n.nombre.casefold()), None)
+            if negocio:
+                continue
+        if not area:
+            area = next((a for a in areas if a.nombre.casefold() in limpio or limpio in a.nombre.casefold()), None)
+            if area:
+                continue
+        if not cargo:
+            cargo = next((c for c in cargos if c.nombre.casefold() in limpio or limpio in c.nombre.casefold()), None)
+            if cargo:
+                continue
+        if not subcartera and len(parte) >= 3:
+            subcartera = _limpiar_texto(parte)
+
+    return negocio, area, cargo, subcartera
 
 
 def usuario_puede_reclutamiento(user):
@@ -31,13 +100,18 @@ def lista_candidatos(request):
     
     # Aplicar filtros dinámicos si existen
     if busqueda:
-        candidatos = candidatos.filter(nombre__icontains=busqueda) | candidatos.filter(documento__icontains=busqueda)
+        candidatos = candidatos.filter(
+            Q(nombre__icontains=busqueda) |
+            Q(documento__icontains=busqueda) |
+            Q(telefono__icontains=busqueda) |
+            Q(observaciones__icontains=busqueda)
+        )
     
     if sede_filtro:
         candidatos = candidatos.filter(sede=sede_filtro)
         
     # Obtener la lista de sedes únicas para el menú desplegable del buscador
-    sedes_disponibles = CandidatoReclutamiento.objects.values_list('sede', flat=True).distinct()
+    sedes_disponibles = CandidatoReclutamiento.objects.exclude(sede__isnull=True).exclude(sede='').values_list('sede', flat=True).distinct().order_by('sede')
 
     context = {
         'candidatos': candidatos,
@@ -68,7 +142,7 @@ def actualizar_estado_ajax(request):
             return respuesta_no_autorizado()
         
         candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
-        candidato.estado_candidato = nuevo_estado
+        candidato.estado_candidato = _normalizar_estado(nuevo_estado)
         candidato.save()
         
         return JsonResponse({'success': True, 'mensaje': 'Estado actualizado'}, status=200)
@@ -132,16 +206,30 @@ def actualizar_candidato_ajax(request):
         estado_viejo = candidato.estado_candidato
         
         # Actualizar con validación
-        candidato.nombre = data.get('nombre', candidato.nombre)
-        candidato.documento = data.get('documento', candidato.documento)
-        candidato.telefono = data.get('telefono', candidato.telefono)
+        candidato.nombre = _limpiar_texto(data.get('nombre', candidato.nombre)) or candidato.nombre
+        candidato.documento = _limpiar_documento(data.get('documento', candidato.documento)) or candidato.documento
+        candidato.telefono = _limpiar_telefono(data.get('telefono', candidato.telefono)) or candidato.telefono
         
-        estado_nuevo = data.get('estado', estado_viejo)
+        estado_nuevo = _normalizar_estado(data.get('estado', estado_viejo))
         if estado_nuevo:
             candidato.estado_candidato = estado_nuevo
         
-        candidato.sede = data.get('sede', 'No Asignado')
-        candidato.canal = data.get('canal', 'Meta Ads')
+        candidato.sede = _limpiar_texto(data.get('sede', 'No Asignado')) or 'No Asignado'
+        candidato.canal = _limpiar_texto(data.get('canal', 'Por Definir')) or 'Por Definir'
+
+        if candidato.documento:
+            duplicado = CandidatoReclutamiento.objects.exclude(id=candidato.id).filter(documento=candidato.documento).first()
+            if duplicado:
+                if len(_limpiar_texto(candidato.nombre)) > len(_limpiar_texto(duplicado.nombre or '')):
+                    duplicado.nombre = candidato.nombre
+                if len(_limpiar_telefono(candidato.telefono)) > len(_limpiar_telefono(duplicado.telefono or '')):
+                    duplicado.telefono = candidato.telefono
+                duplicado.estado_candidato = candidato.estado_candidato
+                duplicado.sede = candidato.sede
+                duplicado.canal = candidato.canal
+                duplicado.save()
+                candidato.delete()
+                return JsonResponse({'success': True, 'mensaje': 'Registro consolidado con un duplicado existente'})
         
         candidato.save()
         
@@ -211,10 +299,10 @@ def metricas_dashboard_ajax(request):
 
     # 3. Agrupación de Datos para los Gráficos
     # ¿Cuántos por Sede?
-    data_sede = list(candidatos.values('sede').annotate(total=Count('id')).order_by('-total'))
+    data_sede = list(candidatos.exclude(sede__isnull=True).exclude(sede='').values('sede').annotate(total=Count('id')).order_by('-total', 'sede'))
     
     # ¿Cuántos por Estado del Embudo?
-    data_estado = list(candidatos.values('estado_candidato').annotate(total=Count('id')).order_by('-total'))
+    data_estado = list(candidatos.values('estado_candidato').annotate(total=Count('id')).order_by('-total', 'estado_candidato'))
 
     return JsonResponse({
         'success': True,

@@ -111,6 +111,9 @@
         <!-- ========================================== -->
         <div class="tab-pane fade" id="modulos" role="tabpanel">
             <div class="d-flex gap-2 mb-4 justify-content-end">
+                <button class="btn btn-dark btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearRutaInduccion">
+                    <i class="bi bi-signpost-split-fill me-2"></i> Crear Ruta
+                </button>
                 <button class="btn btn-primary btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearModulo">
                     <i class="bi bi-folder-plus me-2"></i> Crear Módulo
                 </button>
@@ -160,6 +163,9 @@
                                 <button class="btn btn-sm btn-outline-primary btn-pill fw-semibold w-100" data-bs-toggle="modal" data-bs-target="#modalEditarModulo{{ curso.id }}">
                                     <i class="bi bi-pencil-square"></i> Editar Módulo
                                 </button>
+                                <a href="{% url 'duplicar_version_curso' curso.id %}" class="btn btn-sm btn-outline-dark btn-pill fw-semibold flex-grow-1">
+                                    <i class="bi bi-copy"></i> Nueva versión
+                                </a>
                                 {% if curso.evaluacion %}
                                 <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-success btn-pill fw-semibold flex-grow-1">
                                     <i class="bi bi-file-earmark-excel"></i> Subir Balotario
@@ -191,6 +197,31 @@
                                     <div class="mb-3">
                                         <label class="form-label fw-bold small">Descripción</label>
                                         <textarea class="form-control" name="descripcion" rows="2">{{ curso.descripcion }}</textarea>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Versión</label>
+                                            <input type="number" class="form-control" name="version" value="{{ curso.version|default:1 }}" min="1">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Estado</label>
+                                            <select class="form-select" name="estado_publicacion">
+                                                <option value="PUBLICADO" {% if curso.estado_publicacion == 'PUBLICADO' %}selected{% endif %}>Publicado</option>
+                                                <option value="BORRADOR" {% if curso.estado_publicacion == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                                                <option value="ARCHIVADO" {% if curso.estado_publicacion == 'ARCHIVADO' %}selected{% endif %}>Archivado</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Prerequisito</label>
+                                            <select class="form-select" name="prerequisito_curso">
+                                                <option value="">-- Sin prerequisito --</option>
+                                                {% for c_ref in modulos_biblioteca %}
+                                                    {% if c_ref.id != curso.id %}
+                                                        <option value="{{ c_ref.id }}" {% if curso.prerequisito_curso_id == c_ref.id %}selected{% endif %}>{{ c_ref.titulo }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                        </div>
                                     </div>
                                     <hr>
                                     <div class="mb-3 form-check form-switch">
@@ -272,6 +303,29 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Descripción</label>
                         <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Versión</label>
+                            <input type="number" class="form-control" name="version" value="1" min="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Estado</label>
+                            <select class="form-select" name="estado_publicacion">
+                                <option value="PUBLICADO">Publicado</option>
+                                <option value="BORRADOR">Borrador</option>
+                                <option value="ARCHIVADO">Archivado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Prerequisito</label>
+                            <select class="form-select" name="prerequisito_curso">
+                                <option value="">-- Sin prerequisito --</option>
+                                {% for c_ref in modulos_biblioteca %}
+                                    <option value="{{ c_ref.id }}">{{ c_ref.titulo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     <hr>
                     <div class="mb-3 form-check form-switch">
@@ -369,6 +423,14 @@
                             <label class="form-label fw-bold small text-primary"><i class="bi bi-file-pdf"></i> Archivo PDF Local</label>
                             <input type="file" class="form-control border-primary" name="archivo_pdf" accept=".pdf">
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-success"><i class="bi bi-controller"></i> Simulador / Laboratorio URL</label>
+                            <input type="url" class="form-control border-success" name="url_simulador" placeholder="https://...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-dark"><i class="bi bi-box-seam"></i> URL SCORM (opcional)</label>
+                            <input type="url" class="form-control" name="paquete_scorm_url" placeholder="https://...">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light rounded-bottom-4">
@@ -413,10 +475,63 @@
                             <label class="form-label fw-bold small text-danger">Tiempo (min):</label>
                             <input type="number" class="form-control" name="tiempo_limite_minutos" value="10" required>
                         </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold small text-dark">Intentos (opcional)</label>
+                            <input type="number" class="form-control" name="intentos_maximos" value="0" min="0">
+                            <small class="text-muted">0 = ilimitados</small>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light rounded-bottom-4">
                     <button type="submit" class="btn btn-warning btn-pill fw-semibold text-dark w-100">Crear y Subir Balotario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCrearRutaInduccion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-signpost-split-fill me-2"></i>Crear Ruta de Inducción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'onboarding_admin' %}">
+                {% csrf_token %}
+                <input type="hidden" name="crear_ruta_induccion" value="1">
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small">Nombre de la ruta</label>
+                            <input type="text" class="form-control" name="nombre_ruta" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Rol objetivo</label>
+                            <select class="form-select" name="rol_objetivo">
+                                <option value="">-- Todos --</option>
+                                {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Cartera objetivo</label>
+                            <select class="form-select" name="cartera_objetivo">
+                                <option value="">-- Todas --</option>
+                                {% for n in negocios %}<option value="{{ n.id }}">{{ n.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Subcartera objetivo</label>
+                            <input type="text" class="form-control" name="subcartera_objetivo" placeholder="Ej: Mora Temprana">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small">Descripción</label>
+                            <textarea class="form-control" name="descripcion_ruta" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-dark btn-pill fw-semibold">Guardar Ruta</button>
                 </div>
             </form>
         </div>

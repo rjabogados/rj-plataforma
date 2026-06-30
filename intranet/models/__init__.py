@@ -12,8 +12,11 @@ from .documentos import (
 )
 
 from .lms import (
+    CategoriaModuloLMS,
+    RutaInduccion,
+    RutaInduccionModulo,
     CursoInduccion, MaterialFormativo, EvaluacionCurso, PreguntaEvaluacion, 
-    MatriculaCurso, RespuestaColaborador, Encuesta, Pregunta, 
+    MatriculaCurso, RespuestaColaborador, Encuesta, Pregunta, OpcionPregunta,
     RespuestaEncuesta, CandidatoOnboarding, CursoInduccion, MaterialFormativo, 
     EvaluacionCurso, PreguntaEvaluacion, MatriculaCurso, RespuestaColaborador,
     OpcionRespuesta

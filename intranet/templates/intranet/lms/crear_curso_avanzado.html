@@ -44,8 +44,46 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Categoría Dinámica (opcional)</label>
+                                <select class="form-select" name="categoria_lms">
+                                    <option value="">-- Sin categoría dinámica --</option>
+                                    {% for cat in categorias_lms %}
+                                        <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label fw-semibold text-secondary">Imagen de Portada (Opcional)</label>
                                 <input type="file" class="form-control" name="portada" accept="image/*">
+                                <small class="text-muted d-block mt-1">Dimensión recomendada: 1280 x 720 px (formato 16:9). Peso máximo aceptado: 2 MB. Formatos: JPG, PNG, WEBP.</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold text-secondary">Nivel</label>
+                                <select class="form-select" name="nivel">
+                                    <option value="BASICO">Básico</option>
+                                    <option value="INTERMEDIO">Intermedio</option>
+                                    <option value="AVANZADO">Avanzado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold text-secondary">Duración (horas)</label>
+                                <input type="number" class="form-control" name="duracion_estimada_horas" min="1" value="1">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold text-secondary">Orden sugerido</label>
+                                <input type="number" class="form-control" name="orden_sugerido" min="1" value="1">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <div class="form-check form-switch w-100 bg-white border rounded-3 px-3 py-2">
+                                    <input class="form-check-input me-2" type="checkbox" name="obligatorio" id="obligatorio">
+                                    <label class="form-check-label fw-semibold text-secondary" for="obligatorio">Obligatorio</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch w-100 bg-white border rounded-3 px-3 py-2">
+                                    <input class="form-check-input me-2" type="checkbox" name="certificado_habilitado" id="certificado_habilitado" checked>
+                                    <label class="form-check-label fw-semibold text-secondary" for="certificado_habilitado">Certificado habilitado</label>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{% url 'procesar_mapeo_balotario' %}" id="formMapeo" onsubmit="iniciarCarga()">
+    <form method="POST" action="{% url 'procesar_mapeo_personal' %}" id="formMapeo" onsubmit="iniciarCarga()">
         {% csrf_token %}
         
         <div class="row g-4">
@@ -22,6 +22,16 @@
                 <div class="card shadow-sm border-0 rounded-4 bg-white p-4">
                     <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-vcard text-primary"></i> Identificadores de Acceso</h5>
                     <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Campo de Estructura Libre <span class="text-warning fw-normal">(Opcional)</span></label>
+                            <select class="form-select border-success" name="prop_estructura">
+                                <option value="">-- No usar --</option>
+                                {% for cabecera in cabeceras %}
+                                    <option value="{{ forloop.counter0 }}">Columna: {{ cabecera }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Úsalo si en una sola columna vienen mezclados cartera, área, cargo y subcartera. El sistema intentará separarlos automáticamente.</div>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-muted">Número de DNI / Documento</label>
                             <select class="form-select border-secondary" name="prop_dni" required>

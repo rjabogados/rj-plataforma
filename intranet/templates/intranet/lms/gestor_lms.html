@@ -11,6 +11,9 @@
             <a href="{% url 'dashboard_resultados' %}" class="btn btn-outline-secondary btn-pill fw-semibold shadow-sm">
                 <i class="bi bi-pie-chart-fill me-2"></i>Dashboard
             </a>
+            <button class="btn btn-outline-dark btn-pill fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearCategoria">
+                <i class="bi bi-tags-fill me-2"></i>Nueva Categoria
+            </button>
             <a href="{% url 'crear_curso_avanzado' %}" class="btn btn-primary btn-pill fw-semibold shadow-sm">
                 <i class="bi bi-journal-plus me-2"></i>Crear Curso
             </a>
@@ -58,6 +61,11 @@
                             <input type="text" class="form-control" name="titulo" placeholder="Ej: Evaluación de Políticas" required>
                         </div>
 
+                        <div class="mb-3 lms-input-soft">
+                            <label class="form-label small fw-semibold text-secondary">Instrucciones para el colaborador</label>
+                            <textarea class="form-control" name="instrucciones" rows="2" placeholder="Ej: Lee con calma cada enunciado y responde según protocolo."></textarea>
+                        </div>
+
                         <div class="row g-3 mb-3">
                             <div class="col-6 lms-input-soft">
                                 <label class="form-label small fw-semibold text-secondary">Pts. Máximos</label>
@@ -80,9 +88,36 @@
                             </div>
                         </div>
 
+                        <div class="row g-3 mb-3">
+                            <div class="col-6 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Intentos Max.</label>
+                                <input type="number" class="form-control" name="intentos_maximos" value="1" min="0" required>
+                                <small class="text-muted">0 = ilimitados</small>
+                            </div>
+                            <div class="col-6 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Revision Post-Examen</label>
+                                <select class="form-select" name="permitir_revision_respuestas">
+                                    <option value="">No permitir</option>
+                                    <option value="on">Permitir</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="mb-4 lms-input-soft">
                             <label class="form-label small fw-semibold text-secondary">Preguntas a Mostrar al Azar</label>
                             <input type="number" class="form-control" name="preguntas_a_mostrar" value="10" required>
+                        </div>
+
+                        <div class="form-check form-switch mb-3 lms-input-soft p-3">
+                            <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="mostrar_resultado_inmediato" id="mostrar_resultado_inmediato" checked>
+                            <label class="form-check-label small fw-semibold text-secondary" for="mostrar_resultado_inmediato">
+                                Mostrar resultado inmediato
+                            </label>
+                        </div>
+
+                        <div class="mb-4 lms-input-soft">
+                            <label class="form-label small fw-semibold text-secondary">Retroalimentacion final (opcional)</label>
+                            <textarea class="form-control" name="retroalimentacion_final" rows="2" placeholder="Mensaje posterior al envio del examen"></textarea>
                         </div>
 
                         <div class="form-check form-switch mb-4 lms-input-soft p-3">
@@ -109,6 +144,9 @@
                     <select class="form-select" name="categoria">
                         <option value="">-- Todas las categorías --</option>
                         {% for cat in categorias %}
+                            <option value="{{ cat.nombre }}" {% if cat.nombre == categoria_filtro %}selected{% endif %}>{{ cat.nombre }}</option>
+                        {% endfor %}
+                        {% for cat in categorias_base %}
                             <option value="{{ cat }}" {% if cat == categoria_filtro %}selected{% endif %}>{{ cat }}</option>
                         {% endfor %}
                     </select>
@@ -137,10 +175,24 @@
                                         <i class="bi bi-tags-fill me-1"></i> {{ curso.categoria }}
                                     </span>
                                     {% endif %}
+                                    {% if curso.categoria_lms %}
+                                    <span class="badge mb-2" style="background-color: {{ curso.categoria_lms.color }}22; color: {{ curso.categoria_lms.color }}; border: 1px solid {{ curso.categoria_lms.color }}55;">
+                                        <i class="bi {{ curso.categoria_lms.icono }} me-1"></i> {{ curso.categoria_lms.nombre }}
+                                    </span>
+                                    {% endif %}
                                     <div class="d-flex flex-wrap gap-2 mt-2">
                                         <span class="badge badge-soft">
                                             <i class="bi bi-play-btn-fill me-1"></i> {{ curso.lecciones.count }} Clases
                                         </span>
+                                        <span class="badge badge-soft">
+                                            <i class="bi bi-graph-up-arrow me-1"></i> {{ curso.get_nivel_display }}
+                                        </span>
+                                        <span class="badge badge-soft">
+                                            <i class="bi bi-clock-history me-1"></i> {{ curso.duracion_estimada_horas }}h
+                                        </span>
+                                        {% if curso.obligatorio %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Obligatorio</span>
+                                        {% endif %}
                                         {% if curso.evaluacion %}
                                             <span class="badge badge-soft-success">
                                                 <i class="bi bi-check-circle-fill me-1"></i> Examen Configurado
@@ -172,6 +224,10 @@
                                 
                                 <a href="{% url 'generar_examen_ia' curso.id %}" class="btn btn-sm btn-warning btn-pill fw-semibold">
                                     <i class="bi bi-robot"></i> IA
+                                </a>
+
+                                <a href="{% url 'duplicar_version_curso' curso.id %}" class="btn btn-sm btn-outline-dark btn-pill fw-semibold">
+                                    <i class="bi bi-copy"></i> Versionar
                                 </a>
 
                                 <a href="{% url 'eliminar_curso_lms' curso.id %}" class="btn btn-sm btn-outline-danger btn-pill fw-semibold" onclick="return confirm('¿Estás SEGURO de eliminar este curso? Se borrarán todas sus clases, exámenes y el progreso de los colaboradores. Esta acción no se puede deshacer.');">
@@ -208,6 +264,81 @@
                                                 </div>
                                             </div>
                                             <div class="row g-3" id="filtrosSegmentacion{{ curso.id }}" style="{% if curso.publico_general %}display: none;{% else %}display: flex;{% endif %}">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Categoria Dinamica</label>
+                                                    <select class="form-select" name="categoria_lms">
+                                                        <option value="">-- Sin categoria --</option>
+                                                        {% for categoria in categorias %}
+                                                            <option value="{{ categoria.id }}" {% if curso.categoria_lms_id == categoria.id %}selected{% endif %}>{{ categoria.nombre }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Categoria Legacy</label>
+                                                    <input type="text" class="form-control" name="categoria" value="{{ curso.subcartera_vinculada|default:'' }}" placeholder="Texto libre">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold text-secondary">Nivel</label>
+                                                    <select class="form-select" name="nivel">
+                                                        <option value="BASICO" {% if curso.nivel == 'BASICO' %}selected{% endif %}>Basico</option>
+                                                        <option value="INTERMEDIO" {% if curso.nivel == 'INTERMEDIO' %}selected{% endif %}>Intermedio</option>
+                                                        <option value="AVANZADO" {% if curso.nivel == 'AVANZADO' %}selected{% endif %}>Avanzado</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold text-secondary">Duracion (horas)</label>
+                                                    <input type="number" class="form-control" name="duracion_estimada_horas" min="1" value="{{ curso.duracion_estimada_horas }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold text-secondary">Orden sugerido</label>
+                                                    <input type="number" class="form-control" name="orden_sugerido" min="1" value="{{ curso.orden_sugerido }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold text-secondary">Versión</label>
+                                                    <input type="number" class="form-control" name="version" min="1" value="{{ curso.version|default:1 }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold text-secondary">Estado</label>
+                                                    <select class="form-select" name="estado_publicacion">
+                                                        <option value="PUBLICADO" {% if curso.estado_publicacion == 'PUBLICADO' %}selected{% endif %}>Publicado</option>
+                                                        <option value="BORRADOR" {% if curso.estado_publicacion == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                                                        <option value="ARCHIVADO" {% if curso.estado_publicacion == 'ARCHIVADO' %}selected{% endif %}>Archivado</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Prerequisito opcional</label>
+                                                    <select class="form-select" name="prerequisito_curso">
+                                                        <option value="">-- Sin prerequisito --</option>
+                                                        {% for ref in cursos_referencia %}
+                                                            {% if ref.id != curso.id %}
+                                                                <option value="{{ ref.id }}" {% if curso.prerequisito_curso_id == ref.id %}selected{% endif %}>{{ ref.titulo }}</option>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold text-secondary">Módulo padre (opcional)</label>
+                                                    <select class="form-select" name="modulo_padre">
+                                                        <option value="">-- Sin módulo padre --</option>
+                                                        {% for ref in cursos_referencia %}
+                                                            {% if ref.id != curso.id %}
+                                                                <option value="{{ ref.id }}" {% if curso.modulo_padre_id == ref.id %}selected{% endif %}>{{ ref.titulo }}</option>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch bg-white p-3 rounded-3 border">
+                                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="obligatorio" id="obligatorio{{ curso.id }}" {% if curso.obligatorio %}checked{% endif %}>
+                                                        <label class="form-check-label" for="obligatorio{{ curso.id }}">Curso obligatorio</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch bg-white p-3 rounded-3 border">
+                                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="certificado_habilitado" id="certificado{{ curso.id }}" {% if curso.certificado_habilitado %}checked{% endif %}>
+                                                        <label class="form-check-label" for="certificado{{ curso.id }}">Certificado habilitado</label>
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label fw-semibold text-secondary">Filtrar por Rol</label>
                                                     <select class="form-select" name="rol_permitido">
@@ -274,7 +405,7 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus me-2"></i> Crear Nuevo Curso</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{% url 'gestor_lms' %}">
+            <form method="POST" action="{% url 'gestor_lms' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-body p-4 lms-input-soft">
                     <div class="row g-3">
@@ -286,10 +417,80 @@
                             <label class="form-label fw-semibold text-secondary">Descripción</label>
                             <textarea class="form-control" name="descripcion" rows="2"></textarea>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Categoria Dinamica</label>
+                            <select class="form-select" name="categoria_lms">
+                                <option value="">-- Selecciona --</option>
+                                {% for categoria in categorias %}<option value="{{ categoria.id }}">{{ categoria.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Categoria Legacy</label>
+                            <input type="text" class="form-control" name="categoria" placeholder="Ej: Operaciones">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-secondary">Miniatura del módulo (opcional)</label>
+                            <input type="file" class="form-control" name="portada" accept=".jpg,.jpeg,.png,.webp">
+                            <small class="text-muted d-block mt-1">Formatos: JPG, PNG o WEBP. Tamaño máximo: 2 MB. Recomendado: 1280 x 720 px (16:9).</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-secondary">Nivel</label>
+                            <select class="form-select" name="nivel">
+                                <option value="BASICO">Basico</option>
+                                <option value="INTERMEDIO">Intermedio</option>
+                                <option value="AVANZADO">Avanzado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-secondary">Duracion (horas)</label>
+                            <input type="number" class="form-control" name="duracion_estimada_horas" min="1" value="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-secondary">Orden sugerido</label>
+                            <input type="number" class="form-control" name="orden_sugerido" min="1" value="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-secondary">Versión</label>
+                            <input type="number" class="form-control" name="version" min="1" value="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-secondary">Estado</label>
+                            <select class="form-select" name="estado_publicacion">
+                                <option value="PUBLICADO">Publicado</option>
+                                <option value="BORRADOR">Borrador</option>
+                                <option value="ARCHIVADO">Archivado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Prerequisito opcional</label>
+                            <select class="form-select" name="prerequisito_curso">
+                                <option value="">-- Sin prerequisito --</option>
+                                {% for ref in cursos_referencia %}<option value="{{ ref.id }}">{{ ref.titulo }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Módulo padre (opcional)</label>
+                            <select class="form-select" name="modulo_padre">
+                                <option value="">-- Sin módulo padre --</option>
+                                {% for ref in cursos_referencia %}<option value="{{ ref.id }}">{{ ref.titulo }}</option>{% endfor %}
+                            </select>
+                        </div>
                         <div class="col-md-12">
                             <div class="form-check form-switch bg-white p-3 rounded-4 border border-1 border-light">
                                 <input class="form-check-input ms-0 me-3" type="checkbox" name="publico_general" id="checkPublicoNuevo" checked onchange="toggleFiltros('Nuevo')">
                                 <label class="form-check-label fw-semibold text-secondary" for="checkPublicoNuevo">Visible para toda la empresa</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch bg-white p-3 rounded-3 border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="obligatorio" id="obligatorioNuevo">
+                                <label class="form-check-label" for="obligatorioNuevo">Curso obligatorio</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch bg-white p-3 rounded-3 border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="certificado_habilitado" id="certificadoNuevo" checked>
+                                <label class="form-check-label" for="certificadoNuevo">Certificado habilitado</label>
                             </div>
                         </div>
                         <div class="row g-3" id="filtrosSegmentacionNuevo" style="display: none;">
@@ -326,6 +527,44 @@
                 </div>
                 <div class="modal-footer bg-light rounded-bottom-4">
                     <button type="submit" name="crear_curso" class="btn btn-primary btn-pill fw-semibold">Guardar Curso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCrearCategoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-tags-fill me-2"></i>Crear Categoria de Modulo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'gestor_lms' %}">
+                {% csrf_token %}
+                <input type="hidden" name="crear_categoria_lms" value="1">
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Nombre</label>
+                        <input type="text" class="form-control" name="nombre_categoria" placeholder="Ej: Cumplimiento Regulatorio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Descripcion corta</label>
+                        <input type="text" class="form-control" name="descripcion_categoria" placeholder="Para cursos normativos y politicas internas">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold text-secondary">Icono Bootstrap</label>
+                            <input type="text" class="form-control" name="icono_categoria" value="bi-grid-1x2-fill" placeholder="bi-shield-check">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold text-secondary">Color</label>
+                            <input type="color" class="form-control form-control-color w-100" name="color_categoria" value="#183D74">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-dark btn-pill fw-semibold">Guardar Categoria</button>
                 </div>
             </form>
         </div>
@@ -380,6 +619,14 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> O subir archivo PDF</label>
                                 <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-success"><i class="bi bi-controller"></i> URL Simulador</label>
+                                <input type="url" class="form-control" name="url_simulador" placeholder="https://...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark"><i class="bi bi-box-seam"></i> URL SCORM</label>
+                                <input type="url" class="form-control" name="paquete_scorm_url" placeholder="https://...">
                             </div>
                         </div>
                     </div>

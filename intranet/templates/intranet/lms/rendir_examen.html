@@ -12,7 +12,11 @@
         <div>
             <strong>Instrucciones:</strong> {{ evaluacion.instrucciones|default:"Lee atentamente cada pregunta antes de marcar tu respuesta. Al finalizar, revisa bien y presiona 'Enviar Examen'." }}
             <br>
-            <small>Nota aprobatoria requerida: <strong>{{ evaluacion.puntaje_aprobatorio }}</strong> | Puntaje máximo posible: <strong>{{ evaluacion.puntaje_maximo }}</strong></small>
+            <small>
+                Nota aprobatoria requerida: <strong>{{ evaluacion.puntaje_aprobatorio }}</strong> | Puntaje máximo posible: <strong>{{ evaluacion.puntaje_maximo }}</strong>
+                | Intentos: <strong>{{ matricula.intentos_realizados }}</strong>{% if evaluacion.intentos_maximos == 0 %}/ilimitados{% else %}/{{ evaluacion.intentos_maximos }}{% endif %}
+                | Revision: <strong>{% if evaluacion.permitir_revision_respuestas %}Habilitada{% else %}No habilitada{% endif %}</strong>
+            </small>
         </div>
     </div>
 
