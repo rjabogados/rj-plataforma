@@ -145,6 +145,7 @@ urlpatterns = [
     path('api/webhook/', views.webhook_receptor, name='webhook_receptor'),
     path('reclutamiento/dashboard/', views.dashboard_reclutamiento, name='dashboard_reclutamiento'),
     path('reclutamiento/candidatos/', views.lista_candidatos, name='lista_candidatos'),
+    path('reclutamiento/candidatos/exportar/', views.exportar_candidatos_csv, name='exportar_candidatos'),
     path('api/actualizar-estado/', actualizar_estado_ajax, name='ajax_actualizar_estado'),
     path('api/obtener-candidato/<int:candidato_id>/', obtener_candidato_ajax, name='api_obtener_candidato'),
     path('api/actualizar-candidato/', actualizar_candidato_ajax, name='api_actualizar_candidato'),

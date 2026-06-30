@@ -377,4 +377,28 @@ def metricas_dashboard_ajax(request):
         },
         'grafico_sedes': data_sede,
         'grafico_estados': data_estado
-    })
+    })import csv
+from django.http import HttpResponse
+
+@login_required
+def exportar_candidatos_csv(request):
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = 'attachment; filename="Base_Reclutamiento.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['ID_Matriz', 'Nombre_Completo', 'Documento', 'Telefono', 'Estado', 'Sede', 'Canal', 'Fecha_Registro'])
+    
+    candidatos = CandidatoReclutamiento.objects.all().order_by('-fecha_registro')
+    for c in candidatos:
+        writer.writerow([
+            c.id_matriz,
+            c.nombre_completo,
+            c.documento,
+            c.telefono,
+            c.estado,
+            c.sede,
+            c.canal,
+            c.fecha_registro.strftime('%Y-%m-%d %H:%M') if c.fecha_registro else ''
+        ])
+        
+    return response

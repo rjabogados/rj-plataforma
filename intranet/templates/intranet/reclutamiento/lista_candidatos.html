@@ -12,9 +12,14 @@
             <h2 class="fw-bold m-0 text-primary">Base de Talentos RJ</h2>
             <p class="text-muted small mb-0">Matriz con IA de limpieza, historial y auditoría de contactos.</p>
         </div>
-        <a href="{% url 'dashboard_reclutamiento' %}" class="btn btn-outline-primary btn-pill fw-semibold shadow-sm">
-            <i class="bi bi-graph-up-arrow me-2"></i>Ver dashboard
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'exportar_candidatos' %}" class="btn btn-success btn-pill fw-semibold shadow-sm">
+                <i class="bi bi-file-earmark-excel-fill me-2"></i>Exportar a CSV
+            </a>
+            <a href="{% url 'dashboard_reclutamiento' %}" class="btn btn-outline-primary btn-pill fw-semibold shadow-sm">
+                <i class="bi bi-graph-up-arrow me-2"></i>Ver dashboard
+            </a>
+        </div>
     </div>
 
     <div class="panel-shell overflow-hidden">
@@ -121,6 +126,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block modals %}
 <div class="modal fade" id="modalEdicion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -251,6 +259,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block content %}
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
