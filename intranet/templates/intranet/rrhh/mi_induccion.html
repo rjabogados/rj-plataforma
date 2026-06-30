@@ -42,7 +42,7 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 14px;
+        width: 8px;
         background: rgba(255, 255, 255, 0.5);
         left: 50%;
         transform: translateX(-50%);
@@ -55,7 +55,7 @@
     .roadmap-progress-line {
         position: absolute;
         top: 0;
-        width: 14px;
+        width: 8px;
         background: linear-gradient(to bottom, #00f2fe 0%, #4facfe 100%);
         left: 50%;
         transform: translateX(-50%);
@@ -68,10 +68,10 @@
     /* El hombrecito caminando al borde del progreso */
     .walking-character {
         position: absolute;
-        bottom: -25px; /* se alinea al borde de la línea de progreso */
+        bottom: -20px; /* se alinea al borde de la línea de progreso */
         left: 50%;
         transform: translateX(-50%);
-        font-size: 3rem;
+        font-size: 2.2rem;
         z-index: 10;
         animation: walk-bounce 0.5s infinite alternate;
         text-shadow: 0 5px 10px rgba(0,0,0,0.3);
@@ -88,27 +88,27 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        margin: 50px 0;
+        margin: 35px 0;
         position: relative;
         z-index: 3;
     }
 
     /* El nodo central (El Círculo) */
     .step-node {
-        width: 90px;
-        height: 90px;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2.2rem;
+        font-size: 1.5rem;
         color: white;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.2);
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         position: relative;
         cursor: pointer;
         text-decoration: none !important;
-        border: 4px solid white;
+        border: 3px solid white;
     }
 
     .step-node:hover { transform: scale(1.15) rotate(10deg); }
@@ -121,37 +121,37 @@
         animation: pulse-active 2s infinite;
     }
     
-    .node-pending { background: rgba(255, 255, 255, 0.6); color: #adb5bd; border: 4px solid rgba(255,255,255,0.8); box-shadow: none; backdrop-filter: blur(4px); }
+    .node-pending { background: rgba(255, 255, 255, 0.6); color: #adb5bd; border: 3px solid rgba(255,255,255,0.8); box-shadow: none; backdrop-filter: blur(4px); }
 
     /* La Tarjeta de Información flotante glassmorphism */
     .step-info {
         position: absolute;
-        width: 350px;
-        background: rgba(255, 255, 255, 0.9);
+        width: 320px;
+        background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
-        padding: 25px;
-        border-radius: 24px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         transition: all 0.3s ease;
-        border: 1px solid rgba(255,255,255,0.4);
+        border: 1px solid rgba(255,255,255,0.6);
     }
     
-    .path-step:hover .step-info { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    .path-step:hover .step-info { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
 
     /* Alternancia Izquierda/Derecha para escritorio */
-    .path-step:nth-child(odd) .step-info { left: calc(50% + 80px); text-align: left; }
-    .path-step:nth-child(even) .step-info { right: calc(50% + 80px); text-align: right; }
+    .path-step:nth-child(odd) .step-info { left: calc(50% + 50px); text-align: left; }
+    .path-step:nth-child(even) .step-info { right: calc(50% + 50px); text-align: right; }
     .path-step:nth-child(even) .step-info .d-flex { justify-content: flex-end; }
 
     /* Animaciones */
     @keyframes pulse-active {
-        0% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.7); }
-        70% { box-shadow: 0 0 0 25px rgba(255, 65, 108, 0); }
+        0% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.6); }
+        70% { box-shadow: 0 0 0 20px rgba(255, 65, 108, 0); }
         100% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0); }
     }
     @keyframes float {
         0% { transform: translateY(0px); }
-        50% { transform: translateY(-15px); }
+        50% { transform: translateY(-10px); }
         100% { transform: translateY(0px); }
     }
     .floating-element { animation: float 4s ease-in-out infinite; }
@@ -159,9 +159,9 @@
     /* Adaptación a celulares (Se vuelve una lista recta) */
     @media (max-width: 768px) {
         .roadmap-line, .roadmap-progress-line { left: 40px; }
-        .path-step { justify-content: flex-start; padding-left: 0px; margin: 40px 0; }
+        .path-step { justify-content: flex-start; padding-left: 0px; margin: 30px 0; }
         .path-step:nth-child(odd) .step-info, .path-step:nth-child(even) .step-info {
-            position: relative; left: 20px; right: auto; width: calc(100% - 100px); text-align: left;
+            position: relative; left: 20px; right: auto; width: calc(100% - 80px); text-align: left;
         }
         .path-step:nth-child(even) .step-info .d-flex { justify-content: flex-start; }
     }
@@ -172,7 +172,7 @@
     <!-- ENCABEZADO CELEBRATORIO -->
     <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm mb-4 text-center position-relative overflow-hidden" style="border-bottom: 5px solid #4facfe;">
         <div class="position-relative z-index-2">
-            <h1 class="fw-bold mb-2" style="font-size: 2.8rem; background: linear-gradient(135deg, #1e3c72, #2a5298); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <h1 class="fw-bold mb-2" style="font-size: 2.2rem; background: linear-gradient(135deg, #1e3c72, #2a5298); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                 ¡Comienza tu Aventura, {{ request.user.first_name }}! 🗺️
             </h1>
             <p class="text-secondary fs-5 mb-4">Sigue el camino, completa tus misiones y conviértete en un experto de RJ Abogados.</p>
