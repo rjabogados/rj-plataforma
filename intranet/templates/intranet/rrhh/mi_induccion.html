@@ -1,17 +1,40 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
 
-<!-- ESTILOS MÁGICOS PARA EL CAMINO ANIMADO -->
+<!-- LIBRERÍA CONFETTI -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<!-- ESTILOS MÁGICOS PARA EL CAMINO ANIMADO A1 -->
 <style>
-    .induccion-bg { background-color: #f0f4f8; min-height: 80vh; border-radius: 20px; overflow: hidden; padding-bottom: 80px; }
+    /* Fondo espectacular con imagen de paisaje tipo videojuego / aventura */
+    .induccion-bg { 
+        background: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80&w=2000') center center / cover no-repeat fixed;
+        min-height: 85vh; 
+        border-radius: 24px; 
+        overflow: hidden; 
+        padding-bottom: 80px; 
+        position: relative;
+        box-shadow: inset 0 0 150px rgba(0,0,0,0.5);
+    }
     
+    /* Overlay glassmorphism para que lea bien el texto */
+    .induccion-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 0;
+    }
+
     /* El contenedor del mapa */
     .roadmap-container {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 40px 0;
+        padding: 60px 0;
         position: relative;
+        z-index: 2;
     }
 
     /* La línea del camino */
@@ -19,25 +42,44 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        width: 8px;
-        background-color: #dde3ec;
+        width: 14px;
+        background: rgba(255, 255, 255, 0.5);
         left: 50%;
         transform: translateX(-50%);
         border-radius: 10px;
         z-index: 1;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
     }
 
     /* La línea de progreso (lo que ya avanzó) */
     .roadmap-progress-line {
         position: absolute;
         top: 0;
-        width: 8px;
-        background: linear-gradient(to bottom, #28a745, #ffc107);
+        width: 14px;
+        background: linear-gradient(to bottom, #00f2fe 0%, #4facfe 100%);
         left: 50%;
         transform: translateX(-50%);
         border-radius: 10px;
         z-index: 2;
-        transition: height 1s ease-in-out;
+        transition: height 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 0 15px #4facfe;
+    }
+
+    /* El hombrecito caminando al borde del progreso */
+    .walking-character {
+        position: absolute;
+        bottom: -25px; /* se alinea al borde de la línea de progreso */
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 3rem;
+        z-index: 10;
+        animation: walk-bounce 0.5s infinite alternate;
+        text-shadow: 0 5px 10px rgba(0,0,0,0.3);
+    }
+
+    @keyframes walk-bounce {
+        0% { transform: translate(-50%, 0) rotate(-5deg); }
+        100% { transform: translate(-50%, -10px) rotate(5deg); }
     }
 
     /* Cada parada en el camino */
@@ -46,67 +88,70 @@
         align-items: center;
         justify-content: center;
         width: 100%;
-        margin: 40px 0;
+        margin: 50px 0;
         position: relative;
         z-index: 3;
     }
 
     /* El nodo central (El Círculo) */
     .step-node {
-        width: 80px;
-        height: 80px;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
+        font-size: 2.2rem;
         color: white;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         position: relative;
         cursor: pointer;
         text-decoration: none !important;
+        border: 4px solid white;
     }
 
-    .step-node:hover { transform: scale(1.15); }
+    .step-node:hover { transform: scale(1.15) rotate(10deg); }
 
     /* ESTADOS VISUALES DEL NODO */
-    .node-completed { background: linear-gradient(135deg, #ffc107, #ff9800); }
+    .node-completed { background: linear-gradient(135deg, #11998e, #38ef7d); }
     
     .node-active { 
-        background: linear-gradient(135deg, #183D74, #2a63b8); 
-        animation: pulse-blue 2s infinite;
+        background: linear-gradient(135deg, #ff416c, #ff4b2b); 
+        animation: pulse-active 2s infinite;
     }
     
-    .node-pending { background: #e9ecef; color: #adb5bd; border: 5px solid #ced4da; box-shadow: none; }
+    .node-pending { background: rgba(255, 255, 255, 0.6); color: #adb5bd; border: 4px solid rgba(255,255,255,0.8); box-shadow: none; backdrop-filter: blur(4px); }
 
-    /* La Tarjeta de Información flotante */
+    /* La Tarjeta de Información flotante glassmorphism */
     .step-info {
         position: absolute;
-        width: 320px;
-        background: white;
-        padding: 20px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        transition: transform 0.3s ease;
+        width: 350px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        padding: 25px;
+        border-radius: 24px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.4);
     }
     
-    .path-step:hover .step-info { transform: translateY(-5px); }
+    .path-step:hover .step-info { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
 
     /* Alternancia Izquierda/Derecha para escritorio */
-    .path-step:nth-child(odd) .step-info { left: calc(50% + 70px); text-align: left; }
-    .path-step:nth-child(even) .step-info { right: calc(50% + 70px); text-align: right; }
+    .path-step:nth-child(odd) .step-info { left: calc(50% + 80px); text-align: left; }
+    .path-step:nth-child(even) .step-info { right: calc(50% + 80px); text-align: right; }
     .path-step:nth-child(even) .step-info .d-flex { justify-content: flex-end; }
 
     /* Animaciones */
-    @keyframes pulse-blue {
-        0% { box-shadow: 0 0 0 0 rgba(24, 61, 116, 0.7); }
-        70% { box-shadow: 0 0 0 20px rgba(24, 61, 116, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(24, 61, 116, 0); }
+    @keyframes pulse-active {
+        0% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.7); }
+        70% { box-shadow: 0 0 0 25px rgba(255, 65, 108, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0); }
     }
     @keyframes float {
         0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+        50% { transform: translateY(-15px); }
         100% { transform: translateY(0px); }
     }
     .floating-element { animation: float 4s ease-in-out infinite; }
@@ -114,7 +159,7 @@
     /* Adaptación a celulares (Se vuelve una lista recta) */
     @media (max-width: 768px) {
         .roadmap-line, .roadmap-progress-line { left: 40px; }
-        .path-step { justify-content: flex-start; padding-left: 0px; margin: 30px 0; }
+        .path-step { justify-content: flex-start; padding-left: 0px; margin: 40px 0; }
         .path-step:nth-child(odd) .step-info, .path-step:nth-child(even) .step-info {
             position: relative; left: 20px; right: auto; width: calc(100% - 100px); text-align: left;
         }
@@ -125,45 +170,51 @@
 <div class="container-fluid p-0 mb-5">
     
     <!-- ENCABEZADO CELEBRATORIO -->
-    <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm mb-4 text-center position-relative overflow-hidden">
+    <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm mb-4 text-center position-relative overflow-hidden" style="border-bottom: 5px solid #4facfe;">
         <div class="position-relative z-index-2">
-            <h1 class="fw-bold text-dark mb-2" style="font-size: 2.5rem;">¡Hola, {{ request.user.first_name }}! 👋</h1>
-            <p class="text-secondary fs-5 mb-4">Bienvenido(a) a la familia RJ Abogados. Esta es tu ruta de despegue.</p>
+            <h1 class="fw-bold mb-2" style="font-size: 2.8rem; background: linear-gradient(135deg, #1e3c72, #2a5298); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                ¡Comienza tu Aventura, {{ request.user.first_name }}! 🗺️
+            </h1>
+            <p class="text-secondary fs-5 mb-4">Sigue el camino, completa tus misiones y conviértete en un experto de RJ Abogados.</p>
             {% if ruta_activa %}
-            <span class="badge bg-dark-subtle text-dark border border-dark-subtle mb-3">Ruta activa: {{ ruta_activa.nombre }}</span>
+            <span class="badge bg-primary text-white mb-3 fs-6 px-4 py-2 rounded-pill shadow-sm"><i class="bi bi-map-fill me-2"></i>Ruta: {{ ruta_activa.nombre }}</span>
             {% endif %}
             
             <div class="mx-auto" style="max-width: 600px;">
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="fw-bold text-primary">Progreso de tu Inducción</span>
-                    <span class="fw-bold text-success">{{ porcentaje }}% Completado</span>
+                    <span class="fw-bold text-primary">Progreso de la Expedición</span>
+                    <span class="fw-bold" style="color: #4facfe;">{{ porcentaje }}% Completado</span>
                 </div>
-                <div class="progress bg-light shadow-inner" style="height: 25px; border-radius: 50px;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: {{ porcentaje }}%;"></div>
+                <div class="progress bg-light shadow-inner" style="height: 30px; border-radius: 50px; overflow: hidden; border: 2px solid #e9ecef;">
+                    <div id="progress-bar-animated" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%; background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%); transition: width 2s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
                 </div>
             </div>
         </div>
         <!-- Decoraciones de fondo -->
-        <i class="bi bi-rocket-takeoff-fill text-primary opacity-10 floating-element" style="font-size: 15rem; position: absolute; right: -20px; top: -30px;"></i>
+        <i class="bi bi-compass-fill text-primary opacity-10 floating-element" style="font-size: 15rem; position: absolute; right: -20px; top: -30px;"></i>
     </div>
 
-    <!-- EL CAMINO ANIMADO -->
-    <div class="induccion-bg shadow-sm border">
+    <!-- EL CAMINO ANIMADO A1 -->
+    <div class="induccion-bg shadow border-0">
+        <div class="induccion-overlay"></div>
         
-        {% if total == 0 %}
-        <div class="text-center py-5 mt-5">
-            <div class="floating-element d-inline-block bg-white p-4 rounded-circle shadow mb-4">
-                <i class="bi bi-cup-hot-fill text-warning" style="font-size: 4rem;"></i>
+        {% if total_modulos == 0 %}
+        <div class="text-center py-5 mt-5 position-relative z-index-2">
+            <div class="floating-element d-inline-block bg-white p-4 rounded-circle shadow-lg mb-4">
+                <i class="bi bi-trophy-fill text-warning" style="font-size: 5rem;"></i>
             </div>
-            <h3 class="fw-bold text-dark">Todo está listo</h3>
-            <p class="text-muted">No tienes módulos pendientes. ¡Acomódate y disfruta tu primer día!</p>
+            <h2 class="fw-bold text-dark">¡Misión Cumplida!</h2>
+            <p class="text-dark fs-5 fw-medium">Has conquistado todos los módulos. ¡Eres una leyenda en RJ Abogados!</p>
         </div>
         {% else %}
         
         <div class="roadmap-container">
             <!-- Las Líneas del camino -->
             <div class="roadmap-line"></div>
-            <div class="roadmap-progress-line" style="height: {{ porcentaje }}%;"></div>
+            <!-- La línea de progreso con el hombrecito animado -->
+            <div class="roadmap-progress-line" id="roadProgress" style="height: 0%;">
+                <div class="walking-character" id="walkingChar" style="display: none;">🏃‍♂️</div>
+            </div>
 
             <!-- Recorremos los módulos -->
             {% for matricula in mis_modulos %}
@@ -171,15 +222,15 @@
                 
                 <!-- EL NODO (CÍRCULO CENTRAL) -->
                 {% if matricula.estado == 'COMPLETADO' %}
-                    <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-completed text-white">
-                        <i class="bi bi-star-fill"></i>
+                    <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-completed shadow-lg">
+                        <i class="bi bi-check-circle-fill"></i>
                     </a>
                 {% elif matricula.id in bloqueados_ids %}
                     <div class="step-node node-pending">
                         <i class="bi bi-lock-fill"></i>
                     </div>
                 {% elif matricula.estado == 'PENDIENTE' or matricula.estado == 'EN_CURSO' or matricula.estado == 'EVALUANDO' %}
-                    <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-active text-white">
+                    <a href="{% url 'detalle_curso' matricula.curso.id %}" class="step-node node-active shadow-lg">
                         <i class="bi bi-play-fill" style="margin-left: 5px;"></i>
                     </a>
                 {% else %}
@@ -190,29 +241,28 @@
 
                 <!-- LA TARJETA DE INFORMACIÓN -->
                 <div class="step-info">
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold small">Parada {{ forloop.counter }}</span>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="badge bg-dark text-white rounded-pill px-3 py-2 fw-bold small"><i class="bi bi-geo-alt-fill me-1"></i>Misión {{ forloop.counter }}</span>
                         {% if matricula.estado == 'COMPLETADO' %}
-                            <span class="ms-2 badge bg-success-subtle text-success"><i class="bi bi-check2-all"></i> Listo</span>
+                            <span class="ms-2 badge bg-success-subtle text-success py-2 px-3 rounded-pill fw-bold border border-success"><i class="bi bi-patch-check-fill me-1"></i>Logrado</span>
                         {% endif %}
                     </div>
                     
-                    <h5 class="fw-bold text-dark mb-2">{{ matricula.curso.titulo }}</h5>
-                    <p class="text-muted small mb-3">{{ matricula.curso.descripcion|truncatechars:80 }}</p>
+                    <h5 class="fw-bold text-dark mb-2 lh-sm">{{ matricula.curso.titulo }}</h5>
+                    <p class="text-secondary small mb-4 fw-medium">{{ matricula.curso.descripcion|truncatechars:100 }}</p>
                     
                     <div class="d-flex">
                         {% if matricula.estado == 'COMPLETADO' %}
-                            <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-light text-success fw-bold border-success w-100 rounded-pill">
-                                <i class="bi bi-arrow-repeat me-1"></i> Repasar
+                            <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-light text-success fw-bold border-success w-100 rounded-pill py-2">
+                                <i class="bi bi-arrow-repeat me-1"></i> Volver a jugar
                             </a>
                         {% elif matricula.id in bloqueados_ids %}
-                            <div class="alert alert-warning small py-2 mb-2">Debes completar el módulo prerequisito para desbloquear esta parada.</div>
-                            <button class="btn btn-sm btn-secondary fw-bold w-100 rounded-pill" disabled>
-                                <i class="bi bi-lock-fill me-1"></i> Bloqueado
+                            <button class="btn btn-sm btn-secondary fw-bold w-100 rounded-pill py-2" disabled>
+                                <i class="bi bi-lock-fill me-1"></i> Zona Bloqueada
                             </button>
                         {% else %}
-                            <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-primary fw-bold w-100 rounded-pill shadow-sm" style="background-color: #183D74; border: none;">
-                                <i class="bi bi-door-open-fill me-1"></i> Entrar al Módulo
+                            <a href="{% url 'detalle_curso' matricula.curso.id %}" class="btn btn-sm btn-primary fw-bold w-100 rounded-pill shadow py-2" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); border: none;">
+                                <i class="bi bi-joystick me-1"></i> Iniciar Misión
                             </a>
                         {% endif %}
                     </div>
@@ -221,10 +271,10 @@
             </div>
             {% endfor %}
             
-            <!-- META FINAL (Bandera de llegada) -->
-            <div class="path-step" style="margin-top: 60px;">
-                <div class="step-node {% if porcentaje == 100 %}bg-success{% else %}node-pending{% endif %}" style="width: 100px; height: 100px; font-size: 3rem;">
-                    <i class="bi bi-flag-fill {% if porcentaje == 100 %}text-white floating-element{% endif %}"></i>
+            <!-- META FINAL (Castillo/Bandera de llegada) -->
+            <div class="path-step" style="margin-top: 80px;">
+                <div class="step-node shadow-lg {% if porcentaje == 100 %}bg-warning{% else %}node-pending{% endif %}" style="width: 120px; height: 120px; font-size: 4rem; border: 5px solid white;">
+                    <i class="bi bi-bank2 {% if porcentaje == 100 %}text-white floating-element{% endif %}"></i>
                 </div>
             </div>
 
@@ -233,4 +283,60 @@
 
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const porcentajeProgreso = {{ porcentaje }};
+    
+    // Animar la barra de arriba
+    setTimeout(() => {
+        document.getElementById('progress-bar-animated').style.width = porcentajeProgreso + '%';
+        
+        // Animar la línea del camino (roadProgress)
+        const roadProgress = document.getElementById('roadProgress');
+        const walkingChar = document.getElementById('walkingChar');
+        
+        if (roadProgress) {
+            roadProgress.style.height = porcentajeProgreso + '%';
+            walkingChar.style.display = 'block'; // Mostrar al personaje corriendo
+        }
+
+        // Si llegó al 100%, tirar serpentina brutal (Confetti)
+        if (porcentajeProgreso === 100) {
+            setTimeout(() => {
+                const duration = 5 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+                function randomInRange(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+
+                const interval = setInterval(function() {
+                    const timeLeft = animationEnd - Date.now();
+
+                    if (timeLeft <= 0) {
+                        return clearInterval(interval);
+                    }
+
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+            }, 2000); // Lanzar confetti justo cuando el personaje llega a la meta
+        } else if (porcentajeProgreso > 0 && {{ completados|default:0 }} > 0) {
+            // Un poco de confetti normal por avanzar (si no está al 100%)
+            setTimeout(() => {
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#00f2fe', '#4facfe', '#11998e', '#ff416c']
+                });
+            }, 2000); // Dar tiempo a que el personaje baje
+        }
+    }, 300); // Ligero delay para que se vea la animación al cargar
+});
+</script>
+
 {% endblock %}
