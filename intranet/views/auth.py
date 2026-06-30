@@ -19,14 +19,37 @@ from intranet.models import (
 # Importamos nuestras herramientas de seguridad
 from .utils import solo_directivos, solo_supervisores
 
+from django.core.cache import cache
+
 def login_view(request):
     if request.method == 'POST':
-        user = authenticate(request, username=request.POST.get('username'), password=request.POST.get('password'))
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        # Generar clave de cache para este usuario
+        cache_key = f'login_attempts_{username}'
+        attempts = cache.get(cache_key, 0)
+        
+        # Si excedió los intentos (ej. 5), bloqueamos por 15 minutos (900 seg)
+        if attempts >= 5:
+            return render(request, 'intranet/auth/login.html', {
+                'error': 'Cuenta bloqueada temporalmente por demasiados intentos fallidos. Intente nuevamente en 15 minutos.'
+            })
+            
+        user = authenticate(request, username=username, password=password)
         if user is not None:
-            login(request, user)
-            return redirect('inicio')
+            if user.is_active:
+                # Login exitoso: Limpiamos los intentos
+                cache.delete(cache_key)
+                login(request, user)
+                return redirect('inicio')
+            else:
+                return render(request, 'intranet/auth/login.html', {'error': 'Cuenta deshabilitada. Contacte a soporte.'})
         else:
+            # Login fallido: incrementamos el contador
+            cache.set(cache_key, attempts + 1, timeout=900)
             return render(request, 'intranet/auth/login.html', {'error': 'Usuario o contraseña incorrectos'})
+            
     return render(request, 'intranet/auth/login.html')
 
 @login_required
