@@ -70,11 +70,17 @@ def control_asistencia(request):
     queryset = Asistencia.objects.filter(fecha__range=[f_inicio, f_fin]).select_related(
         'colaborador__user', 'colaborador__negocio'
     )
+    sede = request.GET.get('sede')
+    if sede:
+        queryset = queryset.filter(colaborador__sede=sede)
     
+    from intranet.models.rrhh_core import Colaborador
     return render(request, 'intranet/rrhh/asistencia.html', {
         'asistencias': queryset.order_by('-fecha', 'colaborador__user__last_name'), 
         'fecha_inicio': f_inicio.strftime('%Y-%m-%d'), 
         'fecha_fin': f_fin.strftime('%Y-%m-%d'), 
+        'sedes': Colaborador.SEDES,
+        'sede_actual': sede,
         'hoy': date.today()
     })
 

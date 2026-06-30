@@ -53,6 +53,8 @@ def filtrar_colaboradores(queryset, params, perfil=None):
 
     visibilidad = filtros_personal_disponibles(perfil)
 
+    sede = (params.get('sede') or '').strip()
+
     if busqueda:
         queryset = queryset.filter(
             Q(user__first_name__icontains=busqueda) |
@@ -75,6 +77,10 @@ def filtrar_colaboradores(queryset, params, perfil=None):
 
     if visibilidad.get('subcartera') and subcartera:
         queryset = queryset.filter(subcartera__icontains=subcartera)
+
+    # El filtro de sede está disponible para todos los que puedan filtrar
+    if sede:
+        queryset = queryset.filter(sede=sede)
 
     return queryset
 

@@ -7,7 +7,16 @@
             <p class="text-muted mb-0">Resumen operativo del personal, alertas de estructura y acceso rápido a decisiones de gestión.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <a href="{% url 'exportar_directorio_rrhh' %}" class="btn btn-success btn-pill fw-semibold shadow-sm px-4">
+            <form method="GET" class="d-flex align-items-center me-2">
+                <label class="fw-bold me-2 small text-muted">Sede:</label>
+                <select name="sede" class="form-select form-select-sm border-secondary shadow-sm" onchange="this.form.submit()">
+                    <option value="">Todas las Sedes</option>
+                    {% for s_key, s_name in sedes %}
+                    <option value="{{ s_key }}" {% if s_key == sede_actual %}selected{% endif %}>{{ s_name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <a href="{% url 'exportar_directorio_rrhh' %}{% if sede_actual %}?sede={{ sede_actual }}{% endif %}" class="btn btn-success btn-pill fw-semibold shadow-sm px-4">
                 <i class="bi bi-download me-2"></i>Exportar Directorio
             </a>
             <a href="{% url 'colaboradores' %}" class="btn btn-outline-primary btn-pill fw-semibold shadow-sm px-4">

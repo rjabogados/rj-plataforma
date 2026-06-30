@@ -14,15 +14,24 @@
             <div class="card shadow-sm border-0 rounded-4 bg-white h-100 border-start border-primary border-4">
                 <div class="card-body p-4">
                     <form method="GET" action="{% url 'asistencia' %}" class="row g-3 align-items-end">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted"><i class="bi bi-calendar-event text-primary"></i> Desde (Fecha Inicio)</label>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted"><i class="bi bi-calendar-event text-primary"></i> Desde</label>
                             <input type="date" class="form-control border-secondary" name="fecha_inicio" value="{{ fecha_inicio }}" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-muted"><i class="bi bi-calendar-check text-primary"></i> Hasta (Fecha Fin)</label>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted"><i class="bi bi-calendar-check text-primary"></i> Hasta</label>
                             <input type="date" class="form-control border-secondary" name="fecha_fin" value="{{ fecha_fin }}" required>
                         </div>
-                        <div class="col-md-4 d-flex gap-2">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted"><i class="bi bi-geo-alt-fill text-primary"></i> Sede</label>
+                            <select name="sede" class="form-select border-secondary">
+                                <option value="">Todas las Sedes</option>
+                                {% for s_key, s_name in sedes %}
+                                <option value="{{ s_key }}" {% if sede_actual == s_key %}selected{% endif %}>{{ s_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
                             <button type="submit" class="btn btn-dark fw-bold w-100 shadow-sm" title="Ver en pantalla">
                                 <i class="bi bi-search"></i> Filtrar
                             </button>

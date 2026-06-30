@@ -33,6 +33,15 @@
                         <input type="text" name="documento" class="form-control bg-light" value="{{ request.GET.documento|default:'' }}">
                     </div>
                     <div class="col-lg-2">
+                        <label class="form-label small fw-semibold text-muted">Sede</label>
+                        <select class="form-select bg-light" name="sede">
+                            <option value="">Todas</option>
+                            {% for s_key, s_name in sedes %}
+                                <option value="{{ s_key }}" {% if request.GET.sede == s_key %}selected{% endif %}>{{ s_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
                         <label class="form-label small fw-semibold text-muted">Área</label>
                         <select class="form-select bg-light" name="area">
                             <option value="">Todas</option>
@@ -199,6 +208,14 @@
                                 <option value="">-- Sin asignar --</option>
                                 {% for n in negocios %}
                                 <option value="{{ n.id }}">{{ n.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Sede Operativa</label>
+                            <select class="form-select" name="sede" required>
+                                {% for key, value in sedes %}
+                                <option value="{{ key }}">{{ value }}</option>
                                 {% endfor %}
                             </select>
                         </div>

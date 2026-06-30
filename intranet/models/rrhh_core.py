@@ -49,10 +49,17 @@ class Colaborador(models.Model):
         ('TC', 'Turno Completo'),
         ('PT', 'Part Time')
     ]
+    SEDES = [
+        ('LIMA1', 'Lima 1 (Lince)'),
+        ('LIMA2', 'Lima 2 (San Isidro, Lima)'),
+        ('TRUJILLO1', 'Trujillo 1 (San Isidro, Trujillo)'),
+        ('TRUJILLO2', 'Trujillo 2 (Ayacucho)')
+    ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
     dni = models.CharField(max_length=20, unique=True, db_index=True, null=True, blank=True)
     rol = models.CharField(max_length=50, choices=ROLES, default='ASESOR', db_index=True)
+    sede = models.CharField(max_length=20, choices=SEDES, default='LIMA1', db_index=True)
     negocio = models.ForeignKey(Negocio, on_delete=models.SET_NULL, null=True, blank=True)
     area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name='colaboradores')
     cargo = models.ForeignKey(Cargo, on_delete=models.SET_NULL, null=True, blank=True, related_name='colaboradores')

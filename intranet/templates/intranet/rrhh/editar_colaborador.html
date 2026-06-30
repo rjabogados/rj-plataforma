@@ -66,6 +66,14 @@
                         </select>
                     </div>
                     <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Sede Operativa</label>
+                        <select class="form-select border-secondary" name="sede" required>
+                            {% for key, value in sedes %}
+                            <option value="{{ key }}" {% if colab.sede == key %}selected{% endif %}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label small fw-bold text-muted">Rol en la empresa</label>
                         <select class="form-select border-secondary" name="rol" required>
                             {% for key, value in roles %}

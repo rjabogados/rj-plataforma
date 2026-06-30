@@ -337,6 +337,7 @@ def colaboradores(request):
         subcartera = request.POST.get('subcartera', '').strip() or None
         tipo_horario = request.POST.get('tipo_horario')
         
+        sede_val = request.POST.get('sede') or 'LIMA1'
         username_custom = request.POST.get('username', '').strip()
         password_custom = request.POST.get('password', '').strip()
 
@@ -357,7 +358,7 @@ def colaboradores(request):
                 password=password_final, first_name=nombres, last_name=apellidos
             )
             Colaborador.objects.create(
-                user=nuevo_user, dni=dni_val, rol=rol_val, negocio=negocio_instancia, 
+                user=nuevo_user, dni=dni_val, rol=rol_val, sede=sede_val, negocio=negocio_instancia, 
                 area=area_instancia, cargo=cargo_instancia, subcartera=subcartera,
                 tipo_horario=tipo_horario, hora_ingreso=request.POST.get('hora_ingreso') or None, 
                 hora_salida=request.POST.get('hora_salida') or None, fecha_ingreso=fecha_formal
@@ -376,6 +377,7 @@ def colaboradores(request):
         'areas': Area.objects.filter(activa=True).order_by('nombre'),
         'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('area__nombre', 'nombre'),
         'roles': Colaborador.ROLES,
+        'sedes': Colaborador.SEDES,
         'tipos_horario': Colaborador.TIPO_HORARIO,
         'subcarteras': subcarteras_catalogo(),
         'filtros_disponibles': filtros_personal_disponibles(perfil_actual),
@@ -474,6 +476,7 @@ def editar_colaborador(request, pk):
         if request.POST.get('fecha_ingreso'):
             colab.fecha_ingreso = datetime.strptime(request.POST.get('fecha_ingreso'), '%Y-%m-%d').date()
         
+        colab.sede = request.POST.get('sede')
         negocio_id = request.POST.get('negocio')
         colab.negocio = Negocio.objects.get(id=negocio_id) if negocio_id else None
         area_id = request.POST.get('area')
@@ -511,6 +514,7 @@ def editar_colaborador(request, pk):
         'areas': Area.objects.filter(activa=True).order_by('nombre'),
         'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('area__nombre', 'nombre'),
         'roles': Colaborador.ROLES,
+        'sedes': Colaborador.SEDES,
         'tipos_horario': Colaborador.TIPO_HORARIO,
         'subcarteras': subcarteras_catalogo(),
         'tiene_onboarding': tiene_onboarding

@@ -193,9 +193,15 @@ def dashboard(request):
 @solo_directivos
 def dashboard_rrhh(request):
     colaboradores = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').all()
-    tickets_pendientes = Ticket.objects.filter(estado='PENDIENTE').count()
-    vacaciones_pendientes = SolicitudVacaciones.objects.filter(estado='PENDIENTE').count()
     asistencias_hoy_qs = Asistencia.objects.filter(fecha=date.today()).select_related('colaborador__user', 'colaborador__area', 'colaborador__cargo')
+    
+    sede = request.GET.get('sede')
+    if sede:
+        colaboradores = colaboradores.filter(sede=sede)
+        asistencias_hoy_qs = asistencias_hoy_qs.filter(colaborador__sede=sede)
+        
+    tickets_pendientes = Ticket.objects.filter(estado='PENDIENTE', colaborador__in=colaboradores).count()
+    vacaciones_pendientes = SolicitudVacaciones.objects.filter(estado='PENDIENTE', colaborador__in=colaboradores).count()
     asistencias_hoy = asistencias_hoy_qs.count()
 
     atrasos_hoy = []
@@ -233,6 +239,8 @@ def dashboard_rrhh(request):
         'cargos_resumen': colaboradores.values('cargo__nombre').annotate(total=Count('id')).order_by('-total', 'cargo__nombre')[:6],
         'roles_resumen': colaboradores.values('rol').annotate(total=Count('id')).order_by('-total', 'rol'),
         'ultimos_ingresos': colaboradores.exclude(fecha_ingreso__isnull=True).order_by('-fecha_ingreso')[:8],
+        'sedes': Colaborador.SEDES,
+        'sede_actual': sede,
     })
 
 
@@ -242,10 +250,16 @@ def exportar_directorio_rrhh(request):
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="directorio_rrhh.csv"'
 
+    sede = request.GET.get('sede')
+    
     writer = csv.writer(response)
-    writer.writerow(['Usuario', 'Nombres', 'Apellidos', 'DNI', 'Rol', 'Area', 'Cargo', 'Cartera', 'Subcartera', 'Horario', 'Fecha Ingreso'])
+    writer.writerow(['Usuario', 'Nombres', 'Apellidos', 'DNI', 'Rol', 'Area', 'Cargo', 'Cartera', 'Subcartera', 'Sede', 'Horario', 'Fecha Ingreso'])
 
-    for perfil in Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').order_by('user__last_name', 'user__first_name'):
+    qs = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').order_by('user__last_name', 'user__first_name')
+    if sede:
+        qs = qs.filter(sede=sede)
+
+    for perfil in qs:
         writer.writerow([
             perfil.user.username,
             perfil.user.first_name,
@@ -256,6 +270,7 @@ def exportar_directorio_rrhh(request):
             perfil.cargo.nombre if perfil.cargo else '',
             perfil.negocio.nombre if perfil.negocio else '',
             perfil.subcartera or '',
+            perfil.get_sede_display(),
             perfil.get_tipo_horario_display(),
             perfil.fecha_ingreso.strftime('%Y-%m-%d') if perfil.fecha_ingreso else '',
         ])
