@@ -1,6 +1,6 @@
 {% load static %}
 
-<header class="top-navbar py-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
+<header class="top-navbar py-3 px-3 px-md-4 d-flex justify-content-between align-items-center glass-navbar">
     <div class="d-flex align-items-center gap-3">
         <button class="btn border-0 d-lg-none rounded-3 sidebar-toggle-trigger" id="btnToggleSidebar" aria-label="Toggle Navigation">
             <i class="bi bi-list fs-3"></i>
@@ -15,9 +15,9 @@
     
     <!-- Buscador global (UI) -->
     <div class="d-none d-lg-flex flex-grow-1 mx-4 justify-content-center">
-        <form class="position-relative w-100" style="max-width: 400px;" onsubmit="event.preventDefault(); alert('El buscador global estará disponible en la próxima actualización.');">
+        <form action="{% url 'buscar' %}" method="GET" class="position-relative w-100" style="max-width: 400px;">
             <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted" style="left: 15px;"></i>
-            <input type="search" class="form-control rounded-pill ps-5 bg-light border-0" placeholder="Buscar empleados, cursos, documentos..." aria-label="Search">
+            <input type="search" name="q" class="form-control rounded-pill ps-5 bg-light border-0" placeholder="Buscar empleados, cursos, documentos..." aria-label="Search" required>
         </form>
     </div>
     
@@ -78,8 +78,22 @@
             <span class="d-inline d-sm-none">{% now "d/m/Y" %}</span>
         </span>
 
-        <a href="{% url 'salir' %}" class="btn quick-logout-btn shadow-sm btn-sm fw-bold rounded-pill px-3" title="Cerrar Sesión Segura">
-            <i class="bi bi-power"></i>
-        </a>
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle-hidden" data-bs-toggle="dropdown" aria-expanded="false">
+                {% if request.user.perfil.foto_perfil %}
+                    <img src="{{ request.user.perfil.foto_perfil.url }}" alt="{{ request.user.first_name }}" class="rounded-circle shadow-sm hover-lift border border-2 border-white" style="width: 40px; height: 40px; object-fit: cover;">
+                {% else %}
+                    <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center shadow-sm hover-lift fw-bold border border-2 border-white" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                        {{ request.user.first_name|first }}{{ request.user.last_name|first }}
+                    </div>
+                {% endif %}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3">
+                <li><h6 class="dropdown-header fw-bold text-dark">{{ request.user.get_full_name }}</h6></li>
+                <li><a class="dropdown-item py-2 fw-medium" href="{% url 'perfil' %}"><i class="bi bi-person me-2 text-primary"></i> Mi Perfil</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item py-2 fw-medium text-danger" href="{% url 'salir' %}"><i class="bi bi-power me-2"></i> Cerrar Sesión</a></li>
+            </ul>
+        </div>
     </div>
 </header>

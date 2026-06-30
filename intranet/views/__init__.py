@@ -17,6 +17,8 @@ from .asistencia import (
     procesar_huellero, visor_asistencia, modo_televisor
 )
 
+from .busqueda import buscador_global
+
 from .solicitudes import (
     tickets, tickets_admin, revisar_ticket, 
     vacaciones, vacaciones_admin, eliminar_vacaciones, ver_adjunto_ticket, centro_ayuda

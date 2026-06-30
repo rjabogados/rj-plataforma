@@ -226,9 +226,13 @@
 
     <div class="mt-4 profile-card-container">
         <a href="#" class="d-flex align-items-center text-white text-decoration-none rounded-3 p-2 user-profile-card" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
-            <div class="avatar-circle d-flex align-items-center justify-content-center me-3 fw-bold shadow-sm">
-                {{ request.user.first_name|first|default:"U" }}{{ request.user.last_name|first|default:"" }}
-            </div>
+            {% if request.user.perfil.foto_perfil %}
+                <img src="{{ request.user.perfil.foto_perfil.url }}" alt="{{ request.user.first_name }}" class="rounded-circle me-3 shadow-sm border border-2 border-white" style="width: 42px; height: 42px; object-fit: cover;">
+            {% else %}
+                <div class="avatar-circle d-flex align-items-center justify-content-center me-3 fw-bold shadow-sm border border-2 border-white" style="width: 42px; height: 42px; font-size: 1.1rem; background-color: var(--rj-azul);">
+                    {{ request.user.first_name|first|default:"U" }}{{ request.user.last_name|first|default:"" }}
+                </div>
+            {% endif %}
             <div class="d-flex flex-column overflow-hidden container-user-labels">
                 <strong class="small text-truncate user-display-name">{{ request.user.first_name|default:request.user.username }}</strong>
                 <span class="user-display-role">Opciones de Cuenta</span>

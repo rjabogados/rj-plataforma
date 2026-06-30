@@ -94,7 +94,7 @@
 
     <div class="row g-4">
         
-        <div class="col-lg-8">
+        <div class="col-lg-7">
             <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Mis Accesos Rápidos</h5>
             <div class="row g-3">
                 
@@ -183,27 +183,73 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-megaphone-fill text-primary me-2"></i>Pizarra Informativa</h5>
+        <div class="col-lg-5">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-collection-play-fill text-primary me-2"></i>Muro Social Corporativo</h5>
             
             {% for aviso in comunicados %}
-            <div class="card card-buk bg-white mb-3 overflow-hidden">
-                <div style="height: 8px; background-color: var(--rj-amarillo);"></div>
-                <div class="card-body p-4">
-                    <div class="status-pill danger mb-2">Nuevo</div>
-                    <h6 class="fw-bold text-dark mb-2">{{ aviso.titulo }}</h6>
-                    <p class="small text-muted mb-3">{{ aviso.mensaje|linebreaksbr }}</p>
-                    <hr class="opacity-25">
-                    <div class="d-flex align-items-center text-muted small fw-bold">
-                        <i class="bi bi-calendar-event me-2"></i> {{ aviso.fecha_publicacion|date:"d M Y" }}
+            <div class="card card-buk border-0 shadow-sm mb-4 overflow-hidden rounded-4">
+                <!-- Encabezado del Post -->
+                <div class="card-header bg-white border-0 p-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 45px; height: 45px;">
+                            <i class="bi bi-building-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold text-dark mb-0">Comunicaciones RJ</h6>
+                            <p class="small text-muted mb-0"><i class="bi bi-clock me-1"></i>{{ aviso.fecha_publicacion|timesince }}</p>
+                        </div>
                     </div>
+                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 border border-danger border-opacity-25">
+                        <i class="bi bi-stars me-1"></i>Nuevo
+                    </span>
+                </div>
+
+                <!-- Contenido (Texto) -->
+                <div class="card-body px-4 pt-1 pb-3">
+                    <h5 class="fw-bold text-dark mb-2">{{ aviso.titulo }}</h5>
+                    <p class="text-secondary mb-0" style="font-size: 0.95rem;">{{ aviso.mensaje|linebreaksbr }}</p>
+                </div>
+
+                <!-- Contenido Multimedia -->
+                {% if aviso.adjunto %}
+                    {% if aviso.es_imagen %}
+                        <div class="w-100 bg-light d-flex justify-content-center" style="max-height: 400px; overflow: hidden;">
+                            <img src="{{ aviso.adjunto.url }}" alt="Imagen Adjunta" class="img-fluid w-100" style="object-fit: cover;">
+                        </div>
+                    {% elif aviso.es_video %}
+                        <div class="w-100 bg-black">
+                            <video class="w-100" controls style="max-height: 400px;">
+                                <source src="{{ aviso.adjunto.url }}" type="video/mp4">
+                                Tu navegador no soporta el formato de video.
+                            </video>
+                        </div>
+                    {% else %}
+                        <!-- Archivo no multimedia (PDF, DOCX) -->
+                        <div class="px-4 pb-3">
+                            <a href="{{ aviso.adjunto.url }}" class="btn btn-outline-primary w-100 rounded-pill fw-bold" target="_blank">
+                                <i class="bi bi-file-earmark-arrow-down-fill me-2"></i>Descargar Adjunto
+                            </a>
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Interacción Social (UI) -->
+                <div class="card-footer bg-white border-top-0 px-4 py-3 d-flex border-top border-light">
+                    <button class="btn btn-light rounded-pill flex-grow-1 me-2 fw-semibold text-secondary hover-primary transition-all">
+                        <i class="bi bi-hand-thumbs-up me-2"></i>Me gusta
+                    </button>
+                    <button class="btn btn-light rounded-pill flex-grow-1 ms-2 fw-semibold text-secondary hover-primary transition-all">
+                        <i class="bi bi-chat-dots me-2"></i>Comentar
+                    </button>
                 </div>
             </div>
             {% empty %}
-            <div class="card card-buk bg-white h-100 text-center p-5">
-                <i class="bi bi-inboxes text-muted opacity-50 display-1 mb-3"></i>
-                <h6 class="fw-bold text-muted">Sin comunicados</h6>
-                <p class="small text-muted">No hay anuncios recientes por el momento.</p>
+            <div class="card card-buk border-0 shadow-sm rounded-4 h-100 text-center p-5 d-flex flex-column justify-content-center align-items-center">
+                <div class="rounded-circle bg-light d-flex justify-content-center align-items-center mb-4" style="width: 80px; height: 80px;">
+                    <i class="bi bi-image text-muted opacity-50 display-4"></i>
+                </div>
+                <h5 class="fw-bold text-dark">Todo al día</h5>
+                <p class="text-muted">No hay publicaciones recientes en el muro.</p>
             </div>
             {% endfor %}
             

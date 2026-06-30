@@ -31,7 +31,7 @@ html {
 
 body {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     overflow-x: hidden;
     color: var(--rj-gris-texto);
     line-height: 1.6;
@@ -771,4 +771,39 @@ footer {
     text-align: center;
     padding: 3rem 1.5rem;
     color: #64748b;
+}
+
+/* ========================================= */
+/* MEJORAS VISUALES A1 (PREMIUM UI)          */
+/* ========================================= */
+
+/* Animación de entrada suave para las páginas */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.page-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Efecto Hover Premium para tarjetas y botones */
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.12) !important;
+}
+
+/* Glassmorphism (Efecto Cristal) para Navbar */
+.glass-navbar {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Transiciones suaves en todos los botones y enlaces */
+a, button, .btn {
+    transition: all 0.2s ease-in-out;
 }
