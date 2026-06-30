@@ -2451,7 +2451,7 @@ def crear_curso_avanzado(request):
         cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
 
         # Guardar en base de datos
-        CursoInduccion.objects.create(
+        curso = CursoInduccion.objects.create(
             titulo=titulo,
             descripcion=descripcion,
             tipo='ACADEMIA', 
@@ -2467,8 +2467,30 @@ def crear_curso_avanzado(request):
             rol_permitido=rol_permitido,
             cartera_vinculada=cartera_obj
         )
-        messages.success(request, f"¡Módulo '{titulo}' creado exitosamente con portada y configuración avanzada!")
-        return redirect('gestor_lms')
+        
+        # Guardar lecciones dinámicas
+        import json
+        lecciones_data = request.POST.get('lecciones_data')
+        if lecciones_data:
+            try:
+                from intranet.models.lms import LeccionCurso
+                lecciones = json.loads(lecciones_data)
+                for index, l_data in enumerate(lecciones, start=1):
+                    LeccionCurso.objects.create(
+                        curso=curso,
+                        orden=index,
+                        titulo=l_data.get('titulo', f'Clase {index}'),
+                        descripcion=l_data.get('descripcion', ''),
+                        url_video=l_data.get('url_video') or None,
+                        url_simulador=l_data.get('url_simulador') or None,
+                        paquete_scorm_url=l_data.get('paquete_scorm_url') or None,
+                        url_presentacion_canva=l_data.get('url_presentacion_canva') or None,
+                    )
+            except Exception as e:
+                print("Error parseando lecciones:", e)
+                
+        messages.success(request, f"¡Módulo '{titulo}' creado exitosamente con sus lecciones!")
+        return redirect('curso_curriculum', curso_id=curso.id)
 
     return render(request, 'intranet/lms/crear_curso_avanzado.html', {
         'categorias': [c[0] for c in CursoInduccion.CATEGORIAS_LMS],
@@ -2476,6 +2498,59 @@ def crear_curso_avanzado(request):
         'negocios': Negocio.objects.all(),
         'roles': Colaborador.ROLES
     })
+
+@login_required(login_url='login')
+@solo_directivos
+def crear_curso_induccion(request):
+    from intranet.models.lms import CursoInduccion
+    
+    if request.method == 'POST':
+        titulo = request.POST.get('titulo')
+        descripcion = request.POST.get('descripcion')
+        portada = request.FILES.get('portada')
+        
+        duracion_estimada_horas = request.POST.get('duracion_estimada_horas') or 1
+        orden_sugerido = request.POST.get('orden_sugerido') or 1
+        obligatorio = request.POST.get('obligatorio') == 'on'
+        
+        # Guardar en base de datos
+        curso = CursoInduccion.objects.create(
+            titulo=titulo,
+            descripcion=descripcion,
+            tipo='INDUCCION', 
+            portada=portada,
+            duracion_estimada_horas=duracion_estimada_horas,
+            orden_sugerido=orden_sugerido,
+            obligatorio=obligatorio,
+            publico_general=False,
+            estado_publicacion='PUBLICADO'
+        )
+        
+        # Guardar lecciones dinámicas
+        import json
+        lecciones_data = request.POST.get('lecciones_data')
+        if lecciones_data:
+            try:
+                from intranet.models.lms import LeccionCurso
+                lecciones = json.loads(lecciones_data)
+                for index, l_data in enumerate(lecciones, start=1):
+                    LeccionCurso.objects.create(
+                        curso=curso,
+                        orden=index,
+                        titulo=l_data.get('titulo', f'Clase {index}'),
+                        descripcion=l_data.get('descripcion', ''),
+                        url_video=l_data.get('url_video') or None,
+                        url_simulador=l_data.get('url_simulador') or None,
+                        paquete_scorm_url=l_data.get('paquete_scorm_url') or None,
+                        url_presentacion_canva=l_data.get('url_presentacion_canva') or None,
+                    )
+            except Exception as e:
+                print("Error parseando lecciones en inducción:", e)
+                
+        messages.success(request, f"¡Módulo de Inducción '{titulo}' creado exitosamente con sus clases!")
+        return redirect('onboarding_admin')
+
+    return render(request, 'intranet/lms/crear_curso_induccion.html')
 
 @login_required(login_url='login')
 @solo_directivos

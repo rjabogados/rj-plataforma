@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 from . import views
 from .views.reclutamiento import actualizar_estado_ajax, obtener_candidato_ajax, actualizar_candidato_ajax, descartar_candidato_ajax
 from .views import lms, ia_views
-from intranet.views.lms import dashboard_resultados, crear_curso_avanzado
+from intranet.views.lms import dashboard_resultados, crear_curso_avanzado, crear_curso_induccion
 
 # ==========================================
 # ESPACIO DE NOMBRES (CRÍTICO PARA REDIRECCIONES)
@@ -85,6 +85,7 @@ urlpatterns = [
     path('academia/certificado/verificar/<str:codigo>/', lms.verificar_certificado, name='verificar_certificado'),
     path('lms/dashboard/', dashboard_resultados, name='dashboard_resultados'),
     path('lms/crear-curso/', crear_curso_avanzado, name='crear_curso_avanzado'),
+    path('induccion/modulo/crear/', crear_curso_induccion, name='crear_curso_induccion'),
     path('induccion/rutas/crear/', lms.crear_ruta_induccion_view, name='crear_ruta_induccion'),
 
     # ==========================================

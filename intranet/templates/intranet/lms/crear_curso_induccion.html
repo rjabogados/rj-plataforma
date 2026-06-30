@@ -5,17 +5,26 @@
 <div class="container py-4" style="max-width: 900px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="d-flex align-items-center gap-3">
-            <a href="{% url 'gestor_lms' %}" class="btn btn-light rounded-circle shadow-sm" style="width:45px; height:45px; display:flex; align-items:center; justify-content:center;">
+            <a href="{% url 'onboarding_admin' %}" class="btn btn-light rounded-circle shadow-sm" style="width:45px; height:45px; display:flex; align-items:center; justify-content:center;">
                 <i class="bi bi-arrow-left fs-5"></i>
             </a>
             <div>
-                <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    Creador de Cursos LMS
+                <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Creador de Módulo de Inducción
                 </h2>
-                <p class="text-secondary mb-0">Diseña un nuevo módulo de aprendizaje interactivo en 3 pasos.</p>
+                <p class="text-secondary mb-0">Diseña un nuevo contenido de Onboarding en 3 pasos rápidos.</p>
             </div>
         </div>
     </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
     <!-- Barra de Progreso Stepper -->
     <div class="stepper-wrapper mb-5">
@@ -25,103 +34,74 @@
         </div>
         <div class="stepper-item" id="step-indicator-2">
             <div class="step-counter">2</div>
-            <div class="step-name">Público y Segmentación</div>
+            <div class="step-name">Ajustes Generales</div>
         </div>
         <div class="stepper-item" id="step-indicator-3">
             <div class="step-counter">3</div>
-            <div class="step-name">Gamificación & Ajustes</div>
+            <div class="step-name">Constructor de Clases</div>
         </div>
     </div>
 
-    <form method="POST" action="{% url 'crear_curso_avanzado' %}" enctype="multipart/form-data">
+    <form method="POST" action="{% url 'crear_curso_induccion' %}" enctype="multipart/form-data">
         {% csrf_token %}
 
         <!-- PASO 1: Información Base -->
         <div class="step-content active-step" id="step-1">
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4 p-md-5">
-                    <h5 class="fw-bold mb-4"><i class="bi bi-rocket-takeoff-fill text-danger me-2"></i>Información General del Curso</h5>
+                    <h5 class="fw-bold mb-4"><i class="bi bi-journal-check text-success me-2"></i>Información del Módulo</h5>
                     
                     <div class="row g-4">
                         <div class="col-12">
                             <label class="form-label fw-semibold text-secondary">Título del Módulo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-lg bg-light border-0" id="inpTitulo" name="titulo" placeholder="Ej: Técnicas de Cobranza Telefónica" required>
+                            <input type="text" class="form-control form-control-lg bg-light border-0" id="inpTitulo" name="titulo" placeholder="Ej: Bienvenida a RRHH" required>
                         </div>
                         
                         <div class="col-12">
                             <label class="form-label fw-semibold text-secondary">Descripción <span class="text-danger">*</span></label>
-                            <textarea class="form-control bg-light border-0" id="inpDescripcion" name="descripcion" rows="3" placeholder="¿Qué aprenderán los colaboradores en este módulo?" required></textarea>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">Categoría del Módulo</label>
-                            <select class="form-select bg-light border-0" id="inpCategoria" name="categoria" required>
-                                <option value="">-- Selecciona una Categoría --</option>
-                                {% for cat in categorias %}
-                                    <option value="{{ cat }}">{{ cat }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">Nivel de Dificultad</label>
-                            <select class="form-select bg-light border-0" name="nivel">
-                                <option value="BASICO">Básico</option>
-                                <option value="INTERMEDIO">Intermedio</option>
-                                <option value="AVANZADO">Avanzado</option>
-                            </select>
+                            <textarea class="form-control bg-light border-0" id="inpDescripcion" name="descripcion" rows="3" placeholder="¿Qué contiene este módulo?" required></textarea>
                         </div>
 
                         <div class="col-12">
                             <label class="form-label fw-semibold text-secondary">Imagen de Portada (Opcional)</label>
                             <input type="file" class="form-control bg-light border-0" name="portada" accept="image/*">
-                            <small class="text-muted d-block mt-1">Sube una imagen atractiva (16:9). Se mostrará en la biblioteca LMS.</small>
+                            <small class="text-muted d-block mt-1">Sube una imagen atractiva (16:9) para que destaque en el dashboard del nuevo ingreso.</small>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="nextStep(2)">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
+                <button type="button" class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="nextStep(2)">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
             </div>
         </div>
 
-        <!-- PASO 2: Público y Segmentación -->
+        <!-- PASO 2: Ajustes Generales -->
         <div class="step-content d-none" id="step-2">
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4 p-md-5">
-                    <h5 class="fw-bold mb-4"><i class="bi bi-people-fill text-primary me-2"></i>Segmentación del Curso</h5>
-                    <p class="text-secondary mb-4">Define si este curso será visible para todos en la Academia Libre o si pertenece únicamente a ciertas rutas de inducción para puestos específicos.</p>
+                    <h5 class="fw-bold mb-4"><i class="bi bi-gear-fill text-secondary me-2"></i>Ajustes del Módulo</h5>
+                    <p class="text-muted small mb-4">Los módulos de inducción no necesitan configuración de segmentación compleja ya que se asignan a través de las Rutas de Inducción de Onboarding.</p>
 
-                    <div class="form-check form-switch p-4 rounded-4 bg-light border mb-4">
-                        <input class="form-check-input ms-0 me-3 mt-1" type="checkbox" role="switch" name="publico_general" id="checkPublicoNuevo" checked onchange="toggleFiltros()" style="transform: scale(1.2);">
-                        <label class="form-check-label fw-bold text-dark" style="cursor: pointer; font-size: 1.1rem;" for="checkPublicoNuevo">
-                            Curso de Cultura General (Para todos)
-                        </label>
-                        <small class="d-block text-muted mt-2 ms-5">Aparecerá en la academia de toda la empresa y estará disponible para añadir en cualquier ruta de inducción.</small>
-                    </div>
-
-                    <div id="filtrosSegmentacionNuevo" style="display: none;">
-                        <div class="alert alert-info border-0 bg-info bg-opacity-10 fw-semibold mb-4">
-                            <i class="bi bi-info-circle-fill me-2"></i> Este curso se considerará "Técnico" y solo saldrá para armar rutas de las áreas/cargos seleccionados.
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Duración Estimada (horas)</label>
+                            <input type="number" class="form-control bg-light border-0" name="duracion_estimada_horas" min="1" value="1">
                         </div>
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary">Solo para Cartera</label>
-                                <select class="form-select form-select-lg bg-light border-0" name="cartera_vinculada">
-                                    <option value="">-- Todas las Carteras --</option>
-                                    {% for n in negocios %}
-                                        <option value="{{ n.id }}">{{ n.nombre }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary">Solo para Rol/Puesto</label>
-                                <select class="form-select form-select-lg bg-light border-0" name="rol_permitido">
-                                    <option value="">-- Todos los Roles --</option>
-                                    {% for valor, etiqueta in roles %}
-                                        <option value="{{ valor }}">{{ etiqueta }}</option>
-                                    {% endfor %}
-                                </select>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Orden por Defecto</label>
+                            <input type="number" class="form-control bg-light border-0" name="orden_sugerido" min="1" value="1">
+                        </div>
+                        
+                        <div class="col-12 mt-4">
+                            <hr class="opacity-25">
+                            <div class="d-flex flex-column gap-3 mt-4">
+                                <div class="form-check form-switch p-3 rounded-4 bg-light border d-flex align-items-center">
+                                    <input class="form-check-input ms-0 me-3" type="checkbox" name="obligatorio" id="obligatorio" checked style="transform: scale(1.2);">
+                                    <div>
+                                        <label class="form-check-label fw-bold text-dark mb-0" for="obligatorio">Módulo Obligatorio</label>
+                                        <div class="small text-muted mt-1">Marcará este curso como indispensable para avanzar en la inducción.</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -129,66 +109,21 @@
             </div>
             <div class="d-flex justify-content-between">
                 <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold" onclick="prevStep(1)"><i class="bi bi-arrow-left me-2"></i> Atrás</button>
-                <button type="button" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="nextStep(3)">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
+                <button type="button" class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="nextStep(3)">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
             </div>
         </div>
 
-        <!-- PASO 3: Gamificación & Ajustes -->
-        <div class="step-content d-none" id="step-3">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4 p-md-5">
-                    <h5 class="fw-bold mb-4"><i class="bi bi-joystick text-success me-2"></i>Ajustes Finales</h5>
-                    
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">Duración Estimada (horas)</label>
-                            <input type="number" class="form-control bg-light border-0" name="duracion_estimada_horas" min="1" value="1">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary">Orden de visualización</label>
-                            <input type="number" class="form-control bg-light border-0" name="orden_sugerido" min="1" value="1">
-                            <small class="text-muted">Si hay varios cursos en una ruta, este número ayuda a ordenarlos por defecto.</small>
-                        </div>
-                        
-                        <div class="col-12 mt-4">
-                            <hr class="opacity-25">
-                            <div class="d-flex flex-column gap-3 mt-4">
-                                <div class="form-check form-switch p-3 rounded-4 bg-light border d-flex align-items-center">
-                                    <input class="form-check-input ms-0 me-3" type="checkbox" name="obligatorio" id="obligatorio" style="transform: scale(1.2);">
-                                    <div>
-                                        <label class="form-check-label fw-bold text-dark mb-0" for="obligatorio">Curso Obligatorio</label>
-                                        <div class="small text-muted mt-1">Marcará este curso como requisito indispensable para el puesto.</div>
-                                    </div>
-                                </div>
-                                <div class="form-check form-switch p-3 rounded-4 bg-light border d-flex align-items-center">
-                                    <input class="form-check-input ms-0 me-3" type="checkbox" name="certificado_habilitado" id="certificado_habilitado" checked style="transform: scale(1.2);">
-                                    <div>
-                                        <label class="form-check-label fw-bold text-dark mb-0" for="certificado_habilitado">Emitir Certificado</label>
-                                        <div class="small text-muted mt-1">Entregará un diploma digital al aprobar la evaluación.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex justify-content-between">
-                <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold" onclick="prevStep(2)"><i class="bi bi-arrow-left me-2"></i> Atrás</button>
-                <button type="button" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="nextStep(4)">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
-            </div>
-        </div>
-
-        <!-- PASO 4: Constructor de Clases -->
+        <!-- PASO 3: Constructor de Clases -->
         <input type="hidden" name="lecciones_data" id="lecciones_data">
-        <div class="step-content d-none" id="step-4">
+        <div class="step-content d-none" id="step-3">
             <div class="card border-0 shadow-sm rounded-4 mb-4" style="background: #f8f9fa;">
                 <div class="card-body p-4 p-md-5">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
                         <div>
-                            <h5 class="fw-bold mb-1"><i class="bi bi-collection-play-fill text-danger me-2"></i>Constructor de Clases</h5>
-                            <p class="text-secondary small mb-0">Agrega el contenido multimedia de tu curso (Videos, SCORM, Simuladores).</p>
+                            <h5 class="fw-bold mb-1"><i class="bi bi-collection-play-fill text-success me-2"></i>Constructor de Clases</h5>
+                            <p class="text-secondary small mb-0">Agrega el contenido multimedia para este módulo.</p>
                         </div>
-                        <button type="button" class="btn btn-danger fw-bold rounded-pill shadow-sm" onclick="agregarClase()">
+                        <button type="button" class="btn btn-success fw-bold rounded-pill shadow-sm" onclick="agregarClase()">
                             <i class="bi bi-plus-lg me-1"></i>Añadir Clase
                         </button>
                     </div>
@@ -203,17 +138,17 @@
                         <div class="mb-3">
                             <i class="bi bi-camera-reels text-muted opacity-25" style="font-size: 4rem;"></i>
                         </div>
-                        <h5 class="text-muted fw-bold">No hay clases configuradas</h5>
-                        <p class="small text-muted mb-4">Puedes añadir clases ahora o guardarlo vacío y agregarlas después.</p>
-                        <button type="button" class="btn btn-outline-danger btn-pill fw-bold px-4 rounded-pill" onclick="agregarClase()">
+                        <h5 class="text-muted fw-bold">Sin contenido</h5>
+                        <p class="small text-muted mb-4">Este módulo no tiene clases. Puedes crearlo vacío y agregarlas luego si lo deseas.</p>
+                        <button type="button" class="btn btn-outline-success btn-pill fw-bold px-4 rounded-pill" onclick="agregarClase()">
                             <i class="bi bi-plus-lg me-2"></i>Añadir Primera Clase
                         </button>
                     </div>
                 </div>
             </div>
             <div class="d-flex justify-content-between">
-                <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold" onclick="prevStep(3)"><i class="bi bi-arrow-left me-2"></i> Atrás</button>
-                <button type="submit" class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow-sm" id="btnSubmit"><i class="bi bi-check-circle-fill me-2"></i>Crear Curso Completo</button>
+                <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold" onclick="prevStep(2)"><i class="bi bi-arrow-left me-2"></i> Atrás</button>
+                <button type="submit" class="btn btn-dark px-5 py-2 rounded-pill fw-bold shadow-sm" id="btnSubmit"><i class="bi bi-check-circle-fill me-2"></i>Crear Módulo Completo</button>
             </div>
         </div>
     </form>
@@ -265,21 +200,21 @@
   text-align: center;
   transition: all 0.3s ease;
 }
-/* Modificaciones de colores del stepper para que cuadre con LMS */
+/* Colores para Inducción */
 .stepper-item.active .step-counter {
-  background-color: #dc3545; /* danger / rojo LMS */
+  background-color: #198754; 
   color: white;
-  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
+  box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
 }
 .stepper-item.active .step-name {
-  color: #dc3545;
+  color: #198754;
 }
 .stepper-item.completed .step-counter {
-  background-color: #198754; /* success */
+  background-color: #11998e; 
   color: white;
 }
 .stepper-item.completed .step-name {
-  color: #198754;
+  color: #11998e;
 }
 
 /* Animaciones Step */
@@ -334,13 +269,11 @@ function nextStep(step) {
         // Validar paso 1
         const titulo = document.getElementById('inpTitulo').value.trim();
         const desc = document.getElementById('inpDescripcion').value.trim();
-        const cat = document.getElementById('inpCategoria').value;
         
-        if(!titulo || !desc || !cat) {
-            alert('Por favor completa el Título, Descripción y Categoría antes de avanzar.');
+        if(!titulo || !desc) {
+            alert('Por favor completa el Título y Descripción antes de avanzar.');
             if(!titulo) document.getElementById('inpTitulo').focus();
-            else if(!desc) document.getElementById('inpDescripcion').focus();
-            else document.getElementById('inpCategoria').focus();
+            else document.getElementById('inpDescripcion').focus();
             return;
         }
     }
@@ -348,7 +281,6 @@ function nextStep(step) {
     document.getElementById('step-1').classList.add('d-none');
     document.getElementById('step-2').classList.add('d-none');
     document.getElementById('step-3').classList.add('d-none');
-    if(document.getElementById('step-4')) document.getElementById('step-4').classList.add('d-none');
     
     document.getElementById(`step-${step}`).classList.remove('d-none');
     
@@ -360,7 +292,6 @@ function prevStep(step) {
     document.getElementById('step-1').classList.add('d-none');
     document.getElementById('step-2').classList.add('d-none');
     document.getElementById('step-3').classList.add('d-none');
-    if(document.getElementById('step-4')) document.getElementById('step-4').classList.add('d-none');
     
     document.getElementById(`step-${step}`).classList.remove('d-none');
     
@@ -369,7 +300,7 @@ function prevStep(step) {
 }
 
 function updateStepperUI(step) {
-    for(let i=1; i<=4; i++) {
+    for(let i=1; i<=3; i++) {
         const item = document.getElementById(`step-indicator-${i}`);
         if(item) {
             item.classList.remove('active', 'completed');
@@ -379,18 +310,6 @@ function updateStepperUI(step) {
                 item.classList.add('active');
             }
         }
-    }
-}
-
-function toggleFiltros() {
-    const check = document.getElementById('checkPublicoNuevo');
-    const filtros = document.getElementById('filtrosSegmentacionNuevo');
-    
-    if (check.checked) {
-        filtros.style.display = 'none';
-    } else {
-        filtros.style.display = 'block';
-        filtros.style.animation = 'fadeIn 0.5s';
     }
 }
 
@@ -440,7 +359,7 @@ function renderClases() {
             </button>
             <div class="row pe-md-5 g-3">
                 <div class="col-12">
-                    <span class="badge bg-danger rounded-pill mb-2">Clase ${index + 1}</span>
+                    <span class="badge bg-success rounded-pill mb-2">Clase ${index + 1}</span>
                     <input type="text" class="form-control fs-5 fw-bold border-0 border-bottom bg-transparent rounded-0 px-0 mb-2" 
                            placeholder="Título de la clase..." 
                            value="${c.titulo}" 
@@ -497,7 +416,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         }
     }
     document.getElementById('lecciones_data').value = JSON.stringify(clases);
-    document.getElementById('btnSubmit').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
+    document.getElementById('btnSubmit').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Creando Módulo...';
     document.getElementById('btnSubmit').disabled = true;
 });
 </script>
