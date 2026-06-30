@@ -104,6 +104,84 @@
                     </div>
                 </div>
             </div>
+
+            {% for item in candidatos_progreso %}
+            <div class="modal fade" id="modalExpediente{{ item.onboarding.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4">
+                        <div class="modal-header bg-primary text-white rounded-top-4">
+                            <h5 class="modal-title fw-bold"><i class="bi bi-person-badge me-2"></i> Expediente de {{ item.onboarding.nombres }} {{ item.onboarding.apellidos }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="{% url 'actualizar_expediente' item.onboarding.id %}">
+                            {% csrf_token %}
+                            <div class="modal-body p-4 lms-input-soft">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small">Nombres</label>
+                                        <input type="text" class="form-control" name="nombres" value="{{ item.onboarding.nombres }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small">Apellidos</label>
+                                        <input type="text" class="form-control" name="apellidos" value="{{ item.onboarding.apellidos }}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold small">DNI</label>
+                                        <input type="text" class="form-control" name="dni" value="{{ item.onboarding.dni }}" maxlength="8" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold small">Correo</label>
+                                        <input type="email" class="form-control" name="correo" value="{{ item.onboarding.correo|default:'' }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold small">Teléfono</label>
+                                        <input type="text" class="form-control" name="telefono" value="{{ item.onboarding.telefono|default:'' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small">Puesto esperado</label>
+                                        <select class="form-select" name="puesto_esperado">
+                                            {% for valor, etiqueta in roles %}
+                                            <option value="{{ valor }}" {% if item.onboarding.puesto_esperado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small">Campaña de destino</label>
+                                        <select class="form-select" name="campaña_destino">
+                                            <option value="">-- Sin campaña asignada aún --</option>
+                                            {% for negocio in negocios %}
+                                            <option value="{{ negocio.id }}" {% if item.onboarding.campaña_destino_id == negocio.id %}selected{% endif %}>{{ negocio.nombre }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="card border-0 bg-light rounded-4 p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong class="text-dark">Expediente documentario</strong>
+                                        <span class="badge bg-dark">{{ item.onboarding.porcentaje_expediente }}%</span>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="doc_cv" id="docCv{{ item.onboarding.id }}" {% if item.onboarding.doc_cv %}checked{% endif %}><label class="form-check-label" for="docCv{{ item.onboarding.id }}">CV</label></div></div>
+                                        <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="doc_dni" id="docDni{{ item.onboarding.id }}" {% if item.onboarding.doc_dni %}checked{% endif %}><label class="form-check-label" for="docDni{{ item.onboarding.id }}">DNI</label></div></div>
+                                        <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="doc_antecedentes" id="docAnt{{ item.onboarding.id }}" {% if item.onboarding.doc_antecedentes %}checked{% endif %}><label class="form-check-label" for="docAnt{{ item.onboarding.id }}">Antecedentes</label></div></div>
+                                        <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="doc_recibo_servicios" id="docRec{{ item.onboarding.id }}" {% if item.onboarding.doc_recibo_servicios %}checked{% endif %}><label class="form-check-label" for="docRec{{ item.onboarding.id }}">Recibo de servicios</label></div></div>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info small mb-0">Si ya existe un colaborador vinculado, al guardar también se sincronizarán sus datos básicos y el DNI se usará como identidad única.</div>
+                            </div>
+                            <div class="modal-footer bg-light rounded-bottom-4">
+                                <button type="submit" class="btn btn-primary btn-pill fw-semibold">Guardar expediente</button>
+                                {% if item.onboarding.estado != 'COMPLETADO' %}
+                                <a href="{% url 'pasar_a_planilla' item.onboarding.id %}" class="btn btn-success btn-pill fw-semibold">Pasar a planilla</a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
 
         <!-- ========================================== -->

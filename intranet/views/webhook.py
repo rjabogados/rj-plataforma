@@ -2,6 +2,7 @@ import os
 import json
 import hmac
 import hashlib
+import re
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -28,6 +29,14 @@ def get_webhook_api_key(request, payload):
         or request.headers.get('Authorization', '').removeprefix('Bearer ').strip()
         or str(payload.get('api_key', '')).strip()
     )
+
+
+def limpiar_dni(valor):
+    return ''.join(ch for ch in str(valor or '') if ch.isdigit())[:8]
+
+
+def limpiar_texto(valor):
+    return ' '.join(str(valor or '').strip().split())
 
 
 @csrf_exempt
@@ -72,20 +81,19 @@ def recibir_matriz_excel(request):
         
         for item in lote:
             try:
-                # Validar datos requeridos
-                telefono = str(item.get('telefono', '')).strip()
-                
-                if not telefono or len(telefono) > 20:
+                dni = limpiar_dni(item.get('documento', ''))
+                if not dni:
                     errores += 1
                     continue
                 
                 obj, created = CandidatoOnboarding.objects.update_or_create(
-                    telefono=telefono,
+                    dni=dni,
                     defaults={
-                        'documento': str(item.get('documento', ''))[:20],
-                        'nombre': str(item.get('nombre', ''))[:200],
-                        'estado_candidato': str(item.get('estado_candidato', 'Nuevo'))[:50],
-                        'sede': str(item.get('sede', ''))[:100]
+                        'nombres': limpiar_texto(item.get('nombres') or item.get('nombre', ''))[:100],
+                        'apellidos': limpiar_texto(item.get('apellidos', ''))[:100],
+                        'telefono': limpiar_texto(item.get('telefono', ''))[:15] or None,
+                        'puesto_esperado': limpiar_texto(item.get('puesto_esperado', 'ASESOR'))[:100] or 'ASESOR',
+                        'estado': 'EN_PROCESO',
                     }
                 )
                 if created:

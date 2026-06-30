@@ -12,7 +12,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from intranet.models import Colaborador, Comunicado, DocumentoGenerado, CursoInduccion, MatriculaCurso, MensajeInterno, Ticket, SolicitudVacaciones, Area, Cargo, Negocio, Notificacion, CategoriaModuloLMS
+from intranet.models import Colaborador, Comunicado, DocumentoGenerado, CursoInduccion, MatriculaCurso, MensajeInterno, Ticket, SolicitudVacaciones, Area, Cargo, Negocio, Notificacion, CategoriaModuloLMS, CandidatoOnboarding
 from intranet.models.lms import Encuesta, Pregunta, OpcionPregunta, RespuestaEncuesta, RutaInduccion, RutaInduccionModulo
 from intranet.models.lms import LeccionCurso, EvaluacionCurso
 from intranet.models import Asistencia
@@ -572,3 +572,46 @@ class SecurityAccessTests(TestCase):
 		self.assertEqual(candidato.estado_candidato, 'No interesados')
 		self.assertEqual(candidato.sede, 'LIMA')
 		self.assertEqual(candidato.canal, 'Web')
+
+	def test_actualizar_expediente_sincroniza_datos_basicos(self):
+		user = User.objects.create_user(username='candidato1', password='test12345', first_name='Ana', last_name='Perez', email='ana@test.com')
+		colab = Colaborador.objects.create(user=user, dni='11111111', rol='ASESOR')
+		candidato = CandidatoOnboarding.objects.create(
+			colaborador=colab,
+			nombres='Ana',
+			apellidos='Perez',
+			dni='11111111',
+			correo='ana@test.com',
+			telefono='999999999',
+			puesto_esperado='ASESOR',
+			estado='EN_PROCESO',
+			doc_cv=True,
+			doc_dni=False,
+			doc_antecedentes=False,
+			doc_recibo_servicios=False,
+		)
+
+		self.client.login(username='rrhh', password='test12345')
+		response = self.client.post(reverse('actualizar_expediente', args=[candidato.id]), {
+			'nombres': 'Ana Maria',
+			'apellidos': 'Perez Ruiz',
+			'dni': '22223333',
+			'correo': 'ana.maria@test.com',
+			'telefono': '988877766',
+			'puesto_esperado': 'SUPERVISOR',
+			'campaña_destino': '',
+			'doc_cv': 'on',
+			'doc_dni': 'on',
+			'doc_antecedentes': 'on',
+			'doc_recibo_servicios': '',
+		})
+
+		self.assertEqual(response.status_code, 302)
+		candidato.refresh_from_db()
+		colab.refresh_from_db()
+		self.assertEqual(candidato.dni, '22223333')
+		self.assertEqual(candidato.puesto_esperado, 'SUPERVISOR')
+		self.assertTrue(candidato.doc_dni)
+		self.assertEqual(colab.dni, '22223333')
+		self.assertEqual(colab.rol, 'SUPERVISOR')
+		self.assertEqual(colab.user.email, 'ana.maria@test.com')

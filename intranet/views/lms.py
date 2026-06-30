@@ -994,11 +994,43 @@ def mi_induccion(request):
 def actualizar_expediente(request, candidato_id):
     candidato = get_object_or_404(CandidatoOnboarding, id=candidato_id)
     if request.method == 'POST':
+        nombres = (request.POST.get('nombres') or '').strip()
+        apellidos = (request.POST.get('apellidos') or '').strip()
+        dni_input = ''.join(ch for ch in str(request.POST.get('dni') or '') if ch.isdigit())
+        correo = (request.POST.get('correo') or '').strip().lower() or None
+        telefono = (request.POST.get('telefono') or '').strip() or None
+        puesto_esperado = request.POST.get('puesto_esperado') or candidato.puesto_esperado
+        campaña_destino_id = request.POST.get('campaña_destino') or None
+
+        if dni_input and len(dni_input) != 8:
+            messages.error(request, 'El DNI debe tener exactamente 8 dígitos.')
+            return redirect('onboarding_admin')
+
+        candidato.nombres = nombres or candidato.nombres
+        candidato.apellidos = apellidos or candidato.apellidos
+        candidato.dni = dni_input or candidato.dni
+        candidato.correo = correo
+        candidato.telefono = telefono
+        candidato.puesto_esperado = puesto_esperado
+        candidato.campaña_destino_id = campaña_destino_id
         candidato.doc_cv = request.POST.get('doc_cv') == 'on'
         candidato.doc_dni = request.POST.get('doc_dni') == 'on'
         candidato.doc_antecedentes = request.POST.get('doc_antecedentes') == 'on'
         candidato.doc_recibo_servicios = request.POST.get('doc_recibo_servicios') == 'on'
         candidato.save()
+
+        if candidato.colaborador:
+            candidato.colaborador.user.first_name = candidato.nombres
+            candidato.colaborador.user.last_name = candidato.apellidos
+            if candidato.correo is not None:
+                candidato.colaborador.user.email = candidato.correo
+            candidato.colaborador.user.save(update_fields=['first_name', 'last_name', 'email'])
+            if candidato.dni:
+                candidato.colaborador.dni = candidato.dni
+            candidato.colaborador.rol = candidato.puesto_esperado
+            candidato.colaborador.negocio = candidato.campaña_destino
+            candidato.colaborador.save(update_fields=['dni', 'rol', 'negocio'])
+
         messages.success(request, f"Expediente de {candidato.nombres} actualizado.")
     return redirect('onboarding_admin')
 
@@ -1006,6 +1038,11 @@ def actualizar_expediente(request, candidato_id):
 @solo_directivos
 def pasar_a_planilla(request, candidato_id):
     candidato = get_object_or_404(CandidatoOnboarding, id=candidato_id)
+    dni_limpio = ''.join(ch for ch in str(candidato.dni or '') if ch.isdigit())
+    if len(dni_limpio) != 8:
+        messages.error(request, 'El candidato no puede pasar a planilla sin un DNI válido de 8 dígitos.')
+        return redirect('onboarding_admin')
+
     if candidato.porcentaje_expediente() < 100:
         messages.error(request, "Expediente incompleto. Faltan documentos.")
         return redirect('onboarding_admin')
@@ -1015,11 +1052,13 @@ def pasar_a_planilla(request, candidato_id):
                 candidato.estado = 'COMPLETADO'
                 candidato.save()
             else:
-                username_final = f"{candidato.nombres.split()[0].lower()}.{candidato.apellidos.split()[0].lower()}"
+                nombres_base = (candidato.nombres or 'usuario').split()
+                apellidos_base = (candidato.apellidos or 'usuario').split()
+                username_final = f"{nombres_base[0].lower()}.{apellidos_base[0].lower()}"
                 if User.objects.filter(username=username_final).exists():
-                    username_final = f"{username_final}{candidato.dni[-2:]}"
-                nuevo_user = User.objects.create_user(username=username_final, email=candidato.correo or '', password=candidato.dni, first_name=candidato.nombres, last_name=candidato.apellidos)
-                nuevo_colaborador = Colaborador.objects.create(user=nuevo_user, dni=candidato.dni, rol=candidato.puesto_esperado, negocio=candidato.campaña_destino, fecha_ingreso=date.today())
+                    username_final = f"{username_final}{dni_limpio[-2:]}"
+                nuevo_user = User.objects.create_user(username=username_final, email=candidato.correo or '', password=dni_limpio, first_name=candidato.nombres, last_name=candidato.apellidos)
+                nuevo_colaborador = Colaborador.objects.create(user=nuevo_user, dni=dni_limpio, rol=candidato.puesto_esperado, negocio=candidato.campaña_destino, fecha_ingreso=date.today())
                 candidato.colaborador = nuevo_colaborador
                 candidato.estado = 'COMPLETADO'
                 candidato.save()
