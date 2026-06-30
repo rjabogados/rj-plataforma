@@ -1,0 +1,531 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1000px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{% url 'gestor_lms' %}" class="btn btn-light rounded-circle shadow-sm" style="width:45px; height:45px; display:flex; align-items:center; justify-content:center;">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </a>
+            <div>
+                <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Creador de Cursos LMS
+                </h2>
+                <p class="text-secondary mb-0">Diseña un nuevo módulo de aprendizaje interactivo en 4 sencillos pasos.</p>
+            </div>
+        </div>
+        {% if curso and curso.estado_publicacion == 'BORRADOR' %}
+        <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill"><i class="bi bi-pencil-square me-2"></i>Borrador</span>
+        {% endif %}
+    </div>
+
+    <!-- Barra de Progreso Stepper -->
+    <div class="stepper-wrapper mb-5">
+        <div class="stepper-item {% if request.GET.step == '1' or not request.GET.step %}active{% endif %}" id="step-indicator-1">
+            <div class="step-counter">1</div>
+            <div class="step-name">Configuración y Segmentación</div>
+        </div>
+        <div class="stepper-item {% if request.GET.step == '2' %}active{% elif curso %}completed{% endif %}" id="step-indicator-2">
+            <div class="step-counter">2</div>
+            <div class="step-name">Clases y Multimedia</div>
+        </div>
+        <div class="stepper-item {% if request.GET.step == '3' %}active{% elif curso and request.GET.step > '2' %}completed{% endif %}" id="step-indicator-3">
+            <div class="step-counter">3</div>
+            <div class="step-name">Evaluación</div>
+        </div>
+        <div class="stepper-item {% if request.GET.step == '4' %}active{% endif %}" id="step-indicator-4">
+            <div class="step-counter">4</div>
+            <div class="step-name">Publicación</div>
+        </div>
+    </div>
+
+    <!-- PASO 1: Configuración General y Segmentación -->
+    <div class="step-content {% if request.GET.step == '1' or not request.GET.step %}active-step{% else %}d-none{% endif %}" id="step-1">
+        <form method="POST" action="{{ action_url }}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="paso" value="1">
+            
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-rocket-takeoff-fill text-danger me-2"></i>1. Información General y Segmentación</h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-secondary">Título del Módulo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0" id="inpTitulo" name="titulo" value="{{ curso.titulo|default:'' }}" placeholder="Ej: Técnicas de Cobranza Telefónica" required>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-secondary">Descripción <span class="text-danger">*</span></label>
+                            <textarea class="form-control bg-light border-0" id="inpDescripcion" name="descripcion" rows="3" placeholder="¿Qué aprenderán los colaboradores en este módulo?" required>{{ curso.descripcion|default:'' }}</textarea>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Categoría del Módulo</label>
+                            <select class="form-select bg-light border-0" id="inpCategoria" name="categoria_lms" required>
+                                <option value="">-- Selecciona una Categoría --</option>
+                                {% for cat in categorias_lms %}
+                                    <option value="{{ cat.id }}" {% if curso and curso.categoria_lms_id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Nivel de Dificultad</label>
+                            <select class="form-select bg-light border-0" name="nivel">
+                                <option value="BASICO" {% if curso and curso.nivel == 'BASICO' %}selected{% endif %}>Básico</option>
+                                <option value="INTERMEDIO" {% if curso and curso.nivel == 'INTERMEDIO' %}selected{% endif %}>Intermedio</option>
+                                <option value="AVANZADO" {% if curso and curso.nivel == 'AVANZADO' %}selected{% endif %}>Avanzado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Duración Estimada (horas)</label>
+                            <input type="number" class="form-control bg-light border-0" name="duracion_estimada_horas" min="1" value="{{ curso.duracion_estimada_horas|default:'1' }}">
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <label class="form-label fw-semibold text-secondary">Imagen de Portada</label>
+                            <input type="file" class="form-control bg-light border-0" name="portada" accept="image/*">
+                            {% if curso and curso.portada %}
+                            <div class="mt-2 text-success small"><i class="bi bi-check-circle-fill me-1"></i>Portada cargada actualmente. Sube otra si deseas reemplazarla.</div>
+                            {% else %}
+                            <small class="text-muted d-block mt-1">Sube una imagen atractiva (16:9). Se mostrará en la biblioteca LMS.</small>
+                            {% endif %}
+                        </div>
+
+                        {% if not is_induccion %}
+                        <div class="col-12 mt-4 border-top pt-4">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-people-fill text-primary me-2"></i>Público Objetivo</h6>
+                            <div class="form-check form-switch p-4 rounded-4 bg-light border mb-4">
+                                <input class="form-check-input ms-0 me-3 mt-1" type="checkbox" role="switch" name="publico_general" id="checkPublicoNuevo" onchange="toggleFiltros()" style="transform: scale(1.2);" {% if not curso or curso.publico_general %}checked{% endif %}>
+                                <label class="form-check-label fw-bold text-dark" style="cursor: pointer; font-size: 1.1rem;" for="checkPublicoNuevo">
+                                    Curso de Cultura General (Visible para todos)
+                                </label>
+                                <small class="d-block text-muted mt-2 ms-5">Aparecerá en la academia de toda la empresa y estará disponible para añadir en cualquier ruta de inducción.</small>
+                            </div>
+
+                            <div id="filtrosSegmentacionNuevo" style="{% if not curso or curso.publico_general %}display: none;{% endif %}">
+                                <div class="alert alert-info border-0 bg-info bg-opacity-10 fw-semibold mb-4">
+                                    <i class="bi bi-info-circle-fill me-2"></i> Este curso se considerará "Técnico" y solo saldrá para las áreas, roles o carteras seleccionadas.
+                                </div>
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-secondary">Solo para Cartera</label>
+                                        <select class="form-select form-select-lg bg-light border-0" name="cartera_vinculada">
+                                            <option value="">-- Todas las Carteras --</option>
+                                            {% for n in negocios %}
+                                                <option value="{{ n.id }}" {% if curso and curso.cartera_vinculada_id == n.id %}selected{% endif %}>{{ n.nombre }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-secondary">Solo para Rol/Puesto</label>
+                                        <select class="form-select form-select-lg bg-light border-0" name="rol_permitido">
+                                            <option value="">-- Todos los Roles --</option>
+                                            {% for valor, etiqueta in roles %}
+                                                <option value="{{ valor }}" {% if curso and curso.rol_permitido == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm">Guardar y Siguiente <i class="bi bi-arrow-right ms-2"></i></button>
+            </div>
+        </form>
+    </div>
+
+    <!-- PASO 2: Clases y Multimedia -->
+    <div class="step-content {% if request.GET.step == '2' %}active-step{% else %}d-none{% endif %}" id="step-2">
+        {% if curso %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4" style="background: #f8f9fa;">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-1"><i class="bi bi-collection-play-fill text-danger me-2"></i>Constructor de Clases</h5>
+                        <p class="text-secondary small mb-0">Agrega el contenido multimedia de tu curso (Videos, Canva, SCORM, Simuladores).</p>
+                    </div>
+                    <button type="button" class="btn btn-danger fw-bold rounded-pill shadow-sm" onclick="abrirModalNuevaClase()">
+                        <i class="bi bi-plus-lg me-1"></i>Añadir Nueva Clase
+                    </button>
+                </div>
+
+                <!-- Lista de clases creadas -->
+                <div id="listaLecciones" class="d-flex flex-column gap-3 mb-4">
+                    <div class="text-center py-4" id="leccionesLoading">
+                        <div class="spinner-border text-danger" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between">
+            <a href="?step=1" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold"><i class="bi bi-arrow-left me-2"></i> Atrás</a>
+            <a href="?step=3" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></a>
+        </div>
+        {% else %}
+        <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center py-5">
+            <i class="bi bi-exclamation-triangle-fill fs-1 text-warning mb-3"></i>
+            <h5 class="fw-bold">Debes completar el Paso 1 primero</h5>
+            <p class="text-muted">Guarda la información general del curso para poder agregarle clases.</p>
+            <a href="?step=1" class="btn btn-warning fw-bold px-4 rounded-pill mt-2">Ir al Paso 1</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PASO 3: Evaluación -->
+    <div class="step-content {% if request.GET.step == '3' %}active-step{% else %}d-none{% endif %}" id="step-3">
+        {% if curso %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4"><i class="bi bi-list-check text-success me-2"></i>Evaluación del Curso</h5>
+                <p class="text-muted mb-4">Configura los parámetros del examen final. Podrás subir las preguntas (Balotario en Excel) después de publicar el curso, desde el Panel del Curso.</p>
+                
+                <form method="POST" action="{{ action_url }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="paso" value="3">
+
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-secondary">Título del Examen</label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0" name="titulo" value="{{ curso.evaluacion.titulo|default:'Evaluación Final' }}" required>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-secondary">Instrucciones</label>
+                            <textarea class="form-control bg-light border-0" name="instrucciones" rows="2">{{ curso.evaluacion.instrucciones|default:'Lee detenidamente cada pregunta antes de responder.' }}</textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Puntaje Máximo</label>
+                            <input type="number" class="form-control bg-light border-0" name="puntaje_maximo" value="{{ curso.evaluacion.puntaje_maximo|default:'20' }}" step="1" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Nota Aprobatoria</label>
+                            <input type="number" class="form-control bg-light border-0" name="puntaje_aprobatorio" value="{{ curso.evaluacion.puntaje_aprobatorio|default:'14' }}" step="1" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Tiempo Límite (minutos)</label>
+                            <input type="number" class="form-control bg-light border-0" name="tiempo_limite_minutos" value="{{ curso.evaluacion.tiempo_limite_minutos|default:'15' }}" required>
+                            <small class="text-muted">0 para ilimitado</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Puntos Gamificación</label>
+                            <input type="number" class="form-control bg-light border-0" name="puntos_premio" value="{{ curso.evaluacion.puntos_premio|default:'50' }}" required>
+                            <small class="text-muted">Puntos que ganan al aprobar</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Preguntas a Mostrar</label>
+                            <input type="number" class="form-control bg-light border-0" name="preguntas_a_mostrar" value="{{ curso.evaluacion.preguntas_a_mostrar|default:'10' }}" required>
+                            <small class="text-muted">Se eligen al azar del balotario</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Intentos Máximos</label>
+                            <input type="number" class="form-control bg-light border-0" name="intentos_maximos" value="{{ curso.evaluacion.intentos_maximos|default:'1' }}" min="0" required>
+                            <small class="text-muted">0 para ilimitados</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-5">
+                        <a href="?step=2" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold"><i class="bi bi-arrow-left me-2"></i> Atrás</a>
+                        <button type="submit" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm">Guardar y Siguiente <i class="bi bi-arrow-right ms-2"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center py-5">
+            <h5 class="fw-bold">Debes completar los pasos anteriores</h5>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PASO 4: Publicación -->
+    <div class="step-content {% if request.GET.step == '4' %}active-step{% else %}d-none{% endif %}" id="step-4">
+        {% if curso %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5 text-center">
+                <i class="bi bi-rocket-fill text-danger fs-1 mb-3"></i>
+                <h3 class="fw-bold">¡Todo listo para despegar!</h3>
+                <p class="text-muted fs-5 mb-4">El curso <strong>"{{ curso.titulo }}"</strong> está guardado como borrador. Puedes publicarlo ahora para que sea visible por el público objetivo, o dejarlo en borrador si deseas seguir editándolo más tarde.</p>
+
+                <form method="POST" action="{{ action_url }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="paso" value="4">
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a href="{% url 'gestor_lms' %}" class="btn btn-light px-4 py-3 rounded-pill fw-bold shadow-sm text-secondary">
+                            Guardar como Borrador y Salir
+                        </a>
+                        <button type="submit" class="btn btn-danger px-5 py-3 rounded-pill fw-bold shadow-lg fs-5">
+                            <i class="bi bi-broadcast me-2"></i>Publicar Curso Ahora
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="d-flex justify-content-start">
+            <a href="?step=3" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold"><i class="bi bi-arrow-left me-2"></i> Atrás</a>
+        </div>
+        {% else %}
+        <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center py-5">
+            <h5 class="fw-bold">Debes completar los pasos anteriores</h5>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Modal Nueva Clase -->
+<div class="modal fade" id="modalClase" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Agregar Lección</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formClase">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título de la Lección</label>
+                        <input type="text" class="form-control" name="titulo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción (Opcional)</label>
+                        <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                    </div>
+                    
+                    <h6 class="fw-bold text-secondary mt-4 mb-3 border-bottom pb-2">Material Multimedia (Elige los que apliquen)</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Video (YouTube / Vimeo)</label>
+                            <input type="url" class="form-control" name="url_video" placeholder="https://...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Presentación (Canva / Genially)</label>
+                            <input type="url" class="form-control" name="url_presentacion_canva" placeholder="Enlace de insertar...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Paquete SCORM</label>
+                            <input type="url" class="form-control" name="paquete_scorm_url" placeholder="https://...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Archivo PDF Adjunto</label>
+                            <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" onclick="guardarClase()">Guardar Lección</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos Stepper (Compartidos) */
+.stepper-wrapper {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+.stepper-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background-color: #e9ecef;
+  z-index: 0;
+}
+.stepper-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  z-index: 1;
+}
+.step-counter {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  color: #6c757d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  border: 3px solid white;
+}
+.step-name {
+  color: #6c757d;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+/* Modificaciones de colores del stepper para que cuadre con LMS */
+.stepper-item.active .step-counter {
+  background-color: #dc3545; /* danger / rojo LMS */
+  color: white;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
+}
+.stepper-item.active .step-name {
+  color: #dc3545;
+}
+.stepper-item.completed .step-counter {
+  background-color: #198754; /* success */
+  color: white;
+}
+.stepper-item.completed .step-name {
+  color: #198754;
+}
+
+/* Animaciones Step */
+.step-content {
+    animation: fadeIn 0.4s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Clases Builder */
+.clase-card {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 1rem;
+    padding: 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.clase-card:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+}
+</style>
+
+<script>
+function toggleFiltros() {
+    const check = document.getElementById('checkPublicoNuevo');
+    const filtros = document.getElementById('filtrosSegmentacionNuevo');
+    
+    if (check.checked) {
+        filtros.style.display = 'none';
+    } else {
+        filtros.style.display = 'block';
+        filtros.style.animation = 'fadeIn 0.5s';
+    }
+}
+
+{% if curso %}
+const cursoId = {{ curso.id }};
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+const apiURL = `/intranet/lms/api/curso/${cursoId}/lecciones/`;
+
+function cargarLecciones() {
+    fetch(apiURL)
+    .then(r => r.json())
+    .then(data => {
+        const container = document.getElementById('listaLecciones');
+        container.innerHTML = '';
+        if(data.lecciones.length === 0) {
+            container.innerHTML = `
+            <div class="text-center py-5 bg-white rounded-4 border">
+                <i class="bi bi-camera-reels text-muted opacity-25" style="font-size: 4rem;"></i>
+                <h5 class="text-muted fw-bold mt-3">No hay clases configuradas</h5>
+            </div>`;
+        } else {
+            data.lecciones.forEach((l, idx) => {
+                let iconos = '';
+                if(l.url_video) iconos += '<i class="bi bi-youtube text-danger me-2" title="Video"></i>';
+                if(l.url_presentacion_canva) iconos += '<i class="bi bi-file-earmark-slides text-info me-2" title="Canva"></i>';
+                if(l.paquete_scorm_url) iconos += '<i class="bi bi-box-seam text-dark me-2" title="SCORM"></i>';
+
+                container.innerHTML += `
+                <div class="clase-card">
+                    <div>
+                        <span class="badge bg-danger rounded-pill mb-1">Clase ${idx + 1}</span>
+                        <h5 class="fw-bold mb-1">${l.titulo}</h5>
+                        <div class="text-muted small">${iconos}</div>
+                    </div>
+                    <div>
+                        <button class="btn btn-light text-danger rounded-circle p-2" onclick="eliminarClase(${l.id})">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+        }
+    });
+}
+
+function abrirModalNuevaClase() {
+    document.getElementById('formClase').reset();
+    new bootstrap.Modal(document.getElementById('modalClase')).show();
+}
+
+function guardarClase() {
+    const form = document.getElementById('formClase');
+    if(!form.titulo.value) {
+        alert("El título es obligatorio");
+        return;
+    }
+    const formData = new FormData(form);
+    
+    fetch(apiURL, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.status === 'ok') {
+            bootstrap.Modal.getInstance(document.getElementById('modalClase')).hide();
+            cargarLecciones();
+        } else {
+            alert('Error al guardar la lección');
+        }
+    });
+}
+
+function eliminarClase(id) {
+    if(confirm('¿Estás seguro de eliminar esta lección?')) {
+        fetch(apiURL, {
+            method: 'DELETE',
+            body: JSON.stringify({leccion_id: id}),
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.status === 'ok') {
+                cargarLecciones();
+            }
+        });
+    }
+}
+
+// Cargar lecciones si estamos en el paso 2
+if(new URLSearchParams(window.location.search).get('step') === '2') {
+    cargarLecciones();
+}
+{% endif %}
+</script>
+{% endblock %}

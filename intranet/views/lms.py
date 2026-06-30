@@ -14,6 +14,7 @@ from urllib.parse import quote
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -2546,135 +2547,270 @@ def dashboard_resultados(request):
 
 @login_required(login_url='login')
 @solo_directivos
-def crear_curso_avanzado(request):
+def crear_curso_avanzado(request, curso_id=None):
     from intranet.models.rrhh_core import Negocio, Colaborador
-    from intranet.models.lms import CursoInduccion
+    from intranet.models.lms import CursoInduccion, LeccionCurso, EvaluacionLMS
     
+    curso = None
+    if curso_id:
+        curso = get_object_or_404(CursoInduccion, id=curso_id)
+
     if request.method == 'POST':
-        titulo = request.POST.get('titulo')
-        descripcion = request.POST.get('descripcion')
-        portada = request.FILES.get('portada')
-        portada_ok, portada_error = portada_curso_valida(portada)
-        if not portada_ok:
-            messages.error(request, portada_error)
-            return redirect('crear_curso_avanzado')
-        
-        categoria_text = request.POST.get('categoria') or None
-        categoria_lms_id = request.POST.get('categoria_lms')
-        categoria_lms = CategoriaModuloLMS.objects.filter(id=categoria_lms_id, activa=True).first() if categoria_lms_id else None
-        nivel = request.POST.get('nivel') or 'BASICO'
-        duracion_estimada_horas = request.POST.get('duracion_estimada_horas') or 1
-        orden_sugerido = request.POST.get('orden_sugerido') or 1
-        obligatorio = request.POST.get('obligatorio') == 'on'
-        certificado_habilitado = request.POST.get('certificado_habilitado') == 'on'
-        
-        # Segmentación
-        publico_general = request.POST.get('publico_general') == 'on'
-        rol_permitido = request.POST.get('rol_permitido') or None
-        cartera_id = request.POST.get('cartera_vinculada')
-        cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
+        paso = request.POST.get('paso')
 
-        # Guardar en base de datos
-        curso = CursoInduccion.objects.create(
-            titulo=titulo,
-            descripcion=descripcion,
-            tipo='ACADEMIA', 
-            portada=portada,
-            subcartera_vinculada=categoria_text,
-            categoria_lms=categoria_lms,
-            nivel=nivel,
-            duracion_estimada_horas=duracion_estimada_horas,
-            orden_sugerido=orden_sugerido,
-            obligatorio=obligatorio,
-            certificado_habilitado=certificado_habilitado,
-            publico_general=publico_general,
-            rol_permitido=rol_permitido,
-            cartera_vinculada=cartera_obj
-        )
-        
-        # Guardar lecciones dinámicas
-        import json
-        lecciones_data = request.POST.get('lecciones_data')
-        if lecciones_data:
-            try:
-                from intranet.models.lms import LeccionCurso
-                lecciones = json.loads(lecciones_data)
-                for index, l_data in enumerate(lecciones, start=1):
-                    LeccionCurso.objects.create(
-                        curso=curso,
-                        orden=index,
-                        titulo=l_data.get('titulo', f'Clase {index}'),
-                        descripcion=l_data.get('descripcion', ''),
-                        url_video=l_data.get('url_video') or None,
-                        url_simulador=l_data.get('url_simulador') or None,
-                        paquete_scorm_url=l_data.get('paquete_scorm_url') or None,
-                        url_presentacion_canva=l_data.get('url_presentacion_canva') or None,
-                    )
-            except Exception as e:
-                print("Error parseando lecciones:", e)
+        if paso == '1':
+            titulo = request.POST.get('titulo')
+            descripcion = request.POST.get('descripcion')
+            portada = request.FILES.get('portada')
+            
+            if portada:
+                portada_ok, portada_error = portada_curso_valida(portada)
+                if not portada_ok:
+                    messages.error(request, portada_error)
+                    return redirect('crear_curso_avanzado' if not curso else 'editar_curso_avanzado', curso_id=curso.id if curso else None)
+            
+            categoria_text = request.POST.get('categoria') or None
+            categoria_lms_id = request.POST.get('categoria_lms')
+            categoria_lms = CategoriaModuloLMS.objects.filter(id=categoria_lms_id, activa=True).first() if categoria_lms_id else None
+            nivel = request.POST.get('nivel') or 'BASICO'
+            duracion_estimada_horas = request.POST.get('duracion_estimada_horas') or 1
+            
+            publico_general = request.POST.get('publico_general') == 'on'
+            rol_permitido = request.POST.get('rol_permitido') or None
+            cartera_id = request.POST.get('cartera_vinculada')
+            cartera_obj = Negocio.objects.filter(id=cartera_id).first() if cartera_id else None
+
+            if curso:
+                curso.titulo = titulo
+                curso.descripcion = descripcion
+                if portada: curso.portada = portada
+                curso.subcartera_vinculada = categoria_text
+                curso.categoria_lms = categoria_lms
+                curso.nivel = nivel
+                curso.duracion_estimada_horas = duracion_estimada_horas
+                curso.publico_general = publico_general
+                curso.rol_permitido = rol_permitido
+                curso.cartera_vinculada = cartera_obj
+                curso.save()
+            else:
+                curso = CursoInduccion.objects.create(
+                    titulo=titulo,
+                    descripcion=descripcion,
+                    tipo='ACADEMIA', 
+                    portada=portada,
+                    subcartera_vinculada=categoria_text,
+                    categoria_lms=categoria_lms,
+                    nivel=nivel,
+                    duracion_estimada_horas=duracion_estimada_horas,
+                    publico_general=publico_general,
+                    rol_permitido=rol_permitido,
+                    cartera_vinculada=cartera_obj,
+                    estado_publicacion='BORRADOR'
+                )
+            return redirect(f"/intranet/lms/editar-curso/{curso.id}/?step=2")
+
+        elif paso == '3':
+            # Guardar evaluación
+            if curso:
+                titulo_eval = request.POST.get('titulo')
+                instrucciones = request.POST.get('instrucciones', '')
+                puntaje_maximo = request.POST.get('puntaje_maximo', 20.00)
+                puntaje_aprobatorio = request.POST.get('puntaje_aprobatorio', 14.00)
+                tiempo_limite_minutos = request.POST.get('tiempo_limite_minutos', 0)
+                puntos_premio = request.POST.get('puntos_premio', 50)
+                preguntas_a_mostrar = request.POST.get('preguntas_a_mostrar', 10)
+                intentos_maximos = request.POST.get('intentos_maximos', 1)
                 
-        messages.success(request, f"¡Módulo '{titulo}' creado exitosamente con sus lecciones!")
-        return redirect('curso_curriculum', curso_id=curso.id)
+                if hasattr(curso, 'evaluacion'):
+                    ev = curso.evaluacion
+                    ev.titulo = titulo_eval
+                    ev.instrucciones = instrucciones
+                    ev.puntaje_maximo = puntaje_maximo
+                    ev.puntaje_aprobatorio = puntaje_aprobatorio
+                    ev.tiempo_limite_minutos = tiempo_limite_minutos
+                    ev.puntos_premio = puntos_premio
+                    ev.preguntas_a_mostrar = preguntas_a_mostrar
+                    ev.intentos_maximos = intentos_maximos
+                    ev.save()
+                else:
+                    EvaluacionCurso.objects.create(
+                        curso=curso,
+                        titulo=titulo_eval,
+                        instrucciones=instrucciones,
+                        puntaje_maximo=puntaje_maximo,
+                        puntaje_aprobatorio=puntaje_aprobatorio,
+                        tiempo_limite_minutos=tiempo_limite_minutos,
+                        puntos_premio=puntos_premio,
+                        preguntas_a_mostrar=preguntas_a_mostrar,
+                        intentos_maximos=intentos_maximos
+                    )
+            return redirect(f"/intranet/lms/editar-curso/{curso.id}/?step=4")
 
-    return render(request, 'intranet/lms/crear_curso_avanzado.html', {
+        elif paso == '4':
+            # Publicar Curso
+            if curso:
+                curso.estado_publicacion = 'PUBLICADO'
+                curso.save()
+                messages.success(request, f"¡Curso '{curso.titulo}' publicado exitosamente!")
+                return redirect('dashboard_resultados')
+
+    context = {
+        'curso': curso,
         'categorias': [c[0] for c in CursoInduccion.CATEGORIAS_LMS],
         'categorias_lms': CategoriaModuloLMS.objects.filter(activa=True).order_by('nombre'),
         'negocios': Negocio.objects.all(),
         'roles': Colaborador.ROLES
-    })
+    }
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        pass # Podríamos devolver JSON parciales aquí si lo deseamos
+
+    return render(request, 'intranet/lms/crear_curso_stepper.html', context)
 
 @login_required(login_url='login')
 @solo_directivos
-def crear_curso_induccion(request):
-    from intranet.models.lms import CursoInduccion
+def api_gestionar_lecciones(request, curso_id):
+    import json
+    from django.http import JsonResponse
+    from intranet.models.lms import CursoInduccion, LeccionCurso
     
-    if request.method == 'POST':
+    curso = get_object_or_404(CursoInduccion, id=curso_id)
+
+    if request.method == 'GET':
+        lecciones = curso.lecciones.all().order_by('orden')
+        data = [{
+            'id': l.id,
+            'titulo': l.titulo,
+            'descripcion': l.descripcion,
+            'url_video': l.url_video,
+            'url_presentacion_canva': l.url_presentacion_canva,
+            'url_simulador': l.url_simulador,
+            'paquete_scorm_url': l.paquete_scorm_url,
+            'orden': l.orden
+        } for l in lecciones]
+        return JsonResponse({'lecciones': data})
+        
+    elif request.method == 'POST':
+        # Agregar leccion
         titulo = request.POST.get('titulo')
         descripcion = request.POST.get('descripcion')
-        portada = request.FILES.get('portada')
-        
-        duracion_estimada_horas = request.POST.get('duracion_estimada_horas') or 1
-        orden_sugerido = request.POST.get('orden_sugerido') or 1
-        obligatorio = request.POST.get('obligatorio') == 'on'
-        
-        # Guardar en base de datos
-        curso = CursoInduccion.objects.create(
+        url_video = request.POST.get('url_video')
+        url_presentacion_canva = request.POST.get('url_presentacion_canva')
+        url_simulador = request.POST.get('url_simulador')
+        paquete_scorm_url = request.POST.get('paquete_scorm_url')
+        archivo_pdf = request.FILES.get('archivo_pdf')
+
+        orden = curso.lecciones.count() + 1
+
+        leccion = LeccionCurso.objects.create(
+            curso=curso,
             titulo=titulo,
             descripcion=descripcion,
-            tipo='INDUCCION', 
-            portada=portada,
-            duracion_estimada_horas=duracion_estimada_horas,
-            orden_sugerido=orden_sugerido,
-            obligatorio=obligatorio,
-            publico_general=False,
-            estado_publicacion='PUBLICADO'
+            url_video=url_video,
+            url_presentacion_canva=url_presentacion_canva,
+            url_simulador=url_simulador,
+            paquete_scorm_url=paquete_scorm_url,
+            archivo_pdf=archivo_pdf,
+            orden=orden
         )
-        
-        # Guardar lecciones dinámicas
-        import json
-        lecciones_data = request.POST.get('lecciones_data')
-        if lecciones_data:
-            try:
-                from intranet.models.lms import LeccionCurso
-                lecciones = json.loads(lecciones_data)
-                for index, l_data in enumerate(lecciones, start=1):
-                    LeccionCurso.objects.create(
-                        curso=curso,
-                        orden=index,
-                        titulo=l_data.get('titulo', f'Clase {index}'),
-                        descripcion=l_data.get('descripcion', ''),
-                        url_video=l_data.get('url_video') or None,
-                        url_simulador=l_data.get('url_simulador') or None,
-                        paquete_scorm_url=l_data.get('paquete_scorm_url') or None,
-                        url_presentacion_canva=l_data.get('url_presentacion_canva') or None,
-                    )
-            except Exception as e:
-                print("Error parseando lecciones en inducción:", e)
-                
-        messages.success(request, f"¡Módulo de Inducción '{titulo}' creado exitosamente con sus clases!")
-        return redirect('onboarding_admin')
+        return JsonResponse({'status': 'ok', 'id': leccion.id, 'titulo': leccion.titulo})
 
-    return render(request, 'intranet/lms/crear_curso_induccion.html')
+    elif request.method == 'DELETE':
+        try:
+            body = json.loads(request.body)
+            leccion_id = body.get('leccion_id')
+            leccion = get_object_or_404(LeccionCurso, id=leccion_id, curso=curso)
+            leccion.delete()
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@login_required(login_url='login')
+@solo_directivos
+def crear_curso_induccion(request, curso_id=None):
+    from intranet.models.lms import CursoInduccion, EvaluacionCurso
+    
+    curso = None
+    if curso_id:
+        curso = get_object_or_404(CursoInduccion, id=curso_id)
+
+    if request.method == 'POST':
+        paso = request.POST.get('paso')
+
+        if paso == '1':
+            titulo = request.POST.get('titulo')
+            descripcion = request.POST.get('descripcion')
+            portada = request.FILES.get('portada')
+            
+            duracion_estimada_horas = request.POST.get('duracion_estimada_horas') or 1
+            
+            if curso:
+                curso.titulo = titulo
+                curso.descripcion = descripcion
+                if portada: curso.portada = portada
+                curso.duracion_estimada_horas = duracion_estimada_horas
+                curso.save()
+            else:
+                curso = CursoInduccion.objects.create(
+                    titulo=titulo,
+                    descripcion=descripcion,
+                    tipo='INDUCCION', 
+                    portada=portada,
+                    duracion_estimada_horas=duracion_estimada_horas,
+                    publico_general=False,
+                    estado_publicacion='BORRADOR'
+                )
+            return redirect(f"/intranet/induccion/modulo/editar/{curso.id}/?step=2")
+
+        elif paso == '3':
+            # Guardar evaluación
+            if curso:
+                titulo_eval = request.POST.get('titulo')
+                instrucciones = request.POST.get('instrucciones', '')
+                puntaje_maximo = request.POST.get('puntaje_maximo', 20.00)
+                puntaje_aprobatorio = request.POST.get('puntaje_aprobatorio', 14.00)
+                tiempo_limite_minutos = request.POST.get('tiempo_limite_minutos', 0)
+                puntos_premio = request.POST.get('puntos_premio', 50)
+                preguntas_a_mostrar = request.POST.get('preguntas_a_mostrar', 10)
+                intentos_maximos = request.POST.get('intentos_maximos', 1)
+                
+                if hasattr(curso, 'evaluacion'):
+                    ev = curso.evaluacion
+                    ev.titulo = titulo_eval
+                    ev.instrucciones = instrucciones
+                    ev.puntaje_maximo = puntaje_maximo
+                    ev.puntaje_aprobatorio = puntaje_aprobatorio
+                    ev.tiempo_limite_minutos = tiempo_limite_minutos
+                    ev.puntos_premio = puntos_premio
+                    ev.preguntas_a_mostrar = preguntas_a_mostrar
+                    ev.intentos_maximos = intentos_maximos
+                    ev.save()
+                else:
+                    EvaluacionCurso.objects.create(
+                        curso=curso,
+                        titulo=titulo_eval,
+                        instrucciones=instrucciones,
+                        puntaje_maximo=puntaje_maximo,
+                        puntaje_aprobatorio=puntaje_aprobatorio,
+                        tiempo_limite_minutos=tiempo_limite_minutos,
+                        puntos_premio=puntos_premio,
+                        preguntas_a_mostrar=preguntas_a_mostrar,
+                        intentos_maximos=intentos_maximos
+                    )
+            return redirect(f"/intranet/induccion/modulo/editar/{curso.id}/?step=4")
+
+        elif paso == '4':
+            if curso:
+                curso.estado_publicacion = 'PUBLICADO'
+                curso.save()
+                messages.success(request, f"¡Módulo de Inducción '{curso.titulo}' publicado exitosamente!")
+                return redirect('onboarding_admin')
+
+    return render(request, 'intranet/lms/crear_curso_stepper.html', {
+        'curso': curso, 
+        'is_induccion': True,
+        'action_url': reverse('editar_curso_induccion', args=[curso.id]) if curso else reverse('crear_curso_induccion')
+    })
 
 @login_required(login_url='login')
 @solo_directivos

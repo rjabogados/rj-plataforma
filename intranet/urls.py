@@ -94,7 +94,10 @@ urlpatterns = [
     path('academia/certificado/verificar/<str:codigo>/', lms.verificar_certificado, name='verificar_certificado'),
     path('lms/dashboard/', dashboard_resultados, name='dashboard_resultados'),
     path('lms/crear-curso/', crear_curso_avanzado, name='crear_curso_avanzado'),
-    path('induccion/modulo/crear/', crear_curso_induccion, name='crear_curso_induccion'),
+    path('lms/editar-curso/<int:curso_id>/', crear_curso_avanzado, name='editar_curso_avanzado'),
+    path('lms/api/curso/<int:curso_id>/lecciones/', lms.api_gestionar_lecciones, name='api_gestionar_lecciones'),
+    path('induccion/modulo/crear/', lms.crear_curso_induccion, name='crear_curso_induccion'),
+    path('induccion/modulo/editar/<int:curso_id>/', lms.crear_curso_induccion, name='editar_curso_induccion'),
     path('induccion/rutas/crear/', lms.crear_ruta_induccion_view, name='crear_ruta_induccion'),
 
     # ==========================================
