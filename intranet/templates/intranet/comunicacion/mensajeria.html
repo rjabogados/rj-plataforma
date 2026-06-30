@@ -1,139 +1,206 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="section-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+<div class="container-fluid py-4" style="max-width: 1400px;">
+    
+    <!-- HEADER PREMIUM -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
-            <h2><i class="bi bi-chat-left-dots-fill me-2"></i>Mensajería Interna</h2>
-            <p class="text-muted mb-0">Centraliza conversaciones, adjuntos y seguimiento interno en una sola bandeja.</p>
+            <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-envelope-paper-fill text-primary me-2"></i>Bandeja de Entrada
+            </h2>
+            <p class="text-secondary mb-0 fw-medium">Gestiona tu comunicación interna de forma rápida y segura.</p>
         </div>
-        <button class="btn btn-primary btn-pill fw-semibold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#modalRedactar">
-            <i class="bi bi-pencil-square me-2"></i><span>Nuevo mensaje</span>
+        <button class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm px-4 btn-hover-grow" data-bs-toggle="modal" data-bs-target="#modalRedactar" style="background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;">
+            <i class="bi bi-pencil-square me-2"></i>Redactar Mensaje
         </button>
     </div>
 
-    <div class="panel-shell overflow-hidden">
-        <div class="panel-toolbar">
-            <div>
-                <h5 class="fw-bold text-dark mb-1">Bandeja compartida</h5>
-                <p class="text-muted small mb-0">Busca por remitente, asunto y alterna entre recibidos y enviados.</p>
-            </div>
-            <form method="GET" class="d-flex gap-2 lms-input-soft">
-                <input type="text" name="q" class="form-control form-control-sm" placeholder="Buscar remitente o asunto..." value="{{ query }}">
-                <button type="submit" class="btn btn-outline-primary btn-pill btn-sm px-3"><i class="bi bi-search"></i></button>
-            </form>
-        </div>
-        <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
-            <ul class="nav nav-tabs fw-bold" id="inboxTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active text-dark px-4" data-bs-toggle="tab" data-bs-target="#recibidos" type="button"><i class="bi bi-inbox-fill text-primary me-2"></i> Recibidos</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link text-dark px-4" data-bs-toggle="tab" data-bs-target="#enviados" type="button"><i class="bi bi-send-fill text-secondary me-2"></i> Enviados</button>
-                </li>
-            </ul>
-        </div>
-        <div class="card-body p-0">
-            <div class="tab-content">
-                <div class="tab-pane fade show active" id="recibidos">
-                    <div class="list-group list-group-flush rounded-bottom-4">
-                        {% for m in recibidos %}
-                        <a href="{% url 'leer_mensaje' m.id %}" class="message-row {% if not m.leido %}message-row-unread fw-bold{% else %}text-muted{% endif %}">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="avatar-soft secondary">
-                                    <i class="bi bi-person-fill fs-5"></i>
-                                </div>
-                                <div>
-                                    <div class="text-dark">{{ m.remitente.user.get_full_name }}</div>
-                                    <div class="small text-truncate text-muted" style="max-width: 300px;">{{ m.asunto }}</div>
-                                </div>
-                            </div>
-                            <div class="text-end small">
-                                <div>{{ m.fecha_envio|date:"d M, H:i" }}</div>
-                                {% if m.adjunto %}<i class="bi bi-paperclip fs-6"></i>{% endif %}
-                            </div>
-                        </a>
-                        {% empty %}
-                        <div class="empty-panel">
-                            <i class="bi bi-mailbox display-4"></i>
-                            <p class="mt-3">
-                                {% if query %}No se encontraron mensajes con la búsqueda "{{ query }}".{% else %}Tu bandeja está vacía.{% endif %}
-                            </p>
-                        </div>
-                        {% endfor %}
+    <!-- MAIN APP CONTAINER -->
+    <div class="card border-0 rounded-4 overflow-hidden shadow-sm" style="background: #fdfbfb;">
+        <div class="row g-0">
+            
+            <!-- SIDEBAR MENSAJERIA (Filtros) -->
+            <div class="col-md-3 border-end bg-white p-4" style="min-height: 600px;">
+                <form method="GET" class="mb-4">
+                    <div class="input-group bg-light rounded-pill p-1 border">
+                        <span class="input-group-text bg-transparent border-0 text-muted ps-3"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" class="form-control bg-transparent border-0 shadow-none fw-medium" placeholder="Buscar correo..." value="{{ query }}">
                     </div>
-                </div>
+                </form>
 
-                <div class="tab-pane fade" id="enviados">
-                    <div class="list-group list-group-flush rounded-bottom-4">
-                        {% for m in enviados %}
-                        <a href="{% url 'leer_mensaje' m.id %}" class="message-row">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="avatar-soft secondary">
-                                    <i class="bi bi-arrow-up-right"></i>
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                    <button class="nav-link active text-start fw-bold px-4 py-3 mb-2 rounded-pill d-flex justify-content-between align-items-center" id="recibidos-tab" data-bs-toggle="pill" data-bs-target="#recibidos" type="button" role="tab">
+                        <span><i class="bi bi-inbox-fill me-2 fs-5 text-primary"></i> Recibidos</span>
+                    </button>
+                    <button class="nav-link text-start fw-bold px-4 py-3 rounded-pill d-flex justify-content-between align-items-center text-muted" id="enviados-tab" data-bs-toggle="pill" data-bs-target="#enviados" type="button" role="tab">
+                        <span><i class="bi bi-send-fill me-2 fs-5"></i> Enviados</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- LISTA DE MENSAJES -->
+            <div class="col-md-9 p-0 bg-transparent">
+                <div class="tab-content h-100" id="v-pills-tabContent">
+                    
+                    <!-- TAB RECIBIDOS -->
+                    <div class="tab-pane fade show active h-100" id="recibidos" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center p-4 border-bottom bg-white">
+                            <h5 class="fw-bold text-dark mb-0">Buzón Principal</h5>
+                            <span class="badge bg-primary rounded-pill">{{ recibidos|length }} correos</span>
+                        </div>
+                        <div class="list-group list-group-flush msg-list">
+                            {% for m in recibidos %}
+                            <a href="{% url 'leer_mensaje' m.id %}" class="list-group-item list-group-item-action p-4 border-bottom msg-item {% if not m.leido %}unread bg-primary bg-opacity-10{% endif %}">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="avatar-circle shadow-sm" style="background: {% if not m.leido %}linear-gradient(135deg, #00c6ff, #0072ff){% else %}#e9ecef{% endif %}; color: {% if not m.leido %}white{% else %}#6c757d{% endif %};">
+                                            {{ m.remitente.user.first_name|first|default:"U" }}{{ m.remitente.user.last_name|first|default:"" }}
+                                        </div>
+                                    </div>
+                                    <div class="col overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <strong class="text-dark fs-6">{{ m.remitente.user.get_full_name }}</strong>
+                                            <small class="text-muted fw-semibold">{{ m.fecha_envio|date:"d M Y, h:i a" }}</small>
+                                        </div>
+                                        <div class="text-truncate text-dark {% if not m.leido %}fw-bold{% else %}fw-medium{% endif %} mb-1">{{ m.asunto }}</div>
+                                        <p class="text-muted small mb-0 text-truncate opacity-75">{{ m.cuerpo|striptags }}</p>
+                                    </div>
+                                    {% if m.adjunto %}
+                                    <div class="col-auto text-end ps-3">
+                                        <i class="bi bi-paperclip fs-5 text-secondary"></i>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                <div>
-                                    <div class="text-dark small fw-bold">Para: {{ m.destinatario.user.get_full_name }}</div>
-                                    <div class="small text-muted text-truncate" style="max-width: 300px;">{{ m.asunto }}</div>
-                                </div>
+                            </a>
+                            {% empty %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-mailbox2 text-muted opacity-25" style="font-size: 5rem;"></i>
+                                <h5 class="fw-bold text-muted mt-3">Bandeja Vacía</h5>
+                                <p class="text-secondary small">No tienes correos nuevos.</p>
                             </div>
-                            <div class="text-end small text-muted">
-                                <div>{{ m.fecha_envio|date:"d M, H:i" }}</div>
-                                {% if m.leido %}<span class="status-pill success" style="font-size: 0.65rem;">Leído</span>{% endif %}
-                            </div>
-                        </a>
-                        {% empty %}
-                        <div class="empty-panel">Aún no has enviado mensajes.</div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
+
+                    <!-- TAB ENVIADOS -->
+                    <div class="tab-pane fade h-100" id="enviados" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center p-4 border-bottom bg-white">
+                            <h5 class="fw-bold text-dark mb-0">Mensajes Enviados</h5>
+                            <span class="badge bg-secondary rounded-pill">{{ enviados|length }} correos</span>
+                        </div>
+                        <div class="list-group list-group-flush msg-list">
+                            {% for m in enviados %}
+                            <a href="{% url 'leer_mensaje' m.id %}" class="list-group-item list-group-item-action p-4 border-bottom msg-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="avatar-circle shadow-sm" style="background: #f8f9fa; color: #adb5bd; border: 1px solid #dee2e6;">
+                                            <i class="bi bi-send-fill"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted small fw-semibold">Para: <strong class="text-dark">{{ m.destinatario.user.get_full_name }}</strong></span>
+                                            <small class="text-muted">{{ m.fecha_envio|date:"d M Y, h:i a" }}</small>
+                                        </div>
+                                        <div class="text-truncate text-dark fw-medium mb-1">{{ m.asunto }}</div>
+                                        <p class="text-muted small mb-0 text-truncate opacity-75">{{ m.cuerpo|striptags }}</p>
+                                    </div>
+                                    {% if m.adjunto %}
+                                    <div class="col-auto text-end ps-3">
+                                        <i class="bi bi-paperclip fs-5 text-secondary"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </a>
+                            {% empty %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-send-x text-muted opacity-25" style="font-size: 5rem;"></i>
+                                <h5 class="fw-bold text-muted mt-3">Buzón Vacío</h5>
+                                <p class="text-secondary small">No has enviado ningún mensaje.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Modal Redactar Mensaje -->
 <div class="modal fade" id="modalRedactar" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square"></i> Redactar Mensaje</h5>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header bg-primary text-white border-0 p-4" style="background: linear-gradient(135deg, #00c6ff, #0072ff);">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Nuevo Mensaje</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-                <input type="hidden" name="enviar_mensaje" value="1">
-                <div class="modal-body p-4 bg-light lms-input-soft">
-                    
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Para: (Puedes seleccionar varios usando Ctrl o Cmd)</label>
-                        <select class="form-select" name="destinatarios" multiple required style="height: 120px;">
-                            {% for c in compañeros %}
-                            <option value="{{ c.id }}">{{ c.user.last_name }}, {{ c.user.first_name }} - {{ c.get_rol_display }}</option>
+                <div class="modal-body p-4 p-md-5">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-secondary">Para (Destinatario)</label>
+                        <select class="form-select form-select-lg bg-light border-0 fw-semibold text-dark" name="destinatario_id" required>
+                            <option value="">-- Selecciona un colaborador --</option>
+                            {% for c in colaboradores %}
+                                <option value="{{ c.id }}">{{ c.user.get_full_name }} ({{ c.get_rol_display }})</option>
                             {% endfor %}
                         </select>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Asunto</label>
-                        <input type="text" class="form-control" name="asunto" placeholder="Ej: Actualización de campaña publicitaria" required>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-secondary">Asunto</label>
+                        <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold" name="asunto" placeholder="Motivo de tu mensaje..." required>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Mensaje</label>
-                        <textarea class="form-control" name="cuerpo" rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-secondary">Mensaje</label>
+                        <textarea class="form-control bg-light border-0" name="cuerpo" rows="6" placeholder="Escribe tu mensaje aquí..." required></textarea>
                     </div>
-
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold text-secondary"><i class="bi bi-paperclip"></i> Adjuntar Archivo (Opcional)</label>
+                    <div>
+                        <label class="form-label small fw-bold text-secondary"><i class="bi bi-paperclip me-1"></i>Adjuntar Archivo (Opcional)</label>
                         <input type="file" class="form-control" name="adjunto">
                     </div>
-
                 </div>
-                <div class="modal-footer border-0 bg-white">
-                    <button type="button" class="btn btn-light btn-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-pill fw-semibold px-5 shadow-sm"><i class="bi bi-send-fill me-2"></i>Enviar a destinatarios</button>
+                <div class="modal-footer border-0 p-4 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" name="enviar_mensaje" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm" style="background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;">
+                        <i class="bi bi-send-fill me-2"></i>Enviar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<style>
+.avatar-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.msg-item {
+    transition: background-color 0.2s, padding-left 0.2s;
+    border-left: 4px solid transparent;
+}
+.msg-item:hover {
+    background-color: #f8f9fa !important;
+    border-left: 4px solid var(--bs-primary);
+    padding-left: 1.8rem !important;
+}
+.msg-item.unread {
+    border-left: 4px solid #00c6ff;
+}
+.btn-hover-grow {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-hover-grow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 198, 255, 0.4) !important;
+}
+</style>
 {% endblock %}

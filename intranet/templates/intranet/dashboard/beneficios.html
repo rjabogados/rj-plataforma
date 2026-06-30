@@ -1,55 +1,88 @@
 {% extends 'intranet/base.html' %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h3 class="fw-bold text-dark"><i class="bi bi-gift-fill text-primary"></i> Beneficios y Recompensas RJ</h3>
-            <p class="text-muted">Canjea tus Estrellas RJ acumuladas por beneficios exclusivos corporativos.</p>
-        </div>
-        <div class="p-3 rounded-4 shadow-sm text-center text-white" style="background-color: var(--rj-azul); min-width: 200px;">
-            <span class="text-white-50 small d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Mi Saldo Disponible</span>
-            <h3 class="fw-bold text-warning mb-0"><i class="bi bi-star-fill"></i> {% if perfil %}{{ perfil.estrellas_rj }}{% else %}0{% endif %}</h3>
+<div class="container-fluid py-4" style="max-width: 1300px;">
+    
+    <!-- HERO SECTION PREMIUM -->
+    <div class="card border-0 rounded-4 overflow-hidden mb-5 position-relative shadow-sm" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('https://www.transparenttextures.com/patterns/cubes.png'); opacity: 0.2;"></div>
+        <div class="card-body p-4 p-md-5 position-relative z-index-2 text-white">
+            <div class="row align-items-center">
+                <div class="col-md-8 mb-4 mb-md-0">
+                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold mb-3 shadow-sm" style="font-size: 0.85rem;">
+                        <i class="bi bi-stars text-warning me-1"></i> RJ Rewards
+                    </span>
+                    <h2 class="fw-bold display-6 mb-2" style="letter-spacing: -1px;">Beneficios y Recompensas</h2>
+                    <p class="fs-5 opacity-75 mb-0 fw-medium">El esfuerzo trae recompensas. Canjea tus <strong class="text-warning">Estrellas RJ</strong> por beneficios exclusivos.</p>
+                </div>
+                <div class="col-md-4 text-md-end text-center">
+                    <div class="d-inline-block p-4 rounded-4 shadow-lg text-center bg-white" style="backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.4);">
+                        <span class="text-muted small d-block text-uppercase fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">Mi Saldo Disponible</span>
+                        <h1 class="fw-bold mb-0 text-dark display-4 d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-star-fill text-warning text-glow" style="filter: drop-shadow(0 0 10px rgba(255,193,7,0.8));"></i>
+                            {% if perfil %}{{ perfil.estrellas_rj }}{% else %}0{% endif %}
+                        </h1>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     {% if mensaje_estrellas %}
-        <div class="alert alert-info border-0 shadow-sm rounded-4 mb-4 fw-bold p-3">
-            <i class="bi bi-info-circle-fill me-2"></i> {{ mensaje_estrellas }}
+        <div class="alert border-0 shadow-sm rounded-4 mb-5 p-4 text-white d-flex align-items-center gap-3" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+            <i class="bi bi-info-circle-fill fs-2"></i> 
+            <div>
+                <h5 class="fw-bold mb-1">Actualización de Canje</h5>
+                <p class="mb-0 fw-medium">{{ mensaje_estrellas }}</p>
+            </div>
         </div>
     {% endif %}
 
-    <h5 class="fw-bold text-dark mb-3">Catálogo de Premios Disponibles</h5>
-    <div class="row">
+    <div class="d-flex align-items-center mb-4">
+        <h4 class="fw-bold text-dark mb-0"><i class="bi bi-shop text-primary me-2"></i>Catálogo de Premios</h4>
+        <span class="badge bg-light text-secondary border ms-3">Actualizado</span>
+    </div>
+
+    <div class="row g-4">
         {% for premio in recompensas %}
-        <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden bg-white">
-                <div class="p-4 bg-light text-center border-bottom d-flex align-items-center justify-content-center" style="height: 140px; background: linear-gradient(135deg, #f8f9fa, #eef2f7);">
-                    <i class="bi bi-ticket-perforated text-primary" style="font-size: 3.5rem; opacity: 0.7;"></i>
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 rounded-4 h-100 bg-white reward-card">
+                <!-- Imagen/Icono del Premio -->
+                <div class="reward-img-container p-4 d-flex align-items-center justify-content-center position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-opacity-10 bg-primary"></div>
+                    <!-- Partículas decorativas -->
+                    <div class="position-absolute shape shape-1 rounded-circle bg-primary opacity-25" style="width: 50px; height: 50px; top: -10px; right: -10px;"></div>
+                    <div class="position-absolute shape shape-2 rounded-circle bg-info opacity-25" style="width: 30px; height: 30px; bottom: 20px; left: 20px;"></div>
+                    
+                    <i class="bi bi-gift text-primary reward-icon" style="font-size: 5rem; z-index: 1;"></i>
                 </div>
+                
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div>
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="fw-bold text-dark mb-0">{{ premio.nombre }}</h5>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="fw-bold text-dark mb-0 lh-sm">{{ premio.nombre }}</h5>
                         </div>
-                        <span class="badge bg-warning text-dark fw-bold px-3 py-1.5 mb-3" style="font-size: 0.85rem;">
-                            <i class="bi bi-star-fill text-dark"></i> {{ premio.costo_estrellas }} Estrellas RJ
-                        </span>
-                        <p class="text-secondary small mb-4">{{ premio.descripcion|default:"Este beneficio requiere validación previa con el área de operaciones al momento de la entrega." }}</p>
+                        
+                        <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-warning bg-opacity-10 border border-warning border-opacity-50 mb-3">
+                            <i class="bi bi-star-fill text-warning" style="font-size: 1.2rem;"></i>
+                            <span class="fw-bold text-dark fs-6">{{ premio.costo_estrellas }} Estrellas RJ</span>
+                        </div>
+                        
+                        <p class="text-secondary small fw-medium mb-4 lh-lg">{{ premio.descripcion|default:"Este beneficio requiere validación previa con el área de operaciones al momento de la entrega. Asegúrate de coordinarlo con tu jefe directo." }}</p>
                     </div>
 
-                    <form method="POST">
+                    <form method="POST" class="mt-auto">
                         {% csrf_token %}
                         <input type="hidden" name="costo" value="{{ premio.costo_estrellas }}">
                         <input type="hidden" name="nombre_premio" value="{{ premio.nombre }}">
                         
                         {% if perfil and perfil.estrellas_rj >= premio.costo_estrellas %}
-                            <button type="submit" name="canjear_premio" class="btn btn-primary w-100 fw-bold py-2.5 rounded-3 shadow-sm">
-                                <i class="bi bi-basket3-fill"></i> Solicitar Canje
+                            <button type="submit" name="canjear_premio" class="btn btn-primary w-100 fw-bold py-3 rounded-pill shadow-sm btn-hover-grow">
+                                <i class="bi bi-bag-check-fill me-2"></i> Solicitar Canje
                             </button>
                         {% else %}
-                            <button type="button" class="btn btn-light w-100 text-muted fw-bold py-2.5 border rounded-3" disabled>
-                                <i class="bi bi-lock-fill"></i> Falta acumular estrellas
+                            <button type="button" class="btn btn-light text-secondary w-100 fw-bold py-3 rounded-pill border" disabled>
+                                <i class="bi bi-lock-fill me-2"></i> Saldo Insuficiente
                             </button>
                         {% endif %}
                     </form>
@@ -57,11 +90,46 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm">
-            <i class="bi bi-shop text-muted fs-1"></i>
-            <p class="text-muted mt-2 mb-0">El catálogo de recompensas se está actualizando. Vuelve a consultar pronto.</p>
+        <div class="col-12 text-center py-5">
+            <div class="d-inline-block bg-white p-4 rounded-circle shadow-sm mb-3">
+                <i class="bi bi-box-seam text-muted" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold text-dark">Aún no hay recompensas</h5>
+            <p class="text-muted">El catálogo se actualizará pronto con increíbles beneficios.</p>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<style>
+/* ESTILOS A1 PARA BENEFICIOS */
+.reward-card {
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+.reward-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+}
+.reward-img-container {
+    height: 180px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 1rem 1rem 0 0;
+}
+.reward-card:hover .reward-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+.reward-icon {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+}
+.btn-hover-grow {
+    transition: all 0.2s ease;
+}
+.btn-hover-grow:hover {
+    transform: scale(1.02);
+    box-shadow: 0 5px 15px rgba(var(--bs-primary-rgb), 0.4) !important;
+}
+</style>
+
 {% endblock %}

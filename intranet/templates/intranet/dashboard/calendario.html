@@ -3,66 +3,104 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/es.global.min.js"></script>
 
-<div class="container-fluid">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-        <div>
-            <h4 class="fw-bold text-dark mb-0"><i class="bi bi-calendar3 text-primary"></i> Calendario de Actividades</h4>
-            <p class="text-muted small mb-0">Visualización de feriados, reuniones de campaña y capacitaciones corporativas.</p>
+<div class="container-fluid py-4" style="max-width: 1400px;">
+    
+    <!-- HEADER CALENDARIO A1 -->
+    <div class="card border-0 rounded-4 overflow-hidden mb-5 position-relative shadow-sm" style="background: linear-gradient(135deg, #093028 0%, #237A57 100%);">
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('https://www.transparenttextures.com/patterns/connected.png'); opacity: 0.15;"></div>
+        <div class="card-body p-4 p-md-5 position-relative z-index-2 text-white">
+            <div class="row align-items-center">
+                <div class="col-md-8 mb-4 mb-md-0">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-white bg-opacity-25 border border-white border-opacity-50 mb-3 shadow-sm" style="backdrop-filter: blur(5px);">
+                        <i class="bi bi-calendar3 text-warning"></i>
+                        <span class="fw-bold fs-6 text-white text-uppercase" style="letter-spacing: 1px;">Eventos RJ</span>
+                    </div>
+                    <h2 class="fw-bold display-6 mb-2">Calendario Corporativo</h2>
+                    <p class="fs-5 opacity-75 mb-0 fw-medium">Visualización de feriados, reuniones de campaña y capacitaciones.</p>
+                </div>
+                <div class="col-md-4 text-md-end text-center">
+                    {% if es_admin %}
+                    <button class="btn btn-warning btn-lg fw-bold rounded-pill shadow-lg px-4 hover-grow" data-bs-toggle="modal" data-bs-target="#modalEvento">
+                        <i class="bi bi-calendar-plus-fill me-2"></i> Crear Evento
+                    </button>
+                    {% else %}
+                    <i class="bi bi-calendar2-range text-white opacity-25" style="font-size: 8rem; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));"></i>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        {% if es_admin %}
-        <button class="btn btn-primary fw-bold rounded-pill shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#modalEvento">
-            <i class="bi bi-plus-circle"></i> Crear Evento
-        </button>
-        {% endif %}
     </div>
 
-    <div class="card shadow-sm border-0 rounded-4 p-3 p-md-4 bg-white">
-        <div id="calendar"></div>
+    <!-- CALENDARIO CONTENEDOR -->
+    <div class="card shadow-lg border-0 rounded-4 bg-white overflow-hidden mb-5">
+        <div class="card-body p-0">
+            <!-- FullCalendar wrapper -->
+            <div id="calendar-wrapper" class="p-3 p-md-4">
+                <div id="calendar"></div>
+            </div>
+        </div>
     </div>
 </div>
 
 {% if es_admin %}
+<!-- MODAL REGISTRAR EVENTO A1 -->
 <div class="modal fade" id="modalEvento" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus"></i> Registrar Evento</h5>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-header text-white border-0 p-4" style="background: linear-gradient(135deg, #093028 0%, #237A57 100%);">
+                <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus-fill me-2"></i> Registrar Nuevo Evento</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{% url 'calendario' %}">
                 {% csrf_token %}
-                <div class="modal-body p-4 bg-light">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Título de la Actividad</label>
-                        <input type="text" class="form-control border-secondary" name="titulo" required placeholder="Ej: Capacitación Meta Ads o Feriado Nacional">
+                <div class="modal-body p-4 p-md-5 bg-light">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase">Título de la Actividad</label>
+                        <input type="text" class="form-control form-control-lg border-0 shadow-sm" name="titulo" required placeholder="Ej: Capacitación Meta Ads o Feriado Nacional">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Detalles / Descripción</label>
-                        <textarea class="form-control border-secondary" name="descripcion" rows="3" placeholder="Ingresa los pormenores de la reunión..."></textarea>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase">Detalles / Descripción</label>
+                        <textarea class="form-control border-0 shadow-sm" name="descripcion" rows="4" placeholder="Ingresa los pormenores de la reunión..."></textarea>
                     </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">Inicio</label>
-                            <input type="datetime-local" class="form-control border-secondary" name="fecha_inicio" required>
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Fecha y Hora de Inicio</label>
+                            <input type="datetime-local" class="form-control form-control-lg border-0 shadow-sm" name="fecha_inicio" required>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-muted">Fin</label>
-                            <input type="datetime-local" class="form-control border-secondary" name="fecha_fin" required>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Fecha y Hora de Fin</label>
+                            <input type="datetime-local" class="form-control form-control-lg border-0 shadow-sm" name="fecha_fin" required>
                         </div>
                     </div>
-                    <div class="mb-2">
-                        <label class="form-label small fw-bold text-muted">Color de Etiqueta Informativa</label>
-                        <select class="form-select border-secondary" name="color">
-                            <option value="#183D74" selected>Azul (Institucional)</option>
-                            <option value="#D60C3B">Rojo (Urgente / Feriado)</option>
-                            <option value="#FF9E20">Amarillo (Recordatorio)</option>
-                            <option value="#198754">Verde (Capacitaciones)</option>
-                        </select>
+                    
+                    <div class="mb-2 p-3 bg-white rounded-4 shadow-sm border">
+                        <label class="form-label fw-bold text-dark small text-uppercase mb-3 d-block">Color de Etiqueta Informativa</label>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-primary border-primary" type="radio" name="color" id="colAzul" value="#183D74" checked style="width: 25px; height: 25px;">
+                                <label class="form-check-label ms-2 mt-1 fw-bold text-secondary" for="colAzul">Institucional (Azul)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-danger border-danger" type="radio" name="color" id="colRojo" value="#D60C3B" style="width: 25px; height: 25px;">
+                                <label class="form-check-label ms-2 mt-1 fw-bold text-secondary" for="colRojo">Urgente/Feriado (Rojo)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-warning border-warning" type="radio" name="color" id="colAmarillo" value="#FF9E20" style="width: 25px; height: 25px;">
+                                <label class="form-check-label ms-2 mt-1 fw-bold text-secondary" for="colAmarillo">Recordatorio (Amarillo)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input bg-success border-success" type="radio" name="color" id="colVerde" value="#198754" style="width: 25px; height: 25px;">
+                                <label class="form-check-label ms-2 mt-1 fw-bold text-secondary" for="colVerde">Capacitaciones (Verde)</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-white">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary fw-bold rounded-pill px-5 shadow-sm">Guardar Evento</button>
+                <div class="modal-footer border-0 p-4 bg-white">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold rounded-pill px-5 shadow-sm hover-grow" style="background: linear-gradient(135deg, #093028 0%, #237A57 100%); border: none;">
+                        <i class="bi bi-save2-fill me-2"></i> Guardar Evento
+                    </button>
                 </div>
             </form>
         </div>
@@ -70,43 +108,72 @@
 </div>
 {% endif %}
 
+<!-- MODAL DETALLE EVENTO -->
 <div class="modal fade" id="modalDetalleEvento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title fw-bold" id="detalleTitulo">Detalles de la Actividad</h5>
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 p-4">
+                <h5 class="modal-title fw-bold" id="detalleTitulo"><i class="bi bi-info-square-fill me-2"></i> Detalles de la Actividad</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4 bg-light">
-                <p class="fw-medium text-dark" id="detalleDescripcion"></p>
-                <hr class="opacity-25">
-                <div class="row small text-muted">
-                    <div class="col-6"><strong><i class="bi bi-clock"></i> Inicio:</strong> <span id="detalleInicio"></span></div>
-                    <div class="col-6"><strong><i class="bi bi-clock-fill"></i> Fin:</strong> <span id="detalleFin"></span></div>
+            <div class="modal-body p-4 p-md-5 bg-white text-center">
+                <div class="d-inline-block bg-primary bg-opacity-10 text-primary rounded-circle p-4 mb-4" id="detalleIcon">
+                    <i class="bi bi-calendar-event display-4"></i>
+                </div>
+                
+                <div class="d-flex justify-content-center gap-3 mb-4">
+                    <div class="bg-light p-3 rounded-4 border shadow-sm flex-fill">
+                        <span class="small text-muted fw-bold text-uppercase d-block mb-1">Inicio</span>
+                        <strong class="text-dark fs-6" id="detalleInicio"></strong>
+                    </div>
+                    <div class="bg-light p-3 rounded-4 border shadow-sm flex-fill">
+                        <span class="small text-muted fw-bold text-uppercase d-block mb-1">Fin</span>
+                        <strong class="text-dark fs-6" id="detalleFin"></strong>
+                    </div>
+                </div>
+
+                <div class="text-start bg-light p-4 rounded-4 border">
+                    <span class="small text-muted fw-bold text-uppercase d-block mb-2">Descripción Adicional</span>
+                    <p id="detalleDescripcion" class="mb-0 text-dark fw-medium lh-base"></p>
                 </div>
             </div>
-            <div class="modal-footer border-0 bg-white justify-content-between">
-                <div>
-                    {% if es_admin %}
-                    <form method="POST" id="formEliminarEvento" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger fw-bold rounded-pill px-3" onclick="return confirm('¿Estás seguro que deseas eliminar permanentemente este evento?');">
-                            <i class="bi bi-trash"></i> Eliminar Evento
-                        </button>
-                    </form>
-                    {% endif %}
-                </div>
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            {% if es_admin %}
+            <div class="modal-footer border-0 p-4 bg-light justify-content-center">
+                <form method="POST" id="formEliminarEvento">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-outline-danger fw-bold rounded-pill px-5 shadow-sm hover-grow" onclick="eliminarEventoSeleccionado()">
+                        <i class="bi bi-trash-fill me-2"></i> Eliminar Actividad
+                    </button>
+                </form>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
+<style>
+/* FullCalendar A1 Overrides */
+.fc-theme-standard .fc-scrollgrid { border: none !important; }
+.fc-theme-standard td, .fc-theme-standard th { border-color: #f1f3f5 !important; }
+.fc-col-header-cell { padding: 12px 0 !important; background-color: #f8f9fa; font-weight: 700 !important; color: #495057; text-transform: uppercase; font-size: 0.85rem; border-bottom: 2px solid #dee2e6 !important;}
+.fc-daygrid-day-number { font-weight: 600; color: #495057; padding: 8px !important; text-decoration: none; }
+.fc-day-today { background-color: rgba(35, 122, 87, 0.05) !important; font-weight: bold; }
+.fc-event { border-radius: 6px !important; border: none !important; padding: 3px 5px !important; font-size: 0.8rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s; }
+.fc-event:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+.fc-button-primary { background: #1e293b !important; border: none !important; border-radius: 8px !important; font-weight: bold !important; text-transform: capitalize; padding: 8px 16px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.fc-button-primary:hover { background: #0f172a !important; }
+.fc-toolbar-title { font-weight: 800 !important; color: #1e293b !important; font-size: 1.5rem !important; }
+.hover-grow { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.hover-grow:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important; }
+</style>
+
 <script>
+    let eventoIdSeleccionado = null;
+
     document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar');
-        var eventosData = JSON.parse(document.getElementById('eventos-json').textContent);
-
+        var eventosJson = {{ eventos_json|safe|default:"[]" }};
+        
         var calendar = new FullCalendar.Calendar(calendarEl, {
             locale: 'es',
             initialView: 'dayGridMonth',
@@ -115,68 +182,40 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            themeSystem: 'bootstrap5',
-            events: eventosData,
+            height: 'auto',
+            events: eventosJson,
             eventClick: function(info) {
-                // Capturar propiedades del evento clicado
-                var titulo = info.event.title;
-                var desc = info.event.extendedProps.description || "Sin descripción adicional.";
-                var inicio = info.event.start.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' });
-                var fin = info.event.end ? info.event.end.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : inicio;
-                var idEvento = info.event.id;
-
-                // Rellenar dinámicamente el modal de visualización
-                document.getElementById('detalleTitulo').innerText = titulo;
-                document.getElementById('detalleDescripcion').innerText = desc;
-                document.getElementById('detalleInicio').innerText = inicio;
-                document.getElementById('detalleFin').innerText = fin;
-
-                // Si existe el formulario de borrado (es admin), reescribimos su acción hacia la URL correspondiente
-                var formEliminar = document.getElementById('formEliminarEvento');
-                if (formEliminar) {
-                    formEliminar.action = "/calendario/eliminar/" + idEvento + "/";
-                }
-
-                // Disparar la apertura visual del Modal mediante Bootstrap
-                var modalDetalle = new bootstrap.Modal(document.getElementById('modalDetalleEvento'));
-                modalDetalle.show();
+                eventoIdSeleccionado = info.event.id;
+                document.getElementById('detalleTitulo').innerText = info.event.title;
+                
+                // Formateo de fechas lindo
+                const formatOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' };
+                let inicioStr = info.event.start ? info.event.start.toLocaleDateString('es-ES', formatOptions) : 'Sin fecha';
+                let finStr = info.event.end ? info.event.end.toLocaleDateString('es-ES', formatOptions) : 'Sin fecha';
+                
+                document.getElementById('detalleInicio').innerText = inicioStr;
+                document.getElementById('detalleFin').innerText = finStr;
+                
+                let desc = info.event.extendedProps.description;
+                document.getElementById('detalleDescripcion').innerText = desc ? desc : 'No hay información extra sobre esta actividad.';
+                
+                var modal = new bootstrap.Modal(document.getElementById('modalDetalleEvento'));
+                modal.show();
             }
         });
-
         calendar.render();
     });
-</script>
 
-{{ eventos_json|json_script:"eventos-json" }}
-
-<style>
-    .fc {
-        --fc-border-color: #e2e8f0;
-        --fc-button-bg-color: #183D74;
-        --fc-button-border-color: #183D74;
-        --fc-button-active-bg-color: #FF9E20;
-        --fc-button-active-border-color: #FF9E20;
-        --fc-button-hover-bg-color: #13325e;
-        --fc-button-hover-border-color: #13325e;
-        font-size: 0.9rem;
-    }
-    .fc .fc-toolbar-title {
-        font-weight: 700;
-        color: #334155;
-        font-size: 1.2rem;
-    }
-    .fc-event {
-        cursor: pointer;
-        padding: 2px 4px;
-        border-radius: 4px;
-        font-weight: 500;
-        border: none !important;
-    }
-    @media (max-width: 767.98px) {
-        .fc .fc-toolbar {
-            flex-direction: column;
-            gap: 10px;
+    {% if es_admin %}
+    function eliminarEventoSeleccionado() {
+        if(eventoIdSeleccionado) {
+            if(confirm('¿Confirmas que deseas eliminar este evento del calendario general?')) {
+                var form = document.getElementById('formEliminarEvento');
+                form.action = '/calendario/eliminar/' + eventoIdSeleccionado + '/';
+                form.submit();
+            }
         }
     }
-</style>
+    {% endif %}
+</script>
 {% endblock %}

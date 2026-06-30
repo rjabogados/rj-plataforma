@@ -2,101 +2,131 @@
 {% load static %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="section-header text-center mb-5 mt-3">
-        <h2 class="fw-bold text-dark"><i class="bi bi-life-preserver me-2 text-primary"></i>Centro de Solicitudes</h2>
-        <p class="text-muted mb-0">Selecciona el tipo de ayuda o solicitud que necesitas.</p>
+<div class="container-fluid py-4" style="max-width: 1300px;">
+    
+    <!-- HEADER PREMIUM -->
+    <div class="card border-0 rounded-4 overflow-hidden mb-5 shadow-sm position-relative" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('https://www.transparenttextures.com/patterns/stardust.png'); opacity: 0.3;"></div>
+        <div class="card-body p-4 p-md-5 position-relative z-index-2 text-white text-center">
+            <div class="d-inline-block bg-white bg-opacity-25 rounded-circle p-3 mb-3 shadow">
+                <i class="bi bi-headset fs-1 text-white"></i>
+            </div>
+            <h2 class="fw-bold display-6 mb-2">Centro de Ayuda y Solicitudes</h2>
+            <p class="fs-5 opacity-75 mb-0 fw-medium">¿Necesitas soporte de TI o gestionar tus vacaciones? Estamos aquí para ayudarte.</p>
+        </div>
     </div>
 
-    <!-- Tarjetas de Acciones Rápidas -->
+    <!-- Tarjetas de Acciones Rápidas A1 -->
     <div class="row g-4 justify-content-center mb-5">
-        <div class="col-md-5 col-lg-4">
-            <div class="card card-buk h-100 text-center shadow-sm hover-elevate border-0" data-bs-toggle="modal" data-bs-target="#modalTicket" style="cursor: pointer;">
-                <div class="card-body py-5">
-                    <div class="d-inline-block bg-warning bg-opacity-10 rounded-circle p-3 mb-3">
-                        <i class="bi bi-ticket-detailed-fill fs-1 text-warning"></i>
+        <div class="col-md-6 col-lg-5">
+            <div class="card h-100 text-center shadow-sm border-0 rounded-4 action-card" data-bs-toggle="modal" data-bs-target="#modalTicket">
+                <div class="card-body py-5 px-4 position-relative overflow-hidden">
+                    <div class="shape shape-1 rounded-circle bg-warning opacity-10" style="width: 150px; height: 150px; position: absolute; top: -50px; left: -50px;"></div>
+                    
+                    <div class="d-inline-block bg-warning bg-opacity-10 rounded-circle p-4 mb-4 position-relative z-index-2 shadow-sm" style="transition: transform 0.3s ease;">
+                        <i class="bi bi-ticket-detailed-fill text-warning display-5"></i>
                     </div>
-                    <h5 class="fw-bold">Reportar Problema</h5>
-                    <p class="text-muted small mb-0">Justificaciones, soporte TI o fallas.</p>
+                    <h4 class="fw-bold text-dark position-relative z-index-2">Reportar un Problema</h4>
+                    <p class="text-secondary fw-medium mb-0 position-relative z-index-2">Soporte técnico, fallas de sistema o justificaciones laborales.</p>
+                    
+                    <div class="mt-4 position-relative z-index-2">
+                        <span class="btn btn-warning rounded-pill px-4 fw-bold text-dark shadow-sm">Crear Ticket <i class="bi bi-arrow-right ms-1"></i></span>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-5 col-lg-4">
-            <div class="card card-buk h-100 text-center shadow-sm hover-elevate border-0" data-bs-toggle="modal" data-bs-target="#modalVacaciones" style="cursor: pointer;">
-                <div class="card-body py-5">
-                    <div class="d-inline-block bg-info bg-opacity-10 rounded-circle p-3 mb-3">
-                        <i class="bi bi-airplane-engines-fill fs-1 text-info"></i>
+        
+        <div class="col-md-6 col-lg-5">
+            <div class="card h-100 text-center shadow-sm border-0 rounded-4 action-card" data-bs-toggle="modal" data-bs-target="#modalVacaciones">
+                <div class="card-body py-5 px-4 position-relative overflow-hidden">
+                    <div class="shape shape-1 rounded-circle bg-info opacity-10" style="width: 150px; height: 150px; position: absolute; bottom: -50px; right: -50px;"></div>
+                    
+                    <div class="d-inline-block bg-info bg-opacity-10 rounded-circle p-4 mb-4 position-relative z-index-2 shadow-sm" style="transition: transform 0.3s ease;">
+                        <i class="bi bi-airplane-engines-fill text-info display-5"></i>
                     </div>
-                    <h5 class="fw-bold">Solicitar Vacaciones</h5>
-                    <p class="text-muted small mb-0">Programa tus días libres.</p>
+                    <h4 class="fw-bold text-dark position-relative z-index-2">Solicitar Vacaciones</h4>
+                    <p class="text-secondary fw-medium mb-0 position-relative z-index-2">Programa tus días libres y consulta el estado de tu solicitud.</p>
+                    
+                    <div class="mt-4 position-relative z-index-2">
+                        <span class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm">Ver Calendario <i class="bi bi-arrow-right ms-1"></i></span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Historiales unificados con Tabs -->
-    <div class="card card-buk border-0 overflow-hidden shadow-sm">
-        <div class="card-header bg-white border-bottom p-0">
-            <ul class="nav nav-tabs nav-tabs-buk w-100" id="historialTabs" role="tablist">
-                <li class="nav-item w-50 text-center" role="presentation">
-                    <button class="nav-link active w-100 py-3 fw-bold" id="tickets-tab" data-bs-toggle="tab" data-bs-target="#tab-tickets" type="button" role="tab">
-                        <i class="bi bi-ticket-detailed me-2"></i> Mis Tickets ({{ tickets|length }})
+    <!-- Historiales unificados con Tabs Modernos -->
+    <div class="card border-0 rounded-4 shadow-sm bg-white overflow-hidden">
+        <div class="card-header bg-transparent border-bottom-0 p-4 pb-0">
+            <ul class="nav nav-pills custom-pills w-100 d-flex gap-2" id="historialTabs" role="tablist">
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link active w-100 py-3 fw-bold rounded-3" id="tickets-tab" data-bs-toggle="pill" data-bs-target="#tab-tickets" type="button" role="tab">
+                        <i class="bi bi-ticket-detailed me-2"></i> Mis Tickets Emitidos <span class="badge bg-white text-primary ms-1">{{ tickets|length }}</span>
                     </button>
                 </li>
-                <li class="nav-item w-50 text-center" role="presentation">
-                    <button class="nav-link w-100 py-3 fw-bold" id="vacaciones-tab" data-bs-toggle="tab" data-bs-target="#tab-vacaciones" type="button" role="tab">
-                        <i class="bi bi-airplane-engines me-2"></i> Mis Vacaciones ({{ solicitudes_vacaciones|length }})
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link w-100 py-3 fw-bold rounded-3" id="vacaciones-tab" data-bs-toggle="pill" data-bs-target="#tab-vacaciones" type="button" role="tab">
+                        <i class="bi bi-airplane-engines me-2"></i> Mis Vacaciones <span class="badge bg-white text-secondary ms-1">{{ solicitudes_vacaciones|length }}</span>
                     </button>
                 </li>
             </ul>
         </div>
         
-        <div class="card-body p-0">
+        <div class="card-body p-0 mt-3">
             <div class="tab-content" id="historialTabsContent">
                 
                 <!-- Tab Tickets -->
                 <div class="tab-pane fade show active" id="tab-tickets" role="tabpanel">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light text-secondary small">
+                        <table class="table table-hover align-middle custom-table mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4">Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Detalle</th>
-                                    <th>Evidencia</th>
-                                    <th>Estado</th>
+                                    <th class="ps-4 text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Fecha y Hora</th>
+                                    <th class="text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Categoría</th>
+                                    <th class="text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Detalle del Problema</th>
+                                    <th class="text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Adjuntos</th>
+                                    <th class="text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for t in tickets %}
                                 <tr>
-                                    <td class="ps-4 small text-muted fw-semibold">{{ t.fecha_registro|date:"d/m/Y H:i" }}</td>
-                                    <td><span class="badge-soft">{{ t.get_tipo_display }}</span></td>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">{{ t.fecha_registro|date:"d M Y" }}</div>
+                                        <small class="text-muted">{{ t.fecha_registro|date:"H:i a" }}</small>
+                                    </td>
                                     <td>
-                                        <p class="mb-0 small text-secondary" style="max-width: 280px; white-space: pre-wrap;">{{ t.motivo }}</p>
+                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm"><i class="bi bi-tag-fill text-primary me-1"></i> {{ t.get_tipo_display }}</span>
+                                    </td>
+                                    <td>
+                                        <p class="mb-0 text-dark fw-medium text-truncate" style="max-width: 300px;" title="{{ t.motivo }}">{{ t.motivo }}</p>
                                     </td>
                                     <td>
                                         {% if t.adjunto_comprobante %}
-                                        <a href="{% url 'ver_adjunto_ticket' t.id %}" target="_blank" class="btn btn-sm btn-outline-primary btn-pill fw-semibold">
-                                            <i class="bi bi-paperclip me-1"></i> Ver adjunto
+                                        <a href="{% url 'ver_adjunto_ticket' t.id %}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill fw-bold">
+                                            <i class="bi bi-paperclip me-1"></i> Ver archivo
                                         </a>
                                         {% else %}
-                                        <span class="text-muted small">Sin adjunto</span>
+                                        <span class="badge bg-light text-muted border">Sin adjunto</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if t.estado == 'PENDIENTE' %}
-                                        <span class="badge-status pending"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
                                         {% elif t.estado == 'APROBADO' %}
-                                        <span class="badge-status approved"><i class="bi bi-check-circle-fill me-1"></i>Aprobado</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Solucionado</span>
                                         {% else %}
-                                        <span class="badge-status rejected"><i class="bi bi-x-circle-fill me-1"></i>Rechazado</span>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-x-circle-fill me-1"></i>Rechazado</span>
                                         {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">Aún no has generado ningún ticket.</td>
+                                    <td colspan="5" class="text-center py-5">
+                                        <i class="bi bi-inbox text-muted opacity-25 display-4 d-block mb-3"></i>
+                                        <h5 class="fw-bold text-muted">Bandeja Vacía</h5>
+                                        <p class="text-secondary small">Aún no has generado ningún ticket de soporte.</p>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -107,33 +137,64 @@
                 <!-- Tab Vacaciones -->
                 <div class="tab-pane fade" id="tab-vacaciones" role="tabpanel">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light text-secondary small">
+                        <table class="table table-hover align-middle custom-table mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4">Fechas</th>
-                                    <th>Días</th>
-                                    <th>Estado</th>
-                                    <th>Respuesta RRHH</th>
+                                    <th class="ps-4 text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Período Solicitado</th>
+                                    <th class="text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Días Totales</th>
+                                    <th class="text-secondary fw-bold text-uppercase" style="font-size: 0.8rem;">Estado</th>
+                                    <th class="text-secondary fw-bold text-uppercase text-end pe-4" style="font-size: 0.8rem;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for s in solicitudes_vacaciones %}
+                                {% for v in solicitudes_vacaciones %}
                                 <tr>
-                                    <td class="ps-4 fw-semibold text-dark">{{ s.fecha_inicio|date:"d/m/Y" }} al {{ s.fecha_fin|date:"d/m/Y" }}</td>
-                                    <td><span class="badge-soft">{{ s.dias_solicitados }} días</span></td>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-light rounded p-2 text-center border shadow-sm" style="min-width: 60px;">
+                                                <small class="d-block text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">Desde</small>
+                                                <strong class="text-dark">{{ v.fecha_inicio|date:"d M" }}</strong>
+                                            </div>
+                                            <i class="bi bi-arrow-right text-muted"></i>
+                                            <div class="bg-light rounded p-2 text-center border shadow-sm" style="min-width: 60px;">
+                                                <small class="d-block text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">Hasta</small>
+                                                <strong class="text-dark">{{ v.fecha_fin|date:"d M" }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-dark rounded-pill fs-6 px-3 py-2 shadow-sm">{{ v.dias_solicitados }} días</span></td>
                                     <td>
-                                        {% if s.estado == 'PENDIENTE' %}
-                                        <span class="badge-status pending">En evaluación</span>
-                                        {% elif s.estado == 'APROBADO' %}
-                                        <span class="badge-status approved">Aprobado</span>
+                                        {% if v.estado == 'PENDIENTE' %}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
+                                        {% elif v.estado == 'APROBADO' %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Aprobado</span>
                                         {% else %}
-                                        <span class="badge-status rejected">Rechazado</span>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-x-circle-fill me-1"></i>Rechazado</span>
                                         {% endif %}
                                     </td>
-                                    <td class="small text-muted">{{ s.comentarios_rrhh|default:"-" }}</td>
+                                    <td class="text-end pe-4">
+                                        {% if v.estado == 'PENDIENTE' %}
+                                        <form method="POST" action="{% url 'eliminar_vacaciones' v.id %}" class="d-inline" onsubmit="return confirm('¿Seguro que deseas cancelar esta solicitud?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill fw-bold">
+                                                <i class="bi bi-trash-fill"></i> Cancelar
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-light rounded-pill border text-muted" disabled>
+                                            <i class="bi bi-lock-fill"></i> Cerrado
+                                        </button>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="4" class="text-center py-5 text-muted">No tienes solicitudes de vacaciones registradas.</td></tr>
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <i class="bi bi-calendar-x text-muted opacity-25 display-4 d-block mb-3"></i>
+                                        <h5 class="fw-bold text-muted">Sin Solicitudes</h5>
+                                        <p class="text-secondary small">No has solicitado vacaciones recientemente.</p>
+                                    </td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -145,73 +206,111 @@
     </div>
 </div>
 
-<!-- Modal Nuevo Ticket -->
-<div class="modal fade" id="modalTicket" tabindex="-1" aria-labelledby="modalTicketLabel" aria-hidden="true">
+<!-- ================= MODALES ================= -->
+<!-- Modal Ticket -->
+<div class="modal fade" id="modalTicket" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold" id="modalTicketLabel"><i class="bi bi-ticket-detailed-fill text-warning me-2"></i>Nuevo Reporte</h5>
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header bg-warning border-0 p-4">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-ticket-detailed-fill me-2"></i>Reportar un Problema</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <form method="POST" action="{% url 'centro_ayuda' %}" enctype="multipart/form-data" class="lms-input-soft">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Tipo de solicitud</label>
-                        <select class="form-select" name="tipo" required>
-                            <option value="TARDANZA">Justificar tardanza</option>
-                            <option value="INASISTENCIA">Justificar falta</option>
-                            <option value="MEDICO">Descanso médico / salud</option>
-                            <option value="OTRO">Soporte General / TI</option>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4 p-md-5">
+                    <input type="hidden" name="form_type" value="ticket">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-secondary">Categoría del problema</label>
+                        <select class="form-select form-select-lg bg-light border-0 fw-semibold text-dark" name="tipo" required>
+                            <option value="">Seleccione...</option>
+                            <option value="SOPORTE_TI">Soporte Técnico / TI</option>
+                            <option value="RRHH">Gestión de Talento (RRHH)</option>
+                            <option value="JUSTIFICACION">Justificación de Tardanza/Falta</option>
+                            <option value="OTRO">Otros</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Detalle</label>
-                        <textarea class="form-control" name="motivo" rows="4" placeholder="Explica brevemente tu situación..." required></textarea>
-                    </div>
                     <div class="mb-4">
-                        <label class="form-label small fw-semibold text-secondary">Adjuntar evidencia (Opcional)</label>
-                        <input type="file" class="form-control" name="adjunto" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
-                        <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Archivos hasta 10MB.</small>
+                        <label class="form-label small fw-bold text-secondary">Detalle de la situación</label>
+                        <textarea class="form-control bg-light border-0" name="motivo" rows="4" placeholder="Explique brevemente lo sucedido..." required></textarea>
                     </div>
-                    <button type="submit" name="crear_ticket" class="btn btn-warning text-dark btn-pill w-100 fw-bold py-2">Enviar Solicitud</button>
-                </form>
-            </div>
+                    <div>
+                        <label class="form-label small fw-bold text-secondary"><i class="bi bi-paperclip me-1"></i>Evidencia / Adjunto (Opcional)</label>
+                        <input class="form-control" type="file" name="adjunto_comprobante">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-5 fw-bold shadow-sm text-dark"><i class="bi bi-send-fill me-2"></i>Enviar Ticket</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <!-- Modal Vacaciones -->
-<div class="modal fade" id="modalVacaciones" tabindex="-1" aria-labelledby="modalVacacionesLabel" aria-hidden="true">
+<div class="modal fade" id="modalVacaciones" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold" id="modalVacacionesLabel"><i class="bi bi-airplane-engines-fill text-info me-2"></i>Solicitar Vacaciones</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header bg-info border-0 p-4 text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-airplane-engines-fill me-2"></i>Solicitar Vacaciones</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <form method="POST" action="{% url 'centro_ayuda' %}" class="lms-input-soft">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-secondary">Fecha de inicio</label>
-                        <input type="date" class="form-control" name="fecha_inicio" required>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4 p-md-5">
+                    <input type="hidden" name="form_type" value="vacaciones">
+                    <div class="alert alert-info border-0 shadow-sm rounded-3 mb-4 fw-medium text-dark bg-info bg-opacity-10">
+                        <i class="bi bi-info-circle-fill text-info me-2"></i> Las vacaciones están sujetas a la aprobación de tu líder directo y RRHH.
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-semibold text-secondary">Fecha de fin (Inclusive)</label>
-                        <input type="date" class="form-control" name="fecha_fin" required>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary">Fecha de inicio</label>
+                            <input type="date" class="form-control form-control-lg bg-light border-0 fw-semibold text-dark" name="fecha_inicio" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary">Fecha de fin</label>
+                            <input type="date" class="form-control form-control-lg bg-light border-0 fw-semibold text-dark" name="fecha_fin" required>
+                        </div>
                     </div>
-                    <button type="submit" name="solicitar_vac" class="btn btn-info text-white btn-pill w-100 fw-bold py-2">Enviar Solicitud</button>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer border-0 p-4 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill px-5 fw-bold shadow-sm"><i class="bi bi-send-check-fill me-2"></i>Solicitar</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <style>
-    .hover-elevate { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .hover-elevate:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
-    .nav-tabs-buk { border-bottom: 2px solid #f1f5f9; }
-    .nav-tabs-buk .nav-link { border: none; color: #64748b; border-bottom: 3px solid transparent; }
-    .nav-tabs-buk .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
+.action-card {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+}
+.action-card:hover .d-inline-block {
+    transform: scale(1.1);
+}
+.custom-pills .nav-link {
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+.custom-pills .nav-link.active {
+    background-color: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+    box-shadow: 0 4px 10px rgba(var(--bs-primary-rgb), 0.3);
+}
+.custom-table th {
+    border-bottom: 2px solid #dee2e6;
+}
+.custom-table td {
+    padding: 1.2rem 0.5rem;
+}
 </style>
 {% endblock %}
