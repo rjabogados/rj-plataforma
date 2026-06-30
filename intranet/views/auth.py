@@ -138,8 +138,11 @@ import json
 def guardar_atajos(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            atajos = data.get('atajos', [])
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                atajos = data.get('atajos', [])
+            else:
+                atajos = request.POST.getlist('atajo')
             
             # Borrar atajos antiguos
             request.user.atajos_configurados.all().delete()
@@ -164,20 +167,30 @@ def guardar_atajos(request):
             
             for index, url_name in enumerate(atajos):
                 if url_name in diccionario_rutas:
-                    nombre, icono, color = diccionario_rutas[url_name]
                     AtajoUsuario.objects.create(
                         user=request.user,
-                        nombre=nombre,
                         url_name=url_name,
-                        icono=icono,
-                        color=color,
+                        nombre=diccionario_rutas[url_name][0],
+                        icono=diccionario_rutas[url_name][1],
+                        color=diccionario_rutas[url_name][2],
                         orden=index
                     )
             
-            return JsonResponse({'status': 'success'})
+            if request.content_type == 'application/json':
+                return JsonResponse({'status': 'success'})
+            
+            from django.contrib import messages
+            messages.success(request, 'Atajos actualizados correctamente.')
+            return redirect('inicio')
+            
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
-    return JsonResponse({'status': 'invalid_method'})
+            if request.content_type == 'application/json':
+                return JsonResponse({'status': 'error', 'message': str(e)})
+            
+            from django.contrib import messages
+            messages.error(request, f'Error al guardar: {str(e)}')
+            return redirect('inicio')
+    return redirect('inicio')
 
 @login_required(login_url='login')
 @solo_directivos

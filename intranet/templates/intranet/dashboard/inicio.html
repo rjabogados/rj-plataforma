@@ -315,15 +315,16 @@
 <!-- Modal Configuración Atajos -->
 <div class="modal fade" id="modalConfigurarAtajos" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0 p-4">
-                <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2 text-warning"></i>Personalizar Accesos</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4 bg-light">
-                <p class="text-muted small mb-4">Selecciona los módulos a los que deseas tener acceso rápido desde tu pantalla de inicio.</p>
-                
-                <form id="formAtajos">
+        <form id="formAtajos" method="POST" action="{% url 'guardar_atajos' %}">
+            {% csrf_token %}
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white border-0 p-4">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2 text-warning"></i>Personalizar Accesos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <p class="text-muted small mb-4">Selecciona los módulos a los que deseas tener acceso rápido desde tu pantalla de inicio.</p>
+                    
                     <div class="list-group shadow-sm rounded-4 overflow-hidden border-0">
                         <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
                             <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="colaboradores" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'colaboradores' %}checked{% endif %}{% endfor %}>
@@ -389,63 +390,16 @@
                             </span>
                         </label>
                     </div>
-                </form>
+                </div>
+                <div class="modal-footer bg-white border-0 p-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-5 fw-bold shadow-sm hover-grow" onclick="this.innerHTML='<span class=\'spinner-border spinner-border-sm\'></span> Guardando...'">
+                        <i class="bi bi-save2-fill me-2"></i> Guardar Cambios
+                    </button>
+                </div>
             </div>
-            <div class="modal-footer bg-white border-0 p-4">
-                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-dark rounded-pill px-5 fw-bold shadow-sm hover-grow" onclick="guardarAtajos()">
-                    <i class="bi bi-save2-fill me-2"></i> Guardar Cambios
-                </button>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
-
-<script>
-function guardarAtajos() {
-    const checkboxes = document.querySelectorAll('input[name="atajo"]:checked');
-    const seleccionados = Array.from(checkboxes).map(cb => cb.value);
-
-    // Deshabilitar botón para evitar doble clic
-    const btnGuardar = event.currentTarget;
-    const btnOriginalText = btnGuardar.innerHTML;
-    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
-    btnGuardar.disabled = true;
-
-    fetch("{% url 'guardar_atajos' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({ atajos: seleccionados })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.status === 'success') {
-            var myModalEl = document.getElementById('modalConfigurarAtajos');
-            var modal = bootstrap.Modal.getInstance(myModalEl);
-            if (modal) {
-                modal.hide();
-            }
-            // Remover backdrop manualmente por si acaso
-            document.body.classList.remove('modal-open');
-            const backdrop = document.querySelector('.modal-backdrop');
-            if(backdrop) backdrop.remove();
-            
-            window.location.href = window.location.pathname;
-        } else {
-            alert('Error al guardar: ' + data.message);
-            btnGuardar.innerHTML = btnOriginalText;
-            btnGuardar.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        btnGuardar.innerHTML = btnOriginalText;
-        btnGuardar.disabled = false;
-    });
-}
-</script>
 {% endif %}
 {% endblock %}
