@@ -93,21 +93,32 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                {% if t.estado == 'PENDIENTE' %}
-                                    <div class="d-flex gap-2 justify-content-center">
-                                        <form method="POST" action="{% url 'revisar_ticket' t.id 'APROBADO' %}">
+                                <div class="mb-2 small text-muted">
+                                    {% if t.aprobado_por_n1 %}<i class="bi bi-check-all text-success"></i> N1 {% endif %}
+                                    {% if t.aprobado_por_n2 %}<i class="bi bi-check-all text-success"></i> N2 {% endif %}
+                                    {% if t.aprobado_por_n3 %}<i class="bi bi-check-all text-success"></i> N3 {% endif %}
+                                </div>
+                                {% if 'PENDIENTE' in t.estado %}
+                                    <div class="d-flex flex-column gap-2 justify-content-center">
+                                        <div class="badge bg-warning text-dark mb-1">{{ t.get_estado_display }}</div>
+                                        <form method="POST" action="{% url 'revisar_ticket' t.id 'APROBADO' %}" class="w-100">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-success fw-semibold"><i class="bi bi-check-lg"></i> Aprobar</button>
+                                            <button type="submit" class="btn btn-sm btn-success fw-semibold w-100"><i class="bi bi-check-lg"></i> Aprobar</button>
                                         </form>
-                                        <form method="POST" action="{% url 'revisar_ticket' t.id 'RECHAZADO' %}">
+                                        <form method="POST" action="{% url 'revisar_ticket' t.id 'RECHAZADO' %}" class="w-100">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-danger fw-semibold"><i class="bi bi-x-lg"></i> Rechazar</button>
+                                            <input type="text" name="comentarios" class="form-control form-control-sm mb-1" placeholder="Razón del rechazo" required>
+                                            <button type="submit" class="btn btn-sm btn-danger fw-semibold w-100"><i class="bi bi-x-lg"></i> Rechazar</button>
                                         </form>
                                     </div>
                                 {% else %}
-                                    <span class="badge {% if t.estado == 'APROBADO' %}bg-success-subtle text-success border border-success{% else %}bg-danger-subtle text-danger border border-danger{% endif %} p-2 rounded-pill">
-                                        {{ t.get_estado_display }} por {{ t.revisado_por.first_name }}
+                                    <span class="badge {% if t.estado == 'APROBADO' %}bg-success-subtle text-success border border-success{% else %}bg-danger-subtle text-danger border border-danger{% endif %} p-2 rounded-pill d-block mb-1">
+                                        {{ t.get_estado_display }}
                                     </span>
+                                    <span class="text-muted small fst-italic">Cerrado por: {% if t.aprobado_por_n3 %}{{ t.aprobado_por_n3.first_name }}{% else %}Sistemas{% endif %}</span>
+                                    {% if t.comentarios_resolucion %}
+                                        <small class="d-block text-muted mt-1 text-start">💬 "{{ t.comentarios_resolucion }}"</small>
+                                    {% endif %}
                                 {% endif %}
                             </td>
                         </tr>

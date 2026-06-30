@@ -53,8 +53,8 @@
                                 <td class="ps-4 fw-semibold text-dark">{{ s.fecha_inicio|date:"d/m/Y" }} al {{ s.fecha_fin|date:"d/m/Y" }}</td>
                                 <td><span class="badge-soft">{{ s.dias_solicitados }} días</span></td>
                                 <td>
-                                    {% if s.estado == 'PENDIENTE' %}
-                                    <span class="badge-status pending">En evaluación</span>
+                                    {% if 'PENDIENTE' in s.estado %}
+                                    <span class="badge-status pending">En evaluación ({{ s.get_estado_display }})</span>
                                     {% elif s.estado == 'APROBADO' %}
                                     <span class="badge-status approved">Aprobado</span>
                                     {% else %}

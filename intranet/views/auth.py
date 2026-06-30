@@ -158,6 +158,8 @@ def guardar_atajos(request):
                 'gestor_lms': ('Academia LMS', 'bi-mortarboard-fill', 'warning'),
                 'dashboard_rrhh': ('Métricas RRHH', 'bi-graph-up', 'success'),
                 'dashboard_supervisor': ('Panel de Equipo', 'bi-diagram-3-fill', 'primary'),
+                'muro_kudos': ('Muro de Cultura', 'bi-balloon-heart-fill', 'danger'),
+                'centro_ayuda': ('Centro de Ayuda', 'bi-headset', 'info'),
             }
             
             for index, url_name in enumerate(atajos):
@@ -458,7 +460,12 @@ def leer_notificacion(request, pk):
     return redirect('notificaciones')
 
 
+from django.utils.http import url_has_allowed_host_and_scheme
+
 @login_required(login_url='login')
 def marcar_todas_leidas(request):
     request.user.notificaciones.filter(leida=False).update(leida=True)
-    return redirect(request.META.get('HTTP_REFERER', 'inicio'))
+    referer = request.META.get('HTTP_REFERER', '')
+    if not url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
+        referer = 'inicio'
+    return redirect(referer)

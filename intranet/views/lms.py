@@ -1679,9 +1679,11 @@ def eliminar_comunicado(request, pk):
     return redirect('gestor_comunicados')
 @login_required(login_url='login')
 @solo_directivos
+@require_http_methods(["POST"])
 def eliminar_evento(request, pk): return redirect('calendario')
 @login_required(login_url='login')
 @solo_directivos
+@require_http_methods(["POST"])
 def eliminar_candidato(request, pk): return redirect('dashboard')
 @login_required(login_url='login')
 @solo_directivos
@@ -2119,8 +2121,8 @@ def previsualizar_y_guardar_balotario(request):
         return render(request, 'intranet/lms/previsualizar_balotario.html', {'preguntas': preguntas, 'evaluacion': evaluacion})
 
     except Exception as e:
-        import traceback
-        return HttpResponse(f"<h2>¡Atrapado en la inyección! El error real es:</h2><pre style='background:#eee; padding:20px;'>{traceback.format_exc()}</pre>")
+        messages.error(request, "Ocurrió un error procesando el balotario. Contacte a soporte.")
+        return redirect('gestor_lms')
 
 @login_required(login_url='login')
 def rendir_evaluacion(request, matricula_id):
@@ -2433,9 +2435,14 @@ def detalle_curso(request, curso_id):
 
 @login_required(login_url='login')
 def ver_leccion(request, leccion_id):
-    perfil = request.user.perfil
+    perfil = getattr(request.user, 'perfil', None)
     leccion = get_object_or_404(LeccionCurso, id=leccion_id)
     
+    # VALIDACIÓN IDOR
+    if not usuario_es_directivo(request.user):
+        if not perfil or not MatriculaCurso.objects.filter(colaborador=perfil, curso=leccion.curso).exists():
+            raise Http404("Lección no disponible")
+            
     # Verificamos si ya la había marcado como completada antes
     ya_completada = ProgresoLeccion.objects.filter(colaborador=perfil, leccion=leccion, completada=True).exists()
     
@@ -2480,10 +2487,15 @@ def ver_adjunto_comunicado(request, pk):
     return build_storage_response(comunicado.adjunto)
 
 @login_required(login_url='login')
+@require_http_methods(["POST"])
 def completar_leccion(request, leccion_id):
-    perfil = request.user.perfil
+    perfil = getattr(request.user, 'perfil', None)
     leccion = get_object_or_404(LeccionCurso, id=leccion_id)
     
+    # VALIDACIÓN IDOR
+    if not perfil or not MatriculaCurso.objects.filter(colaborador=perfil, curso=leccion.curso).exists():
+        raise Http404("No autorizado")
+        
     # Registramos que vio el video/PDF de forma indestructible
     ProgresoLeccion.objects.get_or_create(
         colaborador=perfil, 
@@ -2873,6 +2885,7 @@ def crear_ruta_induccion_view(request):
 
 @login_required(login_url='login')
 @solo_directivos
+@require_http_methods(["POST"])
 def cerrar_encuesta(request, pk):
     encuesta = get_object_or_404(Encuesta, id=pk)
     encuesta.activa = False
@@ -2882,6 +2895,17 @@ def cerrar_encuesta(request, pk):
 
 @login_required(login_url='login')
 @solo_directivos
+@require_http_methods(["POST"])
+def abrir_encuesta(request, pk):
+    encuesta = get_object_or_404(Encuesta, id=pk)
+    encuesta.activa = True
+    encuesta.save()
+    messages.success(request, f"La encuesta '{encuesta.titulo}' ha sido reabierta.")
+    return redirect('encuestas_admin')
+
+@login_required(login_url='login')
+@solo_directivos
+@require_http_methods(["POST"])
 def eliminar_encuesta(request, pk):
     encuesta = get_object_or_404(Encuesta, id=pk)
     encuesta.delete()

@@ -111,8 +111,8 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% if t.estado == 'PENDIENTE' %}
-                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
+                                        {% if 'PENDIENTE' in t.estado %}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>En revisión ({{ t.get_estado_display }})</span>
                                         {% elif t.estado == 'APROBADO' %}
                                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Solucionado</span>
                                         {% else %}
@@ -164,8 +164,8 @@
                                     </td>
                                     <td><span class="badge bg-dark rounded-pill fs-6 px-3 py-2 shadow-sm">{{ v.dias_solicitados }} días</span></td>
                                     <td>
-                                        {% if v.estado == 'PENDIENTE' %}
-                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
+                                        {% if 'PENDIENTE' in v.estado %}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>En revisión ({{ v.get_estado_display }})</span>
                                         {% elif v.estado == 'APROBADO' %}
                                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-50 px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Aprobado</span>
                                         {% else %}
@@ -204,8 +204,9 @@
             </div>
         </div>
     </div>
-</div>
+{% endblock %}
 
+{% block modals %}
 <!-- ================= MODALES ================= -->
 <!-- Modal Ticket -->
 <div class="modal fade" id="modalTicket" tabindex="-1" aria-hidden="true">
@@ -259,24 +260,29 @@
                         <i class="bi bi-info-circle-fill text-info me-2"></i> Las vacaciones están sujetas a la aprobación de tu líder directo y RRHH.
                     </div>
                     <div class="row g-3 mb-4">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-secondary">Fecha de inicio</label>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-secondary">Fecha de Inicio</label>
                             <input type="date" class="form-control form-control-lg bg-light border-0 fw-semibold text-dark" name="fecha_inicio" required>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-secondary">Fecha de fin</label>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-secondary">Fecha de Fin</label>
                             <input type="date" class="form-control form-control-lg bg-light border-0 fw-semibold text-dark" name="fecha_fin" required>
                         </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-secondary">Comentarios adicionales (opcional)</label>
+                        <textarea class="form-control bg-light border-0" name="motivo" rows="2" placeholder="Información relevante para tu jefe..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 bg-light">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-info text-white rounded-pill px-5 fw-bold shadow-sm"><i class="bi bi-send-check-fill me-2"></i>Solicitar</button>
+                    <button type="submit" class="btn btn-info rounded-pill px-5 fw-bold shadow-sm text-white"><i class="bi bi-send-fill me-2"></i>Enviar Solicitud</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
 <style>
 .action-card {

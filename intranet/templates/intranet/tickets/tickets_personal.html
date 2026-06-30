@@ -80,8 +80,8 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if t.estado == 'PENDIENTE' %}
-                                    <span class="badge-status pending"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
+                                    {% if 'PENDIENTE' in t.estado %}
+                                    <span class="badge-status pending"><i class="bi bi-hourglass-split me-1"></i>En revisión ({{ t.get_estado_display }})</span>
                                     {% elif t.estado == 'APROBADO' %}
                                     <span class="badge-status approved"><i class="bi bi-check-circle-fill me-1"></i>Aprobado</span>
                                     {% else %}

@@ -86,6 +86,7 @@ def control_asistencia(request):
 
 @login_required(login_url='login')
 @solo_directivos
+@require_http_methods(["POST"])
 def eliminar_asistencia(request, pk):
     get_object_or_404(Asistencia, pk=pk).delete()
     return redirect('asistencia')

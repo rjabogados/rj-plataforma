@@ -51,10 +51,16 @@ def muro_celebraciones(request):
 
 @login_required(login_url='login')
 def muro_kudos(request):
-    # Ranking de los que más reconocimientos han recibido
+    # Ranking de los que más reconocimientos han recibido (General)
     top_reconocidos = Colaborador.objects.annotate(
         total_kudos=Count('reconocimientos_recibidos')
     ).filter(total_kudos__gt=0).order_by('-total_kudos')[:10]
+
+    # Ranking específico: El más Migajero
+    from django.db.models import Q
+    top_migajeros = Colaborador.objects.annotate(
+        total_migajas=Count('reconocimientos_recibidos', filter=Q(reconocimientos_recibidos__tipo='MIGAJERO'))
+    ).filter(total_migajas__gt=0).order_by('-total_migajas')[:5]
 
     feed_kudos = Reconocimiento.objects.all().order_by('-fecha')[:50]
     
@@ -67,6 +73,11 @@ def muro_kudos(request):
         
         receptor = get_object_or_404(Colaborador, id=receptor_id)
         
+        # ✅ Verificar que no haya enviado un Kudo al mismo receptor hoy
+        if Reconocimiento.objects.filter(emisor=request.user.perfil, receptor=receptor, fecha__date=date.today()).exists():
+            messages.warning(request, f"Ya le enviaste un Kudo a {receptor.user.first_name} el día de hoy.")
+            return redirect('muro_kudos')
+            
         Reconocimiento.objects.create(
             emisor=request.user.perfil,
             receptor=receptor,
@@ -78,6 +89,7 @@ def muro_kudos(request):
 
     context = {
         'top_reconocidos': top_reconocidos,
+        'top_migajeros': top_migajeros,
         'feed_kudos': feed_kudos,
         'colaboradores': colaboradores,
         'tipos_medalla': Reconocimiento.TIPOS_MEDALLA

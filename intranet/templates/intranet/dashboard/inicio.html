@@ -308,6 +308,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block modals %}
 {% if tiene_permisos_especiales %}
 <!-- Modal Configuración Atajos -->
 <div class="modal fade" id="modalConfigurarAtajos" tabindex="-1" aria-hidden="true">
@@ -371,6 +374,20 @@
                                 <small class="text-muted d-block">Administrar cursos de capacitación.</small>
                             </span>
                         </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="muro_kudos" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'muro_kudos' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-balloon-heart-fill text-danger me-2"></i>Muro de Cultura y Cumpleaños</strong>
+                                <small class="text-muted d-block">Enviar medallas y ver cumpleaños de hoy.</small>
+                            </span>
+                        </label>
+                        <label class="list-group-item d-flex gap-3 align-items-center py-3 bg-white border-bottom">
+                            <input class="form-check-input flex-shrink-0 fs-5" type="checkbox" value="centro_ayuda" name="atajo" {% for a in mis_atajos %}{% if a.url_name == 'centro_ayuda' %}checked{% endif %}{% endfor %}>
+                            <span class="pt-1 form-checked-content">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-headset text-info me-2"></i>Centro de Ayuda Unificado</strong>
+                                <small class="text-muted d-block">Mesa de ayuda y vacaciones.</small>
+                            </span>
+                        </label>
                     </div>
                 </form>
             </div>
@@ -389,6 +406,12 @@ function guardarAtajos() {
     const checkboxes = document.querySelectorAll('input[name="atajo"]:checked');
     const seleccionados = Array.from(checkboxes).map(cb => cb.value);
 
+    // Deshabilitar botón para evitar doble clic
+    const btnGuardar = event.currentTarget;
+    const btnOriginalText = btnGuardar.innerHTML;
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+    btnGuardar.disabled = true;
+
     fetch("{% url 'guardar_atajos' %}", {
         method: 'POST',
         headers: {
@@ -400,12 +423,28 @@ function guardarAtajos() {
     .then(response => response.json())
     .then(data => {
         if(data.status === 'success') {
-            location.reload();
+            var myModalEl = document.getElementById('modalConfigurarAtajos');
+            var modal = bootstrap.Modal.getInstance(myModalEl);
+            if (modal) {
+                modal.hide();
+            }
+            // Remover backdrop manualmente por si acaso
+            document.body.classList.remove('modal-open');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if(backdrop) backdrop.remove();
+            
+            window.location.href = window.location.pathname;
         } else {
             alert('Error al guardar: ' + data.message);
+            btnGuardar.innerHTML = btnOriginalText;
+            btnGuardar.disabled = false;
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        btnGuardar.innerHTML = btnOriginalText;
+        btnGuardar.disabled = false;
+    });
 }
 </script>
 {% endif %}

@@ -112,7 +112,10 @@ def usuario_puede_reclutamiento(user):
 def respuesta_no_autorizado():
     return JsonResponse({'success': False, 'error': 'No autorizado'}, status=403)
 
-@login_required
+from intranet.views.utils import solo_directivos
+
+@login_required(login_url='login')
+@solo_directivos
 def lista_candidatos(request):
     # Obtener todos los candidatos ordenados por los más recientes
     candidatos = CandidatoReclutamiento.objects.all().order_by('-fecha_registro')

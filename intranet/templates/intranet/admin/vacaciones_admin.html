@@ -85,27 +85,44 @@
                                 <span class="badge-soft">{{ s.dias_solicitados }} días</span>
                             </td>
                             <td>
-                                {% if s.estado == 'PENDIENTE' %}
-                                    <span class="badge-status pending"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
+                                {% if 'PENDIENTE' in s.estado %}
+                                    <span class="badge-status pending"><i class="bi bi-hourglass-split me-1"></i>{{ s.get_estado_display }}</span>
                                 {% elif s.estado == 'APROBADO' %}
                                     <span class="badge-status approved"><i class="bi bi-check-circle-fill me-1"></i>Aprobado</span>
                                 {% else %}
                                     <span class="badge-status rejected"><i class="bi bi-x-circle-fill me-1"></i>Rechazado</span>
                                 {% endif %}
+                                <div class="mt-1 small text-muted">
+                                    {% if s.aprobado_por_n1 %}<i class="bi bi-check-all text-success"></i> N1 {% endif %}
+                                    {% if s.aprobado_por_n2 %}<i class="bi bi-check-all text-success"></i> N2 {% endif %}
+                                    {% if s.aprobado_por_n3 %}<i class="bi bi-check-all text-success"></i> N3 {% endif %}
+                                </div>
                             </td>
                             <td class="text-center" style="min-width: 280px;">
-                                {% if s.estado == 'PENDIENTE' %}
-                                    <form method="POST" class="d-flex gap-2 justify-content-center lms-input-soft">
+                                {% if 'PENDIENTE' in s.estado %}
+                                    <form method="POST" class="d-flex flex-column gap-2 justify-content-center lms-input-soft">
                                         {% csrf_token %}
                                         <input type="hidden" name="solicitud_id" value="{{ s.id }}">
-                                        <input type="text" class="form-control form-control-sm" name="comentarios" placeholder="Motivo (opcional)" style="max-width: 170px;">
-                                        <button type="submit" name="gestionar_vac" class="btn btn-sm btn-success fw-semibold btn-pill" onclick="this.form.elements['estado'].value='APROBADO'">Aprobar</button>
-                                        <button type="submit" name="gestionar_vac" class="btn btn-sm btn-danger fw-semibold btn-pill" onclick="this.form.elements['estado'].value='RECHAZADO'">Rechazar</button>
-                                        <input type="hidden" name="estado" value="">
+                                        
+                                        <div class="d-flex gap-2">
+                                            <input type="text" name="comentarios" class="form-control form-control-sm border-0 bg-white shadow-sm" placeholder="Opcional: nota" style="min-width: 120px;">
+                                            <button type="submit" name="estado" value="APROBADO" class="btn btn-sm btn-success btn-pill fw-bold" title="Aprobar"><i class="bi bi-check-lg"></i> Aprobar</button>
+                                            <button type="submit" name="estado" value="RECHAZADO" class="btn btn-sm btn-outline-danger btn-pill fw-bold" title="Rechazar"><i class="bi bi-x-lg"></i></button>
+                                        </div>
                                     </form>
                                 {% else %}
-                                    <span class="text-muted small d-block">Resuelto por: {{ s.revisado_por.first_name }}</span>
-                                    <span class="text-secondary small fst-italic">"{{ s.comentarios_rrhh|default:'Sin comentarios' }}"</span>
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        <span class="text-secondary fst-italic small">Cerrado por: 
+                                            {% if s.aprobado_por_n3 %}{{ s.aprobado_por_n3.first_name }}{% else %}RRHH{% endif %}
+                                        </span>
+                                        <form method="POST" action="{% url 'eliminar_vacaciones' s.id %}" onsubmit="return confirm('¿Eliminar esta solicitud?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-light btn-pill text-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                    {% if s.comentarios_rrhh %}
+                                        <small class="d-block text-muted mt-1 text-start">💬 "{{ s.comentarios_rrhh }}"</small>
+                                    {% endif %}
                                 {% endif %}
                             </td>
                         </tr>

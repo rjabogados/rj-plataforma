@@ -140,6 +140,7 @@ urlpatterns = [
     path('encuestas-control/', views.encuestas_admin, name='encuestas_admin'),
     path('encuestas/crear/', lms.crear_encuesta_view, name='crear_encuesta'),
     path('encuestas/cerrar/<int:pk>/', lms.cerrar_encuesta, name='cerrar_encuesta'),
+    path('encuestas/abrir/<int:pk>/', lms.abrir_encuesta, name='abrir_encuesta'),
     path('encuestas/eliminar/<int:pk>/', lms.eliminar_encuesta, name='eliminar_encuesta'),
     path('encuestas/resultados/<int:pk>/', views.resultados_encuesta, name='resultados_encuesta'),
     path('encuestas/exportar/<int:pk>/', views.exportar_encuesta, name='exportar_encuesta'),

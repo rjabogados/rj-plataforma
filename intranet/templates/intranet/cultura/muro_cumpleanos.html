@@ -63,45 +63,6 @@
                                 <i class="bi bi-send-fill"></i>
                             </button>
                         </div>
-
-                        <!-- Modal para Enviar Felicitación -->
-                        <div class="modal fade" id="modalFelicitacion-{{ c.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 rounded-4 shadow">
-                                    <div class="modal-header border-0 pb-0">
-                                        <h5 class="modal-title fw-bold text-danger">Felicitar a {{ c.user.first_name }}
-                                            🎂</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                    </div>
-                                    <form method="POST">
-                                        {% csrf_token %}
-                                        <div class="modal-body">
-                                            <input type="hidden" name="destinatario_id" value="{{ c.id }}">
-                                            <div class="mb-3">
-                                                <label class="form-label text-secondary fw-medium">Escribe tu
-                                                    mensaje</label>
-                                                <textarea name="mensaje" class="form-control rounded-3" rows="3"
-                                                    placeholder="¡Que pases un lindo día lleno de bendiciones!"
-                                                    required></textarea>
-                                            </div>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" role="switch"
-                                                    id="privado-{{ c.id }}" name="privado">
-                                                <label class="form-check-label text-secondary small"
-                                                    for="privado-{{ c.id }}">Mensaje Privado (No saldrá en el muro
-                                                    público)</label>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer border-0">
-                                            <button type="submit"
-                                                class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">Enviar Saludo
-                                                <i class="bi bi-envelope-heart ms-1"></i></button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                         {% endfor %}
                     </div>
                     {% else %}
@@ -201,4 +162,47 @@
         {% endif %}
     });
 </script>
+{% endblock %}
+
+{% block modals %}
+{% for c in cumpleañeros %}
+<!-- Modal para Enviar Felicitación -->
+<div class="modal fade" id="modalFelicitacion-{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">Felicitar a {{ c.user.first_name }}
+                    🎂</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="destinatario_id" value="{{ c.id }}">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-medium">Escribe tu
+                            mensaje</label>
+                        <textarea name="mensaje" class="form-control rounded-3" rows="3"
+                            placeholder="¡Que pases un lindo día lleno de bendiciones!"
+                            required></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                            id="privado-{{ c.id }}" name="privado">
+                        <label class="form-check-label text-secondary small"
+                            for="privado-{{ c.id }}">Mensaje Privado (No saldrá en el muro
+                            público)</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit"
+                        class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">Enviar Saludo
+                        <i class="bi bi-envelope-heart ms-1"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

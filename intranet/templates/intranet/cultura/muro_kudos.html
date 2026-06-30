@@ -29,7 +29,7 @@
     <div class="row">
         <!-- Lado Izquierdo: Top Ranking -->
         <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm border-0 rounded-4 bg-white">
+            <div class="card shadow-sm border-0 rounded-4 bg-white mb-4">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0">
                     <h5 class="fw-bold text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i> Top Reconocidos</h5>
                 </div>
@@ -60,6 +60,31 @@
                         </div>
                     {% else %}
                         <p class="text-secondary text-center py-4">Aún no hay reconocimientos otorgados. ¡Sé el primero!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                    <h5 class="fw-bold text-dark"><i class="bi bi-coin text-warning me-2"></i> El Más Migajero</h5>
+                    <p class="small text-muted mb-0">Para los que abonan de a poquitos.</p>
+                </div>
+                <div class="card-body">
+                    {% if top_migajeros %}
+                        <div class="list-group list-group-flush">
+                            {% for colab in top_migajeros %}
+                            <div class="list-group-item bg-transparent border-0 d-flex align-items-center px-0 py-2">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 fw-bold text-dark">{{ colab.user.first_name }} {{ colab.user.last_name }}</h6>
+                                </div>
+                                <span class="badge rounded-pill bg-warning text-dark fw-bold px-3 py-1 shadow-sm">
+                                    {{ colab.total_migajas }} <i class="bi bi-coin"></i>
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-secondary text-center py-3 small">Aún no hay medallas migajeras otorgadas.</p>
                     {% endif %}
                 </div>
             </div>
@@ -102,7 +127,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block modals %}
 <!-- Modal para Otorgar Kudo -->
 <div class="modal fade" id="modalKudo" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -119,38 +146,39 @@
                         <select name="receptor_id" class="form-select rounded-3 shadow-sm border-0 bg-light" required>
                             <option value="">Selecciona a un compañero...</option>
                             {% for colab in colaboradores %}
-                                <option value="{{ colab.id }}">{{ colab.user.first_name }} {{ colab.user.last_name }} ({{ colab.get_rol_display }})</option>
+                            <option value="{{ colab.id }}">{{ colab.user.first_name }} {{ colab.user.last_name }} ({{ colab.get_rol_display }})</option>
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-dark">Tipo de Reconocimiento</label>
-                        <div class="row row-cols-2 g-2">
-                            {% for key, name in tipos_medalla %}
-                            <div class="col">
+                        <label class="form-label fw-bold text-dark">Tipo de Medalla</label>
+                        <div class="row g-2">
+                            {% for key, nombre in tipos_medalla %}
+                            <div class="col-6">
                                 <input type="radio" class="btn-check" name="tipo" id="tipo_{{ key }}" value="{{ key }}" required>
-                                <label class="btn btn-outline-primary w-100 rounded-3 text-start px-3 py-2 text-truncate" for="tipo_{{ key }}">
-                                    {{ name }}
+                                <label class="btn btn-outline-warning w-100 fw-semibold text-dark shadow-sm border-0" for="tipo_{{ key }}">
+                                    {{ nombre }}
                                 </label>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
 
-                    <div class="mb-2">
-                        <label class="form-label fw-bold text-dark">Motivo del reconocimiento</label>
-                        <textarea name="mensaje" class="form-control rounded-3 shadow-sm border-0 bg-light" rows="3" placeholder="Ej: Gracias por apoyarme siempre con mis dudas de las cuentas nuevas..." required></textarea>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Mensaje de reconocimiento</label>
+                        <textarea name="mensaje" class="form-control rounded-3 shadow-sm border-0 bg-light" rows="3" placeholder="Ej: Gracias por tu apoyo en el último reporte..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark rounded-pill px-5 fw-bold shadow">Publicar <i class="bi bi-send-fill ms-2"></i></button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold hover-lift"><i class="bi bi-send-fill me-2"></i> Enviar Kudos</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
 <style>
 .hover-lift {

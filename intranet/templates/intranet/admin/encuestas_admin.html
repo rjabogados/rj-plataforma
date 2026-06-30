@@ -117,6 +117,8 @@
                         <button class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalPregunta{{ e.id }}"><i class="bi bi-plus-lg"></i> Pregunta</button>
                         {% if e.activa %}
                         <a href="{% url 'cerrar_encuesta' e.id %}" class="btn btn-sm btn-outline-warning rounded-pill" onclick="return confirm('¿Seguro que deseas cerrar esta encuesta? Ya no recibirá respuestas.')"><i class="bi bi-x-circle"></i> Cerrar</a>
+                        {% else %}
+                        <a href="{% url 'abrir_encuesta' e.id %}" class="btn btn-sm btn-outline-success rounded-pill" onclick="return confirm('¿Seguro que deseas reabrir esta encuesta?')"><i class="bi bi-check-circle"></i> Abrir</a>
                         {% endif %}
                         <a href="{% url 'eliminar_encuesta' e.id %}" class="btn btn-sm btn-outline-danger rounded-pill" onclick="return confirm('¿Estás 100% seguro? Se eliminará la encuesta y todas las respuestas permanentemente.')"><i class="bi bi-trash"></i> Eliminar</a>
                     </div>
@@ -151,73 +153,6 @@
                 </ul>
             </div>
 
-            <div class="modal fade" id="modalPregunta{{ e.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content rounded-4 border-0">
-                        <div class="modal-header bg-dark text-white border-0">
-                            <h6 class="modal-title fw-bold">Nueva Pregunta</h6>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <form method="POST">
-                            {% csrf_token %}
-                            <input type="hidden" name="crear_pregunta" value="1">
-                            <input type="hidden" name="encuesta_id" value="{{ e.id }}">
-                            <div class="modal-body bg-light p-4">
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold">Enunciado de la pregunta</label>
-                                    <input type="text" class="form-control" name="texto" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold">Texto de ayuda</label>
-                                    <input type="text" class="form-control" name="descripcion_ayuda" placeholder="Ej: Responde según tu experiencia del último mes">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold">Tipo de respuesta</label>
-                                    <select class="form-select" name="tipo" id="tipoPregunta{{ e.id }}" onchange="toggleOpcionesPregunta('{{ e.id }}')">
-                                        <option value="ABIERTA">Abierta</option>
-                                        <option value="CERRADA">Cerrada Sí / No</option>
-                                        <option value="OPCION_UNICA">Selección única</option>
-                                        <option value="ESCALA_1_5">Escala 1 a 5</option>
-                                        <option value="FECHA">Fecha</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3" id="opcionesPregunta{{ e.id }}" style="display: none;">
-                                    <label class="form-label small fw-bold">Opciones (una por línea)</label>
-                                    <textarea class="form-control" name="opciones_texto" rows="3" placeholder="Muy satisfecho&#10;Satisfecho&#10;Neutral&#10;Insatisfecho"></textarea>
-                                </div>
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" name="obligatoria" checked>
-                                    <label class="form-check-label small fw-bold">Respuesta obligatoria</label>
-                                </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-md-7">
-                                        <label class="form-label small fw-bold">Depende de pregunta</label>
-                                        <select class="form-select" name="depende_de">
-                                            <option value="">-- Sin condición --</option>
-                                            {% for preg_ref in e.preguntas.all %}
-                                            <option value="{{ preg_ref.id }}">{{ preg_ref.orden }}. {{ preg_ref.texto|truncatechars:45 }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="col-md-5">
-                                        <label class="form-label small fw-bold">Valor disparador</label>
-                                        <input type="text" class="form-control" name="valor_disparador" placeholder="Ej: SI / 5 / Alto">
-                                    </div>
-                                </div>
-                                {% if e.con_puntaje %}
-                                <div class="mb-2">
-                                    <label class="form-label small fw-bold">Puntos si responde SÍ</label>
-                                    <input type="number" class="form-control" name="puntos_si" value="0">
-                                </div>
-                                {% endif %}
-                            </div>
-                            <div class="modal-footer border-0 bg-white">
-                                <button type="submit" class="btn btn-dark fw-bold rounded-pill w-100">Guardar pregunta</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
             {% endfor %}
         </div>
     </div>
@@ -230,4 +165,76 @@
         bloqueOpciones.style.display = selector.value === 'OPCION_UNICA' ? 'block' : 'none';
     }
 </script>
+{% endblock %}
+
+{% block modals %}
+{% for e in encuestas %}
+<div class="modal fade" id="modalPregunta{{ e.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold">Nueva Pregunta</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="crear_pregunta" value="1">
+                <input type="hidden" name="encuesta_id" value="{{ e.id }}">
+                <div class="modal-body bg-light p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Enunciado de la pregunta</label>
+                        <input type="text" class="form-control" name="texto" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Texto de ayuda</label>
+                        <input type="text" class="form-control" name="descripcion_ayuda" placeholder="Ej: Responde según tu experiencia del último mes">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Tipo de respuesta</label>
+                        <select class="form-select" name="tipo" id="tipoPregunta{{ e.id }}" onchange="toggleOpcionesPregunta('{{ e.id }}')">
+                            <option value="ABIERTA">Abierta</option>
+                            <option value="CERRADA">Cerrada Sí / No</option>
+                            <option value="OPCION_UNICA">Selección única</option>
+                            <option value="ESCALA_1_5">Escala 1 a 5</option>
+                            <option value="FECHA">Fecha</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="opcionesPregunta{{ e.id }}" style="display: none;">
+                        <label class="form-label small fw-bold">Opciones (una por línea)</label>
+                        <textarea class="form-control" name="opciones_texto" rows="3" placeholder="Muy satisfecho&#10;Satisfecho&#10;Neutral&#10;Insatisfecho"></textarea>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="obligatoria" checked>
+                        <label class="form-check-label small fw-bold">Respuesta obligatoria</label>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold">Depende de pregunta</label>
+                            <select class="form-select" name="depende_de">
+                                <option value="">-- Sin condición --</option>
+                                {% for preg_ref in e.preguntas.all %}
+                                <option value="{{ preg_ref.id }}">{{ preg_ref.orden }}. {{ preg_ref.texto|truncatechars:45 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Valor disparador</label>
+                            <input type="text" class="form-control" name="valor_disparador" placeholder="Ej: SI / 5 / Alto">
+                        </div>
+                    </div>
+                    {% if e.con_puntaje %}
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Puntos si responde SÍ</label>
+                        <input type="number" class="form-control" name="puntos_si" value="0">
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer border-0 bg-white">
+                    <button type="submit" class="btn btn-dark fw-bold rounded-pill w-100">Guardar pregunta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
