@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from .rrhh_core import Colaborador
 
 class Comunicado(models.Model):
@@ -44,3 +45,26 @@ class EventoCalendario(models.Model):
 
     def __str__(self):
         return self.titulo
+
+
+class Notificacion(models.Model):
+    TIPOS = [
+        ('MENSAJE', 'Mensaje'),
+        ('TICKET', 'Ticket'),
+        ('VACACIONES', 'Vacaciones'),
+        ('ALERTA', 'Alerta'),
+    ]
+
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notificaciones')
+    tipo = models.CharField(max_length=20, choices=TIPOS, default='ALERTA', db_index=True)
+    titulo = models.CharField(max_length=180)
+    detalle = models.CharField(max_length=300, blank=True, default='')
+    url_destino = models.CharField(max_length=300, blank=True, default='')
+    leida = models.BooleanField(default=False, db_index=True)
+    creada_en = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-creada_en']
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.titulo}"

@@ -99,7 +99,7 @@ def colaboradores(request):
     if request.method == 'POST':
         nombres = request.POST.get('nombres')
         apellidos = request.POST.get('apellidos')
-        dni_val = request.POST.get('dni').strip()
+        dni_val = (request.POST.get('dni') or '').strip() or None
         correo_val = request.POST.get('correo').strip().lower() or None
         rol_val = request.POST.get('rol')
         negocio_id = request.POST.get('negocio')
@@ -112,7 +112,7 @@ def colaboradores(request):
         password_custom = request.POST.get('password', '').strip()
 
         username_final = username_custom if username_custom else generar_username_unico(nombres, apellidos, dni_val)
-        password_final = password_custom if password_custom else dni_val
+        password_final = password_custom if password_custom else generar_contrasena_segura()
 
         negocio_instancia = Negocio.objects.get(id=negocio_id) if negocio_id else None
         area_instancia = Area.objects.filter(id=area_id).first() if area_id else None
@@ -236,7 +236,7 @@ def editar_colaborador(request, pk):
             colab.user.set_password(nueva_password)
 
         colab.user.save()
-        colab.dni = request.POST.get('dni').strip()
+        colab.dni = (request.POST.get('dni') or '').strip() or None
         colab.rol = request.POST.get('rol')
         colab.tipo_horario = request.POST.get('tipo_horario')
         colab.hora_ingreso = request.POST.get('hora_ingreso') or None
@@ -258,14 +258,17 @@ def editar_colaborador(request, pk):
         onboarding_activo = request.POST.get('switch_onboarding') == 'on'
         
         if onboarding_activo:
-            CandidatoOnboarding.objects.get_or_create(
-                colaborador=colab, dni=colab.dni,
-                defaults={
-                    'nombres': colab.user.first_name,
-                    'apellidos': colab.user.last_name,
-                    'estado': 'EN_PROCESO'
-                }
-            )
+            if colab.dni:
+                CandidatoOnboarding.objects.get_or_create(
+                    colaborador=colab, dni=colab.dni,
+                    defaults={
+                        'nombres': colab.user.first_name,
+                        'apellidos': colab.user.last_name,
+                        'estado': 'EN_PROCESO'
+                    }
+                )
+            else:
+                messages.warning(request, 'No se activó Onboarding porque el colaborador no tiene DNI/documento registrado.')
         else:
             CandidatoOnboarding.objects.filter(colaborador=colab).delete()
 

@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    {% if user.is_superuser or user.perfil.rol in 'ADMIN,RRHH,GERENCIA' %}
+    {% if user.is_superuser or perfil and perfil.puede_ver_gestion %}
     <div class="mb-5 pb-3 border-bottom">
         <div class="d-flex align-items-center mb-3">
             <span class="icon-chip danger me-2"><i class="bi bi-shield-lock-fill"></i></span>
@@ -57,6 +57,34 @@
                         <h6 class="fw-bold text-dark">Documentos Globales</h6>
                         <p class="small text-muted mb-3">Sube memorándums o políticas de la empresa.</p>
                         <a href="{% url 'documentos_admin' %}" class="btn btn-outline-success btn-sm btn-pill fw-semibold w-100">Abrir Bóveda</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 card-buk panel-shell-soft card-hover-effect">
+                    <div class="card-body p-4 text-center">
+                        <div class="icon-chip info mx-auto mb-3">
+                            <i class="bi bi-airplane-engines-fill fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark">Solicitudes de Vacaciones</h6>
+                        <p class="small text-muted mb-3">
+                            <span class="status-pill warning me-1">{{ vacaciones_pendientes|default:"0" }}</span> pendientes por revisar.
+                        </p>
+                        <a href="{% url 'vacaciones_admin' %}" class="btn btn-outline-primary btn-sm btn-pill fw-semibold w-100">Ir a Vacaciones</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 card-buk panel-shell-soft card-hover-effect">
+                    <div class="card-body p-4 text-center">
+                        <div class="icon-chip danger mx-auto mb-3">
+                            <i class="bi bi-bell-fill fs-3"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark">Centro de Alertas</h6>
+                        <p class="small text-muted mb-3">
+                            <span class="status-pill danger me-1">{{ notificaciones_no_leidas|default:"0" }}</span> notificaciones por revisar.
+                        </p>
+                        <a href="{% url 'notificaciones' %}" class="btn btn-outline-danger btn-sm btn-pill fw-semibold w-100">Abrir Notificaciones</a>
                     </div>
                 </div>
             </div>
@@ -128,6 +156,24 @@
                                 <div>
                                     <h6 class="fw-bold text-dark mb-1">Beneficios RJ</h6>
                                     <span class="small text-muted">Descubre tus descuentos corporativos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6">
+                    <a href="{% url 'notificaciones' %}" class="text-decoration-none">
+                        <div class="card card-buk panel-shell-soft h-100 card-hover-effect">
+                            <div class="card-body p-4 d-flex align-items-center">
+                                <i class="bi bi-bell-fill fs-2 text-warning me-3 opacity-75"></i>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1">Notificaciones</h6>
+                                    {% if notificaciones_no_leidas and notificaciones_no_leidas > 0 %}
+                                        <span class="small text-danger fw-bold"><i class="bi bi-exclamation-circle-fill"></i> {{ notificaciones_no_leidas }} pendiente(s)</span>
+                                    {% else %}
+                                        <span class="small text-muted"><i class="bi bi-check-circle-fill text-success"></i> Sin alertas nuevas</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

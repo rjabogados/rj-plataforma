@@ -19,6 +19,8 @@ urlpatterns = [
     path('', views.inicio, name='inicio'),
     path('perfil/', views.perfil, name='perfil'),
     path('perfil-admin/', views.perfil_admin, name='perfil_admin'),
+    path('notificaciones/', views.notificaciones, name='notificaciones'),
+    path('notificaciones/leer/<int:pk>/', views.leer_notificacion, name='leer_notificacion'),
     path('salir/', views.salir, name='salir'),
     path('login/', views.login_view, name='login'),
 

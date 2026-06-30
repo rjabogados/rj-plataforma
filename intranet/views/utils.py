@@ -112,9 +112,10 @@ def limpiar_texto_usuario(texto):
     primera_palabra = palabras[0] if palabras else ""
     return ''.join(c for c in unicodedata.normalize('NFKD', primera_palabra) if unicodedata.category(c) != 'Mn').replace('ñ', 'n')
 
-def generar_username_unico(nombres_bruto, apellidos_bruto, dni_val):
+def generar_username_unico(nombres_bruto, apellidos_bruto, dni_val=None):
     base_username = f"{limpiar_texto_usuario(nombres_bruto)}.{limpiar_texto_usuario(apellidos_bruto)}"
-    if not base_username or base_username == ".": base_username = f"usuario.{dni_val}"
+    if not base_username or base_username == ".":
+        base_username = f"usuario.{str(dni_val).strip()}" if dni_val else "usuario"
     username_final = base_username
     contador = 1
     while User.objects.filter(username=username_final).exists():

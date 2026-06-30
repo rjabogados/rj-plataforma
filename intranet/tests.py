@@ -9,7 +9,7 @@ from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from intranet.models import Colaborador, Comunicado, DocumentoGenerado, CursoInduccion, MatriculaCurso, MensajeInterno, Ticket, SolicitudVacaciones, Area, Cargo, Negocio
+from intranet.models import Colaborador, Comunicado, DocumentoGenerado, CursoInduccion, MatriculaCurso, MensajeInterno, Ticket, SolicitudVacaciones, Area, Cargo, Negocio, Notificacion
 from intranet.models.lms import Encuesta, Pregunta
 from intranet.models.lms import LeccionCurso
 from intranet.models import Asistencia
@@ -229,8 +229,10 @@ class SecurityAccessTests(TestCase):
 
 		self.client.login(username='rrhh', password='test12345')
 		response = self.client.get(reverse('tickets_admin'), {'area': area.id})
-		self.assertContains(response, 'asesor_op Test')
-		self.assertNotContains(response, 'asesor_otro2 Test')
+		self.assertEqual(response.status_code, 200)
+		tickets_filtrados = list(response.context['tickets'])
+		self.assertEqual(len(tickets_filtrados), 1)
+		self.assertEqual(tickets_filtrados[0].colaborador.user.username, 'asesor_op')
 
 	def test_dashboard_rrhh_y_export_directorio(self):
 		area = Area.objects.create(nombre='Cobranza')
@@ -340,3 +342,60 @@ class SecurityAccessTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'Administrador')
 		self.assertContains(response, 'Sin área')
+
+	def test_colaborador_se_puede_crear_sin_dni(self):
+		self.client.login(username='rrhh', password='test12345')
+
+		response = self.client.post(reverse('colaboradores'), {
+			'nombres': 'Sin',
+			'apellidos': 'Documento',
+			'dni': '',
+			'correo': 'sin.dni@test.com',
+			'rol': 'ASESOR',
+			'negocio': '',
+			'area': '',
+			'cargo': '',
+			'subcartera': '',
+			'tipo_horario': 'T1',
+			'hora_ingreso': '',
+			'hora_salida': '',
+			'fecha_ingreso': date.today().strftime('%Y-%m-%d'),
+			'username': '',
+			'password': '',
+		})
+
+		self.assertEqual(response.status_code, 302)
+		perfil = Colaborador.objects.get(user__email='sin.dni@test.com')
+		self.assertIsNone(perfil.dni)
+
+	def test_crear_mensaje_genera_notificacion_destinatario(self):
+		self.client.login(username='rrhh', password='test12345')
+
+		response = self.client.post(reverse('mensajeria'), {
+			'enviar_mensaje': '1',
+			'destinatarios': [self.user.perfil.id],
+			'asunto': 'Recordatorio',
+			'cuerpo': 'Revisa tu tablero hoy.',
+		})
+
+		self.assertEqual(response.status_code, 302)
+		notificacion = Notificacion.objects.filter(usuario=self.user, tipo='MENSAJE').first()
+		self.assertIsNotNone(notificacion)
+		self.assertIn('Nuevo mensaje', notificacion.titulo)
+
+	def test_leer_notificacion_la_marca_y_redirige(self):
+		notificacion = Notificacion.objects.create(
+			usuario=self.directivo,
+			tipo='ALERTA',
+			titulo='Nueva alerta',
+			detalle='Revisa pendientes.',
+			url_destino='/tickets-admin/',
+		)
+
+		self.client.login(username='rrhh', password='test12345')
+		response = self.client.get(reverse('leer_notificacion', args=[notificacion.id]))
+
+		self.assertEqual(response.status_code, 302)
+		self.assertIn('/tickets-admin/', response.url)
+		notificacion.refresh_from_db()
+		self.assertTrue(notificacion.leida)

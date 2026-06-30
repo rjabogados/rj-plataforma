@@ -1,4 +1,4 @@
-from .auth import login_view, salir, inicio, perfil, dashboard, dashboard_rrhh, exportar_directorio_rrhh, dashboard_supervisor, exportar_equipo_supervisor, perfil_admin
+from .auth import login_view, salir, inicio, perfil, dashboard, dashboard_rrhh, exportar_directorio_rrhh, dashboard_supervisor, exportar_equipo_supervisor, perfil_admin, notificaciones, leer_notificacion
 
 from .api import webhook_receptor
 

@@ -1,6 +1,7 @@
 import csv
 from datetime import date, datetime, timedelta
 from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
@@ -73,13 +74,18 @@ def inicio(request):
     
     # 2. Cálculos para el Espacio Personal (Métricas del usuario actual)
     mis_documentos = DocumentoGenerado.objects.filter(colaborador=request.user, estado='PENDIENTE').count()
+    perfil = getattr(request.user, 'perfil', None)
+    notificaciones_no_leidas = request.user.notificaciones.filter(leida=False).count()
 
     # 3. Enviar las variables al HTML
     context = {
         'comunicados': comunicados,
         'total_colaboradores': total_colaboradores,
         'tickets_pendientes': tickets_pendientes,
+        'vacaciones_pendientes': SolicitudVacaciones.objects.filter(estado='PENDIENTE').count(),
         'mis_documentos': mis_documentos,
+        'perfil': perfil,
+        'notificaciones_no_leidas': notificaciones_no_leidas,
     }
     
     return render(request, 'intranet/dashboard/inicio.html', context)
@@ -304,3 +310,23 @@ def perfil_admin(request):
         'eventos_proximos': eventos_proximos[:6],
         'busqueda': busqueda,
     })
+
+
+@login_required(login_url='login')
+def notificaciones(request):
+    lista_notificaciones = request.user.notificaciones.all().order_by('-creada_en')[:60]
+    return render(request, 'intranet/comunicacion/notificaciones.html', {
+        'lista_notificaciones': lista_notificaciones,
+    })
+
+
+@login_required(login_url='login')
+def leer_notificacion(request, pk):
+    notificacion = get_object_or_404(request.user.notificaciones, pk=pk)
+    if not notificacion.leida:
+        notificacion.leida = True
+        notificacion.save(update_fields=['leida'])
+
+    if notificacion.url_destino:
+        return redirect(notificacion.url_destino)
+    return redirect('notificaciones')
