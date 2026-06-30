@@ -199,43 +199,44 @@
                                     <input type="text" class="form-control" id="edit-canal" placeholder="Ej. Meta Ads">
                                 </div>
                             </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted mb-1">Observaciones</label>
+                                <textarea class="form-control" id="edit-observaciones" rows="3" placeholder="Notas internas del seguimiento..."></textarea>
+                            </div>
                         </form>
                     </div>
 
                     <div class="tab-pane fade" id="tab-historial">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h6 class="fw-bold">Historial de Cambios</h6>
-                            <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-plus-circle"></i> Agregar Fecha</button>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Historial de Cambios</h6>
+                            <span class="badge text-bg-light border" id="contador-historial">0 eventos</span>
                         </div>
-                        <div class="ps-3 mb-3 border-start border-2 border-warning">
-                            <div class="small fw-bold text-dark">Ingreso a matriz (Meta Ads)</div>
-                            <div class="small text-muted"><input type="date" class="form-control form-control-sm w-auto d-inline-block border-0 bg-transparent p-0" value="2026-05-10"></div>
-                        </div>
+                        <div id="lista-historial" class="vstack gap-3"></div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-observaciones">
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Registrar Interacción</label>
                             <div class="input-group input-group-sm mb-2">
-                                <select class="form-select" style="max-width: 150px;" id="nuevo-asesor">
-                                    <option value="">Asesor...</option>
+                                <select class="form-select" style="max-width: 180px;" id="nuevo-asesor-default" onchange="toggleAsesorManual()">
+                                    <option value="">Asesor por defecto...</option>
                                     <option value="Pierina">Pierina</option>
                                     <option value="Beatriz">Beatriz</option>
                                     <option value="Jacqueline">Jacqueline</option>
                                     <option value="Monica">Monica</option>
+                                    <option value="Otro">Otro...</option>
                                 </select>
-                                <select class="form-select" style="max-width: 130px;">
+                                <input type="text" class="form-control d-none" id="nuevo-asesor-manual" placeholder="Escribe el asesor...">
+                                <select class="form-select" style="max-width: 130px;" id="nuevo-tipo-contacto">
                                     <option value="Llamada">Llamada</option>
                                     <option value="WhatsApp">WhatsApp</option>
+                                    <option value="Correo">Correo</option>
                                 </select>
-                                <input type="text" class="form-control" placeholder="Detalle de la comunicación...">
-                                <button class="btn btn-success"><i class="bi bi-send-fill"></i></button>
+                                <input type="text" class="form-control" id="nuevo-detalle-contacto" placeholder="Detalle de la comunicación...">
+                                <button class="btn btn-success" type="button" onclick="registrarContacto()"><i class="bi bi-send-fill"></i></button>
                             </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Observaciones Generales</label>
-                            <textarea class="form-control" id="edit-observaciones" rows="3" placeholder="Ej. El candidato solicita turno mañana..."></textarea>
+                            <div class="small text-muted">La comunicación queda registrada en el historial del candidato.</div>
                         </div>
                     </div>
                 </div>
@@ -311,6 +312,9 @@
                 $('#edit-estado').val(data.estado);
                 $('#edit-sede').val(data.sede);
                 $('#edit-canal').val(data.canal);
+                $('#edit-observaciones').val(data.observaciones || '');
+
+                renderHistorial(data.historial || []);
                 
                 // Limpiamos alertas
                 $('#alerta-mini-ia').addClass('d-none');
@@ -386,10 +390,11 @@
         telefono: $('#edit-telefono').val(),
         estado: $('#edit-estado').val(),
         sede: $('#edit-sede').val(),
-        canal: $('#edit-canal').val()
+        canal: $('#edit-canal').val(),
+        observaciones: $('#edit-observaciones').val()
     };
 
-    const btnGuardar = event.target;
+    const btnGuardar = document.querySelector('button[onclick="guardarEdicion()"]');
     const textoOriginal = btnGuardar.innerHTML;
     btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
     btnGuardar.disabled = true;
@@ -405,13 +410,8 @@
     .then(response => response.json())
     .then(data => {
         if(data.success) {
-            // Cerramos el modal de forma segura
-            const modalElement = document.getElementById('modalEdicion');
-            const ventanaModal = bootstrap.Modal.getOrCreateInstance(modalElement);
-            ventanaModal.hide();
-            
-            // Recargamos para ver los cambios
-            location.reload(); 
+            refreshFilaCandidato(candidatoId, data.estado);
+            abrirModalEdicion(candidatoId, true);
         } else {
             alert("Error al guardar: " + data.error);
             btnGuardar.innerHTML = textoOriginal;
@@ -424,6 +424,98 @@
         btnGuardar.disabled = false;
     });
 }
+
+    function toggleAsesorManual() {
+        const selector = document.getElementById('nuevo-asesor-default');
+        const manual = document.getElementById('nuevo-asesor-manual');
+        if (!selector || !manual) return;
+
+        if (selector.value === 'Otro') {
+            manual.classList.remove('d-none');
+            manual.focus();
+        } else {
+            manual.classList.add('d-none');
+            manual.value = '';
+        }
+    }
+
+    function renderHistorial(items) {
+        const contenedor = document.getElementById('lista-historial');
+        const contador = document.getElementById('contador-historial');
+        if (!contenedor || !contador) return;
+
+        contador.textContent = `${items.length} evento${items.length === 1 ? '' : 's'}`;
+
+        if (!items.length) {
+            contenedor.innerHTML = '<div class="empty-panel py-4"><i class="bi bi-clock-history display-6"></i><p class="mt-2 mb-0">Aún no hay historial para este candidato.</p></div>';
+            return;
+        }
+
+        contenedor.innerHTML = items.map(item => `
+            <div class="border rounded-4 bg-white p-3 shadow-sm">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <div class="fw-bold text-dark">${item.titulo}</div>
+                        <div class="small text-muted">${item.detalle || ''}</div>
+                    </div>
+                    <span class="badge ${item.tipo === 'contacto' ? 'text-bg-primary' : 'text-bg-warning'}">${item.tipo}</span>
+                </div>
+                <div class="small text-muted mt-2"><i class="bi bi-clock me-1"></i>${item.fecha}</div>
+            </div>
+        `).join('');
+    }
+
+    function refreshFilaCandidato(id, estado) {
+        const fila = document.getElementById('row-' + id);
+        if (!fila) return;
+        const ultimaCelda = fila.querySelector('td:nth-child(7)');
+        if (ultimaCelda && estado) {
+            ultimaCelda.innerHTML = `<span class="badge rounded-pill px-3 py-2 bg-secondary text-white shadow-sm"><i class="bi bi-flag-fill me-1"></i> ${estado}</span>`;
+        }
+    }
+
+    function registrarContacto() {
+        const candidatoId = $('#edit-id').val();
+        const asesorDefault = $('#nuevo-asesor-default').val().trim();
+        const asesorManual = $('#nuevo-asesor-manual').val().trim();
+        const asesor = asesorDefault && asesorDefault !== 'Otro' ? asesorDefault : asesorManual;
+        const tipo = $('#nuevo-tipo-contacto').val();
+        const detalle = $('#nuevo-detalle-contacto').val().trim();
+
+        if (!candidatoId || !asesor || !tipo || !detalle) {
+            alert('Completa asesor, tipo y detalle antes de registrar.');
+            return;
+        }
+
+        fetch('/api/registrar-contacto/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                id: candidatoId,
+                asesor: asesor,
+                tipo: tipo,
+                detalle: detalle
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                $('#nuevo-detalle-contacto').val('');
+                renderHistorial(data.historial || []);
+                const historialTab = document.querySelector('#perfilTabs button[data-bs-target="#tab-historial"]');
+                bootstrap.Tab.getOrCreateInstance(historialTab).show();
+            } else {
+                alert('No se pudo registrar la comunicación: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Hubo un error registrando la comunicación.');
+        });
+    }
 
     function descartarCandidato(id) {
         if(confirm("¿Enviar a 'No interesados'? El candidato no se borrará, pasará a reciclaje.")) {

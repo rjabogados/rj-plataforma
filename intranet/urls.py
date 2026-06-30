@@ -145,6 +145,7 @@ urlpatterns = [
     path('api/actualizar-estado/', actualizar_estado_ajax, name='ajax_actualizar_estado'),
     path('api/obtener-candidato/<int:candidato_id>/', obtener_candidato_ajax, name='api_obtener_candidato'),
     path('api/actualizar-candidato/', actualizar_candidato_ajax, name='api_actualizar_candidato'),
+    path('api/registrar-contacto/', views.registrar_contacto_ajax, name='api_registrar_contacto'),
     path('api/descartar-candidato/', descartar_candidato_ajax, name='api_descartar_candidato'),
     path('api/metricas-dashboard/', views.metricas_dashboard_ajax, name='api_metricas_dashboard'),
 

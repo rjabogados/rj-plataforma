@@ -8,7 +8,8 @@ from .reclutamiento import (
     obtener_candidato_ajax, 
     actualizar_candidato_ajax, 
     descartar_candidato_ajax,
-    metricas_dashboard_ajax  # <--- ESTO ES LO QUE FALTA
+    metricas_dashboard_ajax,
+    registrar_contacto_ajax
 )
 
 from .asistencia import (

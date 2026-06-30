@@ -39,6 +39,29 @@ def _normalizar_estado(valor):
     return mapa.get(texto, _limpiar_texto(valor)[:50] or 'Nuevo')
 
 
+def _serializar_historial_estado(candidato):
+    historial = []
+
+    for item in candidato.historial_estados.all().order_by('-fecha_cambio')[:12]:
+        historial.append({
+            'tipo': 'estado',
+            'titulo': f"{item.estado_anterior or 'Sin estado'} → {item.estado_nuevo or 'Sin estado'}",
+            'detalle': 'Actualización de estado del candidato',
+            'fecha': item.fecha_cambio.strftime('%d/%m/%Y %H:%M'),
+        })
+
+    for item in candidato.contactos.all().order_by('-fecha_contacto')[:12]:
+        historial.append({
+            'tipo': 'contacto',
+            'titulo': f"{item.tipo} - {item.asesor}",
+            'detalle': item.detalle or '',
+            'fecha': item.fecha_contacto.strftime('%d/%m/%Y %H:%M'),
+        })
+
+    historial.sort(key=lambda item: item['fecha'], reverse=True)
+    return historial[:20]
+
+
 def _partes_estructura(valor):
     texto = _limpiar_texto(valor)
     if not texto:
@@ -168,7 +191,7 @@ def obtener_candidato_ajax(request, candidato_id):
         except (ValueError, TypeError):
             return JsonResponse({'success': False, 'error': 'ID inválido'}, status=400)
         
-        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        candidato = CandidatoReclutamiento.objects.prefetch_related('historial_estados', 'contactos').get(id=candidato_id)
         
         data = {
             'success': True,
@@ -178,7 +201,9 @@ def obtener_candidato_ajax(request, candidato_id):
             'telefono': candidato.telefono or '',
             'estado': candidato.estado_candidato or '',
             'sede': getattr(candidato, 'sede', 'No Asignado'),
-            'canal': getattr(candidato, 'canal', 'No Asignado')
+            'canal': getattr(candidato, 'canal', 'No Asignado'),
+            'observaciones': getattr(candidato, 'observaciones', '') or '',
+            'historial': _serializar_historial_estado(candidato),
         }
         return JsonResponse(data)
     except CandidatoReclutamiento.DoesNotExist:
@@ -209,6 +234,7 @@ def actualizar_candidato_ajax(request):
         candidato.nombre = _limpiar_texto(data.get('nombre', candidato.nombre)) or candidato.nombre
         candidato.documento = _limpiar_documento(data.get('documento', candidato.documento)) or candidato.documento
         candidato.telefono = _limpiar_telefono(data.get('telefono', candidato.telefono)) or candidato.telefono
+        candidato.observaciones = _limpiar_texto(data.get('observaciones', candidato.observaciones or '')) or candidato.observaciones
         
         estado_nuevo = _normalizar_estado(data.get('estado', estado_viejo))
         if estado_nuevo:
@@ -229,7 +255,7 @@ def actualizar_candidato_ajax(request):
                 duplicado.canal = candidato.canal
                 duplicado.save()
                 candidato.delete()
-                return JsonResponse({'success': True, 'mensaje': 'Registro consolidado con un duplicado existente'})
+                return JsonResponse({'success': True, 'mensaje': 'Registro consolidado con un duplicado existente', 'estado': candidato.estado_candidato})
         
         candidato.save()
         
@@ -241,8 +267,46 @@ def actualizar_candidato_ajax(request):
                 estado_nuevo=candidato.estado_candidato
             )
         
-        return JsonResponse({'success': True, 'mensaje': 'Actualizado correctamente'})
+        return JsonResponse({'success': True, 'mensaje': 'Actualizado correctamente', 'estado': candidato.estado_candidato})
     except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+
+
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def registrar_contacto_ajax(request):
+    try:
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
+
+        data = json.loads(request.body)
+        candidato_id = data.get('id')
+        asesor = _limpiar_texto(data.get('asesor'))
+        tipo = _limpiar_texto(data.get('tipo'))
+        detalle = _limpiar_texto(data.get('detalle'))
+
+        if not candidato_id or not asesor or not tipo or not detalle:
+            return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
+
+        if tipo not in dict(RegistroContacto.TIPOS_CONTACTO):
+            return JsonResponse({'success': False, 'error': 'Tipo de contacto inválido'}, status=400)
+
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        RegistroContacto.objects.create(
+            candidato=candidato,
+            asesor=asesor[:100],
+            tipo=tipo,
+            detalle=detalle,
+        )
+
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Comunicación registrada',
+            'historial': _serializar_historial_estado(candidato),
+        })
+    except CandidatoReclutamiento.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Candidato no encontrado'}, status=404)
+    except Exception:
         return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
         
 @login_required(login_url='login')
