@@ -36,6 +36,8 @@ urlpatterns = [
     path('colaboradores/mapear-excel/', views.mapear_excel, name='mapear_excel'),
     path('colaboradores/procesar-mapeado-personal/', lms.procesar_mapeo_personal, name='procesar_mapeo_personal'),
     path('colaboradores/procesar-mapeado/', lms.procesar_mapeo_balotario, name='procesar_mapeo_balotario'),
+    path('rrhh/organigrama/', lms.organigrama_empresa, name='organigrama_empresa'),
+    path('rrhh/sincronizar-taxonomia/', lms.sincronizar_taxonomia, name='sincronizar_taxonomia'),
 
     # ==========================================
     # ONBOARDING CORPORATIVO (INDUCCIÓN)

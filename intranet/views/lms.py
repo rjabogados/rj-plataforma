@@ -1084,7 +1084,6 @@ def pasar_a_planilla(request, candidato_id):
                 if User.objects.filter(username=username_final).exists():
                     username_final = f"{username_final}{dni_limpio[-2:]}"
                 nuevo_user = User.objects.create_user(username=username_final, email=candidato.correo or '', password=dni_limpio, first_name=candidato.nombres, last_name=candidato.apellidos)
-                nuevo_colaborador = Colaborador.objects.create(user=nuevo_user, dni=dni_limpio, rol=candidato.puesto_esperado, negocio=candidato.campaña_destino, fecha_ingreso=date.today())
                 candidato.colaborador = nuevo_colaborador
                 candidato.estado = 'COMPLETADO'
                 candidato.save()
@@ -1092,6 +1091,127 @@ def pasar_a_planilla(request, candidato_id):
     except Exception:
         messages.error(request, "Error al procesar el alta. Verifique el DNI.")
     return redirect('onboarding_admin')
+
+@login_required(login_url='login')
+@solo_directivos
+def organigrama_empresa(request):
+    from intranet.models.rrhh_core import Area, Cargo, Negocio, Colaborador
+    import json
+    
+    # 1. Administrativos
+    areas = Area.objects.filter(activa=True).prefetch_related('cargos', 'colaboradores').order_by('nombre')
+    
+    admin_data = []
+    for a in areas:
+        cargos = a.cargos.filter(activa=True).order_by('nombre')
+        cargos_list = []
+        for c in cargos:
+            colabs = list(c.colaboradores.values_list('user__first_name', 'user__last_name'))
+            cargos_list.append({
+                'nombre': c.nombre,
+                'personas': [f"{fn} {ln}" for fn, ln in colabs]
+            })
+        
+        admin_data.append({
+            'nombre': a.nombre,
+            'cargos': cargos_list
+        })
+        
+    # 2. Asesores (Carteras)
+    negocios = Negocio.objects.all().order_by('nombre')
+    asesores_data = []
+    for n in negocios:
+        colabs = Colaborador.objects.filter(negocio=n, rol='ASESOR').values_list('user__first_name', 'user__last_name')
+        asesores_data.append({
+            'nombre': n.nombre,
+            'total_asesores': len(colabs),
+            'personas': [f"{fn} {ln}" for fn, ln in colabs][:10] # Solo top 10 para no saturar
+        })
+        
+    context = {
+        'admin_data_json': json.dumps(admin_data),
+        'asesores_data_json': json.dumps(asesores_data)
+    }
+    
+    return render(request, 'intranet/rrhh/organigrama.html', context)
+
+
+@login_required(login_url='login')
+def sincronizar_taxonomia(request):
+    if not request.user.is_superuser:
+        messages.error(request, "Acceso denegado.")
+        return redirect('inicio')
+        
+    import os
+    import sys
+    from intranet.models.rrhh_core import Negocio, Area, Cargo
+    
+    # EJECUTAR EL CÓDIGO DE POBLACIÓN DIRECTAMENTE AQUÍ
+    negocios_data = [
+        "BAN BIF - Vigente y Dracma", "BAN BIF - Preventiva", "BAN BIF - Temprana", "BAN BIF - Castigo",
+        "BBVA TARDÍAS - ExtraJudicial", "BBVA TARDÍAS - Judicial", "BBVA TARDÍAS - Castigo",
+        "BBVA CONTINENTAL - CHALLENGER", "BBVA CONTINENTAL - Consumer",
+        "BBVA TEMPRANAS - Particulares Vencida", "BBVA TEMPRANAS - Convenios", "BBVA TEMPRANAS - Castigo",
+        "CAMPO - Campo", "CAMPO BBVA - Campo",
+        "COMPARTAMOS BANCO - Vigente", "COMPARTAMOS BANCO - Grupal Liga A", "COMPARTAMOS BANCO - Castigo (Individual)",
+        "FINANCIERA EFECTIVA - Xperto 1 y 2", "FINANCIERA EFECTIVA - Castigo / CASTIGO",
+        "CAJA HUANCAYO", "IBK - BPE", "VOLVO", "RJ COMPARTAMOS", "RJ ADMINISTRATIVO", "Cartera Judicial"
+    ]
+    
+    negocios_ids = []
+    for neg_nombre in negocios_data:
+        n, _ = Negocio.objects.get_or_create(nombre=neg_nombre)
+        negocios_ids.append(n.id)
+        
+    areas_cargos_data = {
+        "BANCOS - Sin área específica": ["SUPERVISOR ESAN", "Supervisor(a) de Gestión"],
+        "BANCOS - BAN BIF": ["Coordinador(a) Junior"],
+        "BANCOS - BBVA CASTIGO / BVVA CASTIGO": ["Coordinador(a) Junior", "Coordinador(a) de Gestión", "Supervisora de Gestion (BBVA Castigo)"],
+        "BANCOS - BBVA Convenios/Delfos": ["Supervisor(a) de Gestión"],
+        "BANCOS - BBVA ExtraJudicial": ["Supervisor de Gestion"],
+        "BANCOS - BBVA JUDICIAL": ["Coordinador(a) Junior"],
+        "BANCOS - BBVA Particulares Vencida": ["Coordinador(a) de Gestión", "Supervisor(a) de Gestión", "Supervisora (BBVA Prev. - Particulares . Vcda. Tard)"],
+        "BANCOS - COMPARTAMOS BANCO / RJ .COMPARTAMOS": ["Coordinador(a) de Gestión"],
+        "BANCOS - Efectiva - IBK BPE": ["Supervisora de Gestion"],
+        "BANCOS - FINANCIERA EFECTIVA": ["Supervisora (EFECTIVA - XPERTO - CASTIGO)"],
+        "BANCOS - Pymes Vencida": ["JEFE DE GESTION (MAF - Vda Pymes)"],
+        "BANCOS - Tempranas": ["SUBGERENCIA COMERCIAL"],
+        "CAMPO - Campo": ["Coordinador(a) de Campo", "Supervisor de Gestion de Campo - SENIOR"],
+        "RJ ADMINISTRATIVO - Administración General": ["Jefe de Administración", "Administrativo", "Asistente Administrativo", "Gerente General"],
+        "RJ ADMINISTRATIVO - Área Back Office": ["Back Office", "Supervisor(a) BACK OFFICE", "Digitadora"],
+        "RJ ADMINISTRATIVO - Área de Calidad y Formación": ["Jefe de Calidad y RR. HH.", "Coordinador(a) de Calidad y Formacion", "Coordinador(a) de Calidad", "Supervisor(a) de Calidad", "Asistente de Calidad y Formacion", "Asistente de Calidad"],
+        "RJ ADMINISTRATIVO - Área de Contabilidad y Finanzas": ["Contador", "Coordinador (a) de Contabilidad", "Asistente de Contabilidad", "Asistente Contable"],
+        "RJ ADMINISTRATIVO - Área Legal": ["Asesor Legal"],
+        "RJ ADMINISTRATIVO - Área de Mantenimiento y Logística": ["Asistente de Logística / Asistente de Logistica"],
+        "RJ ADMINISTRATIVO - Área de Recursos Humanos": ["Supervisora de RRHH", "Coordinador(a) de RRHH", "Asistente de RRHH", "Médico Ocupacional", "Coordinador de Capacitación"],
+        "RJ ADMINISTRATIVO - Área de Seguridad": ["Jefe de Seguridad", "Coordinador de Seguridad"],
+        "RJ ADMINISTRATIVO - Área de Tecnologías de la Información (Sistemas)": ["Supervisor Informático", "Supervisor TI", "Coordinador(a) de Sistemas", "Asistente de Sistemas", "Asistente (Monitoreo Of. San Isidro - LIMA)", "Asistente Soporte Técnico"],
+        "RJ ADMINISTRATIVO - Central Telefónica": ["Central Telefónica"],
+        "RJ ADMINISTRATIVO - Marketing": ["Asistente de Marketing"],
+        "RJ ADMINISTRATIVO - Mandos Medios / Operativos": ["Jefe de Productividad", "Coordinador Zonal", "Supervisor(a) Zonal", "Supervisor Junior de Gestion", "Supervisor(a) de Gestión", "Asistente de Gestión"]
+    }
+    
+    areas_activas_ids = []
+    cargos_activos_ids = []
+    
+    for area_name, cargos in areas_cargos_data.items():
+        area, _ = Area.objects.get_or_create(nombre=area_name)
+        area.activa = True
+        area.save()
+        areas_activas_ids.append(area.id)
+        
+        for cargo_name in cargos:
+            cargo, _ = Cargo.objects.get_or_create(area=area, nombre=cargo_name)
+            cargo.activa = True
+            cargo.save()
+            cargos_activos_ids.append(cargo.id)
+            
+    # Ocultar áreas no listadas
+    Area.objects.exclude(id__in=areas_activas_ids).update(activa=False)
+    Cargo.objects.exclude(id__in=cargos_activos_ids).update(activa=False)
+    
+    messages.success(request, "¡Taxonomía sincronizada correctamente! Se han creado y ordenado todas las áreas, cargos y negocios (carteras).")
+    return redirect('inicio')
 
 # ==========================================
 # MOTOR DE ENCUESTAS, COMUNICADOS, CALENDARIO...

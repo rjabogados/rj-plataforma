@@ -1,0 +1,202 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-diagram-3-fill me-2"></i> Organigrama y Estructura
+            </h2>
+            <p class="text-secondary mb-0">Visualiza la jerarquía completa de la empresa, dividida en Administrativos y Operativos.</p>
+        </div>
+        <div>
+            <a href="{% url 'sincronizar_taxonomia' %}" class="btn btn-outline-danger fw-bold shadow-sm rounded-pill px-4" onclick="return confirm('¿Seguro que deseas sincronizar y sobreescribir la estructura de la base de datos con la jerarquía maestra?');">
+                <i class="bi bi-arrow-repeat me-2"></i> Sincronizar Taxonomía
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="card-body p-0 position-relative">
+            <div id="loadingIndicator" class="position-absolute top-50 start-50 translate-middle text-center z-3">
+                <div class="spinner-border text-danger" role="status" style="width: 3rem; height: 3rem;"></div>
+                <div class="mt-2 fw-bold text-secondary">Renderizando mapa corporativo...</div>
+            </div>
+            
+            <div class="d-flex justify-content-end p-3 position-absolute top-0 end-0 z-2">
+                <button class="btn btn-sm btn-light shadow-sm fw-bold me-2" onclick="chart.fit()"><i class="bi bi-arrows-fullscreen me-1"></i>Ajustar Vista</button>
+                <button class="btn btn-sm btn-light shadow-sm fw-bold" onclick="chart.expandAll()"><i class="bi bi-node-plus-fill me-1"></i>Expandir Todo</button>
+            </div>
+
+            <!-- Contenedor del D3 Org Chart -->
+            <div id="chart-container" style="height: 75vh; width: 100%; background-color: #f8f9fa;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- D3.js and D3 Org Chart libraries -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-org-chart@3.1.1"></script>
+
+<!-- Datos desde el backend -->
+{{ admin_data_json|json_script:"admin-data" }}
+{{ asesores_data_json|json_script:"asesores-data" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const adminData = JSON.parse(document.getElementById('admin-data').textContent);
+    const asesoresData = JSON.parse(document.getElementById('asesores-data').textContent);
+    
+    // Transformar los datos a formato plano (Flat Array) para D3
+    let flatData = [];
+    
+    // Nodo Raíz
+    flatData.push({
+        id: "RJ_ROOT",
+        parentId: "",
+        name: "RJ Abogados",
+        type: "Empresa",
+        color: "#1a1a2e"
+    });
+    
+    // Ramas Principales
+    flatData.push({
+        id: "BRANCH_ADMIN",
+        parentId: "RJ_ROOT",
+        name: "Fuerza Administrativa",
+        type: "División",
+        color: "#0f3460"
+    });
+    
+    flatData.push({
+        id: "BRANCH_ASESORES",
+        parentId: "RJ_ROOT",
+        name: "Fuerza Operativa (Asesores)",
+        type: "División",
+        color: "#e94560"
+    });
+
+    // --- Procesar Datos Administrativos (Áreas -> Cargos -> Personas) ---
+    adminData.forEach(area => {
+        let areaId = `AREA_${area.nombre.replace(/[^a-zA-Z0-9]/g, '')}`;
+        flatData.push({
+            id: areaId,
+            parentId: "BRANCH_ADMIN",
+            name: area.nombre,
+            type: "Área",
+            color: "#16213e"
+        });
+        
+        area.cargos.forEach(cargo => {
+            let cargoId = `${areaId}_CARGO_${cargo.nombre.replace(/[^a-zA-Z0-9]/g, '')}`;
+            flatData.push({
+                id: cargoId,
+                parentId: areaId,
+                name: cargo.nombre,
+                type: "Cargo",
+                color: "#2a3b5c"
+            });
+            
+            cargo.personas.forEach((persona, i) => {
+                flatData.push({
+                    id: `${cargoId}_PERSONA_${i}`,
+                    parentId: cargoId,
+                    name: persona,
+                    type: "Colaborador",
+                    color: "#405b87",
+                    isPerson: true
+                });
+            });
+        });
+    });
+
+    // --- Procesar Datos Operativos (Carteras -> Asesores) ---
+    asesoresData.forEach(negocio => {
+        let carteraId = `CARTERA_${negocio.nombre.replace(/[^a-zA-Z0-9]/g, '')}`;
+        flatData.push({
+            id: carteraId,
+            parentId: "BRANCH_ASESORES",
+            name: negocio.nombre,
+            type: "Cartera",
+            color: "#8a2435",
+            info: `${negocio.total_asesores} asesores activos`
+        });
+        
+        negocio.personas.forEach((persona, i) => {
+            flatData.push({
+                id: `${carteraId}_PERSONA_${i}`,
+                parentId: carteraId,
+                name: persona,
+                type: "Asesor (Top 10)",
+                color: "#d14b62",
+                isPerson: true
+            });
+        });
+        
+        if(negocio.total_asesores > 10) {
+            flatData.push({
+                id: `${carteraId}_MORE`,
+                parentId: carteraId,
+                name: `+ ${negocio.total_asesores - 10} asesores más...`,
+                type: "Asesores Restantes",
+                color: "#ff8296"
+            });
+        }
+    });
+
+    // Configurar y renderizar el D3 Org Chart
+    window.chart = new d3.OrgChart()
+        .container('#chart-container')
+        .data(flatData)
+        .nodeWidth((d) => 260)
+        .nodeHeight((d) => 100)
+        .childrenMargin((d) => 50)
+        .compactMarginBetween((d) => 25)
+        .compactMarginPair((d) => 25)
+        .nodeContent(function(d, i, arr, state) {
+            const color = d.data.color || "#333";
+            const isPerson = d.data.isPerson;
+            const bgClass = isPerson ? 'bg-white text-dark' : 'text-white';
+            const textClass = isPerson ? 'text-dark' : 'text-white';
+            const icon = d.data.type === 'Empresa' ? 'bi-building' : 
+                         d.data.type === 'División' ? 'bi-diagram-3' :
+                         d.data.type === 'Área' ? 'bi-folder-fill' :
+                         d.data.type === 'Cartera' ? 'bi-briefcase-fill' :
+                         d.data.type === 'Cargo' ? 'bi-award-fill' : 'bi-person-circle';
+
+            return `
+            <div style="width:${d.width}px;height:${d.height}px;padding: 10px;">
+                <div style="background-color:${isPerson ? '#fff' : color}; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); height:100%; border: ${isPerson ? '2px solid '+color : 'none'}; display:flex; flex-direction:column; justify-content:center; padding: 15px;">
+                    <div style="display:flex; align-items:center; gap: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background-color: rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:${isPerson ? color : '#fff'}">
+                            <i class="bi ${icon}" style="font-size: 1.2rem;"></i>
+                        </div>
+                        <div style="overflow:hidden;">
+                            <h6 style="margin:0; font-weight:700; font-size: 0.9rem; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;" class="${textClass}">${d.data.name}</h6>
+                            <p style="margin:0; font-size: 0.75rem; opacity: 0.8;" class="${textClass}">${d.data.type} ${d.data.info ? ' | '+d.data.info : ''}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        })
+        .render();
+
+    // Expandir un par de niveles por defecto para que se vea bien al entrar
+    setTimeout(() => {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        chart.fit();
+    }, 1000);
+});
+</script>
+{% endblock %}
