@@ -2534,3 +2534,20 @@ def crear_ruta_induccion_view(request):
         'negocios': Negocio.objects.all(),
         'cursos_json': json.dumps(cursos_json)
     })
+
+@login_required(login_url='login')
+@solo_directivos
+def cerrar_encuesta(request, pk):
+    encuesta = get_object_or_404(Encuesta, id=pk)
+    encuesta.activa = False
+    encuesta.save()
+    messages.success(request, f"La encuesta '{encuesta.titulo}' ha sido cerrada.")
+    return redirect('encuestas_admin')
+
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_encuesta(request, pk):
+    encuesta = get_object_or_404(Encuesta, id=pk)
+    encuesta.delete()
+    messages.success(request, f"La encuesta ha sido eliminada permanentemente.")
+    return redirect('encuestas_admin')
