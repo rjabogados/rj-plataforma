@@ -16,30 +16,89 @@
         </div>
     </div>
 
-    <div class="grid-responsive mb-4">
-        <div class="card card-buk p-4 text-center">
-            <div class="mb-2"><i class="bi bi-people-fill fs-2 text-primary"></i></div>
-            <h6 class="text-muted fw-semibold mb-1">Equipo Asignado</h6>
-            <h2 class="fw-bold mb-0 text-primary">{{ equipo_total }}</h2>
-            <small class="text-muted">Miembros bajo tu área/cargo</small>
+    <div class="row g-4 mb-4">
+        <!-- Tarjeta Premium 1 -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 rounded-4 shadow-sm overflow-hidden h-100" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white;">
+                <div class="card-body p-4 position-relative">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-semibold mb-0 opacity-75">Fuerza Laboral</h6>
+                        <div class="p-2 bg-white bg-opacity-25 rounded-circle d-flex justify-content-center align-items-center" style="width: 48px; height: 48px;">
+                            <i class="bi bi-people-fill fs-4 text-white"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline mb-1">
+                        <h2 class="fw-bold mb-0 me-2" style="font-size: 2.5rem;">{{ equipo_total }}</h2>
+                        <span class="badge bg-white text-primary rounded-pill"><i class="bi bi-arrow-up-short"></i> Activos: {{ equipo_activo }}</span>
+                    </div>
+                    <p class="small mb-0 opacity-75 mt-3">Miembros totales asignados a tu gestión operativa.</p>
+                </div>
+            </div>
         </div>
-        <div class="card card-buk p-4 text-center">
-            <div class="mb-2"><i class="bi bi-person-check-fill fs-2 text-success"></i></div>
-            <h6 class="text-muted fw-semibold mb-1">Activos</h6>
-            <h2 class="fw-bold mb-0 text-success">{{ equipo_activo }}</h2>
-            <small class="text-muted">Usuarios habilitados</small>
+
+        <!-- Tarjeta Premium 2 -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 rounded-4 shadow-sm overflow-hidden h-100" style="background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%); color: white;">
+                <div class="card-body p-4 position-relative">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-semibold mb-0 opacity-75">Tasa de Asistencia</h6>
+                        <div class="p-2 bg-white bg-opacity-25 rounded-circle d-flex justify-content-center align-items-center" style="width: 48px; height: 48px;">
+                            <i class="bi bi-fingerprint fs-4 text-white"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline mb-1">
+                        <h2 class="fw-bold mb-0 me-2" style="font-size: 2.5rem;">
+                            {% if equipo_activo > 0 %}
+                                {% widthratio asistencias_hoy equipo_activo 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </h2>
+                    </div>
+                    <div class="progress mt-3 bg-white bg-opacity-25" style="height: 6px;">
+                        {% if equipo_activo > 0 %}
+                        <div class="progress-bar bg-white" role="progressbar" style="width: {% widthratio asistencias_hoy equipo_activo 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                    <p class="small mb-0 opacity-75 mt-2">{{ asistencias_hoy }} marcaciones hoy</p>
+                </div>
+            </div>
         </div>
-        <div class="card card-buk p-4 text-center">
-            <div class="mb-2"><i class="bi bi-ticket-detailed-fill fs-2 text-warning"></i></div>
-            <h6 class="text-muted fw-semibold mb-1">Tickets Pendientes</h6>
-            <h2 class="fw-bold mb-0 text-warning">{{ tickets_pendientes }}</h2>
-            <small class="text-muted">Incidencias por revisar</small>
+
+        <!-- Tarjeta Premium 3 -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 rounded-4 shadow-sm overflow-hidden h-100 bg-white">
+                <div class="card-body p-4 position-relative">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-semibold mb-0 text-muted">Incidencias (Tickets)</h6>
+                        <div class="p-2 bg-warning bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 48px; height: 48px;">
+                            <i class="bi bi-ticket-detailed-fill fs-4 text-warning"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline mb-1">
+                        <h2 class="fw-bold mb-0 me-2 text-dark" style="font-size: 2.5rem;">{{ tickets_pendientes }}</h2>
+                    </div>
+                    <p class="small mb-0 text-muted mt-3">Tickets pendientes del equipo que requieren atención.</p>
+                </div>
+            </div>
         </div>
-        <div class="card card-buk p-4 text-center">
-            <div class="mb-2"><i class="bi bi-airplane-engines-fill fs-2 text-danger"></i></div>
-            <h6 class="text-muted fw-semibold mb-1">Vacaciones Pendientes</h6>
-            <h2 class="fw-bold mb-0 text-danger">{{ vacaciones_pendientes }}</h2>
-            <small class="text-muted">Solicitudes de descanso</small>
+
+        <!-- Tarjeta Premium 4 -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-0 rounded-4 shadow-sm overflow-hidden h-100 bg-white">
+                <div class="card-body p-4 position-relative">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-semibold mb-0 text-muted">Vacaciones</h6>
+                        <div class="p-2 bg-danger bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 48px; height: 48px;">
+                            <i class="bi bi-airplane-engines-fill fs-4 text-danger"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline mb-1">
+                        <h2 class="fw-bold mb-0 me-2 text-dark" style="font-size: 2.5rem;">{{ vacaciones_pendientes }}</h2>
+                    </div>
+                    <p class="small mb-0 text-muted mt-3">Solicitudes de descanso pendientes de validación.</p>
+                </div>
+            </div>
         </div>
     </div>
 
