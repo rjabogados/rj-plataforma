@@ -326,6 +326,10 @@ def crear_comunicado_desde_request(request):
 @login_required(login_url='login')
 @solo_directivos
 def colaboradores(request):
+    if not Area.objects.exists():
+        from intranet.utils.poblar import poblar_taxonomia_completa
+        poblar_taxonomia_completa()
+        
     perfil_actual = getattr(request.user, 'perfil', None)
 
     if request.method == 'POST':
