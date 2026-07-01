@@ -50,6 +50,19 @@
                         <label class="form-label small fw-bold text-muted">Correo Electrónico</label>
                         <input type="email" class="form-control border-secondary" name="correo" value="{{ colab.user.email }}">
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Cumpleaños</label>
+                        <input
+                            type="date"
+                            class="form-control border-secondary"
+                            name="fecha_nacimiento"
+                            value="{{ colab.fecha_nacimiento|date:'Y-m-d' }}"
+                            {% if not puede_editar_cumpleanos %}disabled{% endif %}
+                        >
+                        {% if not puede_editar_cumpleanos %}
+                            <div class="form-text">Solo supervisores o superiores pueden editar este dato.</div>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">Puesto y Asignación</h6>

@@ -118,6 +118,13 @@ def usuario_es_directivo(user):
     return bool(perfil and perfil.rol in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA'])
 
 
+def _puede_editar_cumpleanos(user):
+    if user.is_superuser:
+        return True
+    perfil = getattr(user, 'perfil', None)
+    return bool(perfil and perfil.rol in ['SUPERVISOR', 'ADMINISTRATIVO', 'RRHH', 'GERENCIA'])
+
+
 def _destino_panel_por_tipo(tipo_curso):
     return 'onboarding_admin' if tipo_curso == 'INDUCCION' else 'gestor_lms'
 
@@ -339,6 +346,7 @@ def colaboradores(request):
         poblar_taxonomia_completa()
         
     perfil_actual = getattr(request.user, 'perfil', None)
+    puede_editar_cumpleanos = _puede_editar_cumpleanos(request.user)
 
     if request.method == 'POST':
         nombres = request.POST.get('nombres')
@@ -366,6 +374,10 @@ def colaboradores(request):
             area_instancia = cargo_instancia.area
         f_ingreso = request.POST.get('fecha_ingreso')
         fecha_formal = datetime.strptime(f_ingreso, '%Y-%m-%d').date() if f_ingreso else date.today()
+        fecha_nacimiento = None
+        f_nacimiento = request.POST.get('fecha_nacimiento')
+        if puede_editar_cumpleanos and f_nacimiento:
+            fecha_nacimiento = datetime.strptime(f_nacimiento, '%Y-%m-%d').date()
 
         if not User.objects.filter(username=username_final).exists():
             nuevo_user = User.objects.create_user(
@@ -376,7 +388,8 @@ def colaboradores(request):
                 user=nuevo_user, dni=dni_val, rol=rol_val, sede=sede_val, negocio=negocio_instancia, 
                 area=area_instancia, cargo=cargo_instancia, subcartera=subcartera,
                 tipo_horario=tipo_horario, hora_ingreso=request.POST.get('hora_ingreso') or None, 
-                hora_salida=request.POST.get('hora_salida') or None, fecha_ingreso=fecha_formal
+                hora_salida=request.POST.get('hora_salida') or None, fecha_ingreso=fecha_formal,
+                fecha_nacimiento=fecha_nacimiento,
             )
             return redirect('colaboradores')
 
@@ -396,6 +409,7 @@ def colaboradores(request):
         'tipos_horario': Colaborador.TIPO_HORARIO,
         'subcarteras': subcarteras_catalogo(),
         'filtros_disponibles': filtros_personal_disponibles(perfil_actual),
+        'puede_editar_cumpleanos': puede_editar_cumpleanos,
     })
 
 def generar_contrasena_segura():
@@ -411,6 +425,7 @@ def generar_contrasena_segura():
 @solo_directivos
 def editar_colaborador(request, pk):
     colab = get_object_or_404(Colaborador, pk=pk)
+    puede_editar_cumpleanos = _puede_editar_cumpleanos(request.user)
     
     if request.method == 'POST':
         colab.user.first_name = request.POST.get('nombres')
@@ -434,6 +449,9 @@ def editar_colaborador(request, pk):
         colab.hora_salida = request.POST.get('hora_salida') or None
         if request.POST.get('fecha_ingreso'):
             colab.fecha_ingreso = datetime.strptime(request.POST.get('fecha_ingreso'), '%Y-%m-%d').date()
+        if puede_editar_cumpleanos:
+            fecha_nacimiento_raw = request.POST.get('fecha_nacimiento')
+            colab.fecha_nacimiento = datetime.strptime(fecha_nacimiento_raw, '%Y-%m-%d').date() if fecha_nacimiento_raw else None
         
         colab.sede = request.POST.get('sede')
         negocio_id = request.POST.get('negocio')
@@ -476,7 +494,8 @@ def editar_colaborador(request, pk):
         'sedes': Colaborador.SEDES,
         'tipos_horario': Colaborador.TIPO_HORARIO,
         'subcarteras': subcarteras_catalogo(),
-        'tiene_onboarding': tiene_onboarding
+        'tiene_onboarding': tiene_onboarding,
+        'puede_editar_cumpleanos': puede_editar_cumpleanos,
     })
 
 @login_required(login_url='login')

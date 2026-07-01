@@ -92,6 +92,7 @@
                             <th class="ps-4">Usuario / Intranet</th>
                             <th>Nombres y Apellidos</th>
                             <th>DNI</th>
+                            <th>Cumpleaños</th>
                             <th>Área</th>
                             <th>Cargo</th>
                             <th>Cartera / Subcartera</th>
@@ -111,6 +112,13 @@
                                 <div class="small text-muted">Ingreso: {{ c.fecha_ingreso|date:"d M Y" }}</div>
                             </td>
                             <td><span class="badge bg-light text-dark border">{{ c.dni }}</span></td>
+                            <td>
+                                {% if c.fecha_nacimiento %}
+                                    <span class="badge bg-warning-subtle text-dark border">{{ c.fecha_nacimiento|date:"d/m" }}</span>
+                                {% else %}
+                                    <span class="text-muted small">Sin fecha</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <span class="fw-bold text-dark">{{ c.area.nombre|default:"-- Sin Área --" }}</span>
                             </td>
@@ -139,7 +147,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="bi bi-people opacity-50 display-1 mb-3 d-block"></i>
                                     <h5 class="fw-bold">No se encontraron colaboradores</h5>
@@ -199,6 +207,18 @@
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-dark">Correo Electrónico</label>
                             <input type="email" class="form-control" name="correo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark">Cumpleaños</label>
+                            <input
+                                type="date"
+                                class="form-control"
+                                name="fecha_nacimiento"
+                                {% if not puede_editar_cumpleanos %}disabled{% endif %}
+                            >
+                            {% if not puede_editar_cumpleanos %}
+                                <div class="form-text">Solo supervisores o superiores pueden registrar el cumpleaños.</div>
+                            {% endif %}
                         </div>
                     </div>
 
