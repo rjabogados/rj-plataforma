@@ -594,6 +594,16 @@ $(document).ready(function () {
                 $('#editorForm').hide();
                 updateCounts();
             },
+            onDrop: function (e) {
+                const files = e.originalEvent.dataTransfer.files;
+                if (files && files.length > 0) {
+                    const ext = files[0].name.split('.').pop().toLowerCase();
+                    if (ext === 'docx' || ext === 'txt') {
+                        e.preventDefault();
+                        handleFileUpload(files[0]);
+                    }
+                }
+            },
             onChange: function () {
                 updateCounts();
                 marcarCambio();
@@ -878,11 +888,11 @@ async function handleFileUpload(file) {
                 }
             );
             showProgress('Cargando en editor...', 95);
-            const currentHtml = $('#summernote').summernote('code');
-            // Si ya hay texto, añadimos un par de saltos de línea en lugar de un <hr/> que rompe visualmente la página
-            const separator = currentHtml.replace(/<[^>]*>/g,'').trim() ? '<br><br>' : '';
-            // Añadir al final preservando el texto anterior
-            $('#summernote').summernote('code', currentHtml + separator + result.value);
+            
+            // Sobrescribir el contenido actual. Si el usuario carga un DOCX, espera que reemplace el lienzo.
+            // Concatenar causaba que el documento se duplicara visualmente (el viejo arriba, el nuevo abajo).
+            $('#summernote').summernote('code', result.value);
+            
             showToast('Word importado', `"${file.name}" cargado correctamente.`, 'success');
             if (result.messages.length) {
                 console.warn('Mammoth warnings:', result.messages);
@@ -900,9 +910,7 @@ async function handleFileUpload(file) {
         const reader = new FileReader();
         reader.onload = e => {
             const html = '<p>' + e.target.result.replace(/\r?\n\r?\n/g, '</p><p>').replace(/\r?\n/g, '<br>') + '</p>';
-            const currentHtml = $('#summernote').summernote('code');
-            const separator = currentHtml.replace(/<[^>]*>/g,'').trim() ? '<br><br>' : '';
-            $('#summernote').summernote('code', currentHtml + separator + html);
+            $('#summernote').summernote('code', html);
             showToast('TXT importado', `"${file.name}" cargado.`, 'success');
             hideProgress();
             fileInput.value = '';
