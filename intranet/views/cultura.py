@@ -5,6 +5,7 @@ from intranet.models.rrhh_core import Colaborador
 from intranet.models.comunicacion import FelicitacionCumpleaños, Reconocimiento
 from datetime import date
 from django.db.models import Count
+from django.core.exceptions import ObjectDoesNotExist
 
 MESES_ES = {
     1: 'Enero',
@@ -24,6 +25,13 @@ MESES_ES = {
 @login_required(login_url='login')
 def muro_celebraciones(request):
     hoy = date.today()
+    try:
+        perfil = request.user.perfil
+        tiene_perfil = True
+    except ObjectDoesNotExist:
+        perfil = None
+        tiene_perfil = False
+
     # Cumpleañeros del mes (o semana)
     # Por simplicidad, filtramos por mes de nacimiento
     cumpleaneros = list(Colaborador.objects.filter(
@@ -43,6 +51,10 @@ def muro_celebraciones(request):
     notas_publicas = FelicitacionCumpleaños.objects.filter(privado=False).order_by('-fecha_envio')[:50]
 
     if request.method == 'POST':
+        if not tiene_perfil:
+            messages.error(request, "Tu usuario no tiene un perfil asignado para realizar esta acción.")
+            return redirect('muro_celebraciones')
+
         destinatario_id = request.POST.get('destinatario_id')
         mensaje = request.POST.get('mensaje')
         es_privado = request.POST.get('privado') == 'on'
@@ -63,8 +75,8 @@ def muro_celebraciones(request):
         return redirect('muro_celebraciones')
 
     es_su_cumple = False
-    if request.user.perfil.fecha_nacimiento:
-        if request.user.perfil.fecha_nacimiento.day == hoy.day and request.user.perfil.fecha_nacimiento.month == hoy.month:
+    if tiene_perfil and perfil.fecha_nacimiento:
+        if perfil.fecha_nacimiento.day == hoy.day and perfil.fecha_nacimiento.month == hoy.month:
             es_su_cumple = True
 
     context = {
@@ -79,6 +91,13 @@ def muro_celebraciones(request):
 
 @login_required(login_url='login')
 def muro_kudos(request):
+    try:
+        perfil = request.user.perfil
+        tiene_perfil = True
+    except ObjectDoesNotExist:
+        perfil = None
+        tiene_perfil = False
+        
     # Ranking de los que más reconocimientos han recibido (General)
     top_reconocidos = Colaborador.objects.annotate(
         total_kudos=Count('reconocimientos_recibidos')
@@ -92,9 +111,15 @@ def muro_kudos(request):
 
     feed_kudos = Reconocimiento.objects.all().order_by('-fecha')[:50]
     
-    colaboradores = Colaborador.objects.filter(user__is_active=True).exclude(id=request.user.perfil.id)
+    colaboradores = Colaborador.objects.filter(user__is_active=True)
+    if tiene_perfil:
+        colaboradores = colaboradores.exclude(id=perfil.id)
 
     if request.method == 'POST':
+        if not tiene_perfil:
+            messages.error(request, "Tu usuario no tiene un perfil asignado para realizar esta acción.")
+            return redirect('muro_kudos')
+
         receptor_id = request.POST.get('receptor_id')
         tipo = request.POST.get('tipo')
         mensaje = request.POST.get('mensaje')
@@ -102,7 +127,7 @@ def muro_kudos(request):
         receptor = get_object_or_404(Colaborador, id=receptor_id)
         
         # ✅ Verificar que no haya enviado un Kudo al mismo receptor hoy
-        if Reconocimiento.objects.filter(emisor=request.user.perfil, receptor=receptor, fecha__date=date.today()).exists():
+        if Reconocimiento.objects.filter(emisor=perfil, receptor=receptor, fecha__date=date.today()).exists():
             messages.warning(request, f"Ya le enviaste un Kudo a {receptor.user.first_name} el día de hoy.")
             return redirect('muro_kudos')
             
@@ -118,7 +143,7 @@ def muro_kudos(request):
         puntos = puntos_map.get(tipo, 10)
         
         Reconocimiento.objects.create(
-            emisor=request.user.perfil,
+            emisor=perfil,
             receptor=receptor,
             tipo=tipo,
             mensaje=mensaje,
@@ -139,7 +164,7 @@ def muro_kudos(request):
         'feed_kudos': feed_kudos,
         'colaboradores': colaboradores,
         'tipos_medalla': Reconocimiento.TIPOS_MEDALLA,
-        'mis_puntos': request.user.perfil.puntos_disponibles
+        'mis_puntos': perfil.puntos_disponibles if tiene_perfil else 0
     }
     return render(request, 'intranet/cultura/muro_kudos.html', context)
 
@@ -149,11 +174,21 @@ from intranet.views.utils import solo_directivos
 
 @login_required(login_url='login')
 def catalogo_premios(request):
-    perfil = request.user.perfil
+    try:
+        perfil = request.user.perfil
+        tiene_perfil = True
+    except ObjectDoesNotExist:
+        perfil = None
+        tiene_perfil = False
+        
     premios = CatalogoPremio.objects.filter(activo=True).order_by('costo_puntos')
-    mis_canjes = CanjePremio.objects.filter(colaborador=perfil).order_by('-fecha_solicitud')
+    mis_canjes = CanjePremio.objects.filter(colaborador=perfil).order_by('-fecha_solicitud') if tiene_perfil else []
     
     if request.method == 'POST':
+        if not tiene_perfil:
+            messages.error(request, "Tu usuario no tiene un perfil asignado para realizar canjes.")
+            return redirect('catalogo_premios')
+            
         premio_id = request.POST.get('premio_id')
         premio = get_object_or_404(CatalogoPremio, id=premio_id)
         
@@ -179,7 +214,7 @@ def catalogo_premios(request):
     context = {
         'premios': premios,
         'mis_canjes': mis_canjes,
-        'puntos_disponibles': perfil.puntos_disponibles
+        'puntos_disponibles': perfil.puntos_disponibles if tiene_perfil else 0
     }
     return render(request, 'intranet/cultura/catalogo_premios.html', context)
 
