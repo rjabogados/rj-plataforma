@@ -77,6 +77,23 @@
                                 let lastNotifId = localStorage.getItem('last_notif_id_{{ request.user.id }}') || 0;
                                 data.notificaciones.forEach(notif => {
                                     if(notif.id > lastNotifId) {
+                                        // 1. In-browser web toast
+                                        let toastHtml = `
+                                        <div class="toast show align-items-center text-white bg-primary border-0 rounded-3 shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                                            <div class="d-flex">
+                                                <div class="toast-body fw-bold fs-6 d-flex flex-column gap-1" style="cursor:pointer;" onclick="window.location.href='${notif.url}'">
+                                                    <div class="d-flex align-items-center gap-2"><i class="bi bi-bell-fill fs-5"></i> <span>${notif.titulo}</span></div>
+                                                    <small class="fw-normal opacity-75">${notif.detalle}</small>
+                                                </div>
+                                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                                            </div>
+                                        </div>`;
+                                        if($('#globalToastContainer').length === 0) {
+                                            $('body').append('<div id="globalToastContainer" class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 1060;"></div>');
+                                        }
+                                        $('#globalToastContainer').append(toastHtml);
+
+                                        // 2. OS-level native notification
                                         if (Notification.permission === "granted") {
                                             let n = new Notification(notif.titulo, {
                                                 body: notif.detalle,

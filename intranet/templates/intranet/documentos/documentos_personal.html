@@ -111,6 +111,12 @@
 
                         <form method="POST" action="{% url 'firmar_documento' doc.id %}">
                             {% csrf_token %}
+                            <div class="form-check text-start mb-4 bg-white p-3 rounded-3 border">
+                                <input class="form-check-input" type="checkbox" name="acepto_terminos" id="aceptoTerminos{{ doc.id }}" required>
+                                <label class="form-check-label small fw-bold text-dark" for="aceptoTerminos{{ doc.id }}">
+                                    Declaro bajo juramento que acepto los términos de este documento y reconozco que esta acción constituye mi firma legal.
+                                </label>
+                            </div>
                             <button type="submit" class="btn btn-primary w-100 fw-bold py-3 rounded-pill shadow-sm fs-5 hover-grow">
                                 <i class="bi bi-pen me-2"></i> Acepto y Firmo Digitalmente
                             </button>
