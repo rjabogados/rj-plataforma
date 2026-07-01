@@ -2,553 +2,1033 @@
 {% load static %}
 
 {% block extra_head %}
-<!-- Summernote CSS/JS -->
+<!-- Summernote -->
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
-<!-- Summernote Spanish lang -->
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/lang/summernote-es-ES.min.js"></script>
+<!-- Mammoth.js: convierte .docx a HTML real -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
 
 <style>
-    :root {
-        --primary-color: #667eea;
-        --secondary-color: #764ba2;
-    }
+/* ============================================================
+   RESET Y VARIABLES
+   ============================================================ */
+:root {
+    --accent: #4f46e5;
+    --accent-light: #ede9fe;
+    --accent-dark: #3730a3;
+    --sidebar-w: 300px;
+    --topbar-h: 56px;
+    --toolbar-h: 48px;
+    --footer-h: 36px;
+    --paper-w: 794px;   /* A4 72dpi */
+    --paper-pad: 72px;
+}
 
-    .editor-wrapper {
-        background: white;
-        min-height: 100vh;
-    }
+/* Layout full-height sin scroll en body */
+html, body { height: 100%; margin: 0; }
 
-    .editor-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white;
-        padding: 2rem;
-        border-radius: 0 0 1rem 1rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-    }
+/* Ocultar el padding del base que podría romper el layout */
+.editor-page-root {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px); /* ajusta si el nav base ocupa espacio */
+    background: #f1f3f4;
+    font-family: 'Segoe UI', sans-serif;
+}
 
-    .editor-header h2 {
-        margin: 0;
-        font-size: 1.75rem;
-        font-weight: 700;
-    }
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.ed-topbar {
+    flex: 0 0 auto;
+    height: var(--topbar-h);
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    z-index: 100;
+}
 
-    .editor-header p {
-        margin: 0.5rem 0 0 0;
-        opacity: 0.95;
-    }
+.ed-topbar .doc-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1rem; flex-shrink: 0;
+}
 
-    .editor-container {
-        display: flex;
-        gap: 2rem;
-        padding: 0 2rem 2rem;
-        margin-bottom: 2rem;
-    }
+.ed-topbar .doc-info { flex: 1; min-width: 0; }
+.ed-topbar .doc-title {
+    font-weight: 700; font-size: 0.95rem;
+    color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ed-topbar .doc-meta {
+    font-size: 0.72rem; color: #6b7280; margin-top: 1px;
+}
 
-    .variables-sidebar {
-        background-color: #f8f9fa;
-        border-radius: 1rem;
-        padding: 1.5rem;
-        flex: 0 0 350px;
-        max-height: calc(100vh - 300px);
-        overflow-y: auto;
-        border: 2px solid #e9ecef;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.06);
-        position: sticky;
-        top: 20px;
-    }
+.ed-topbar .topbar-actions { display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center; }
 
-    .sidebar-section {
-        margin-bottom: 0.75rem;
-    }
+.autosave-badge {
+    font-size: 0.7rem; color: #6b7280;
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+}
+.autosave-badge.saved { color: #16a34a; }
+.autosave-badge.saving { color: #d97706; }
+.autosave-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #6b7280; flex-shrink: 0;
+}
+.autosave-badge.saved .autosave-dot { background: #16a34a; }
+.autosave-badge.saving .autosave-dot { background: #d97706; animation: pulse 1s infinite; }
 
-    .sidebar-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 1.5rem;
-    }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-    .upload-zone {
-        background: linear-gradient(135deg, #e7f1ff 0%, #f0e8ff 100%);
-        border: 2px dashed #667eea;
-        border-radius: 0.75rem;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
+.btn-topbar {
+    height: 34px; padding: 0 1rem; border-radius: 7px;
+    font-size: 0.82rem; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    border: none; cursor: pointer; transition: all .18s;
+}
+.btn-topbar.secondary {
+    background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;
+}
+.btn-topbar.secondary:hover { background: #e9ecef; }
+.btn-topbar.primary {
+    background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+    color: white; box-shadow: 0 2px 8px rgba(79,70,229,0.35);
+}
+.btn-topbar.primary:hover {
+    box-shadow: 0 4px 14px rgba(79,70,229,0.5);
+    transform: translateY(-1px);
+}
+.btn-topbar.success {
+    background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+    color: white; box-shadow: 0 2px 8px rgba(22,163,74,0.35);
+}
+.btn-topbar.success:hover {
+    box-shadow: 0 4px 14px rgba(22,163,74,0.5);
+    transform: translateY(-1px);
+}
 
-    .upload-zone:hover {
-        background: linear-gradient(135deg, #d4deff 0%, #e0d8ff 100%);
-        border-color: #764ba2;
-    }
+/* ============================================================
+   BODY DEL EDITOR: SIDEBAR + CANVAS
+   ============================================================ */
+.ed-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
 
-    .upload-zone.dragover {
-        background: linear-gradient(135deg, #c9deff 0%, #d0ceff 100%);
-        border-color: #4c52d9;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-    }
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.ed-sidebar {
+    flex: 0 0 var(--sidebar-w);
+    width: var(--sidebar-w);
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
 
-    .upload-icon {
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
-    }
+.sidebar-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+.sidebar-header h6 {
+    font-size: 0.78rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: #374151; margin: 0;
+}
 
-    .upload-text {
-        font-size: 0.8rem;
-        color: #667eea;
-        font-weight: 500;
-    }
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid #e5e7eb;
+}
+.sidebar-tab {
+    flex: 1; padding: 0.6rem 0.5rem;
+    font-size: 0.75rem; font-weight: 600;
+    text-align: center; cursor: pointer;
+    color: #6b7280; border: none; background: none;
+    border-bottom: 2px solid transparent;
+    transition: all .18s;
+}
+.sidebar-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: var(--accent-light);
+}
+.sidebar-tab:hover:not(.active) { color: #374151; background: #f9fafb; }
 
-    #fileInput {
-        display: none;
-    }
+.sidebar-content { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
 
-    .var-group {
-        margin-bottom: 1.25rem;
-    }
+/* Upload zone */
+.upload-zone {
+    background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%);
+    border: 2px dashed #a78bfa;
+    border-radius: 10px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .25s;
+    margin-bottom: 1rem;
+    position: relative;
+}
+.upload-zone:hover, .upload-zone.dragover {
+    background: linear-gradient(135deg, #ddd6fe 0%, #c7d2fe 100%);
+    border-color: var(--accent);
+    transform: scale(1.01);
+    box-shadow: 0 4px 16px rgba(79,70,229,.15);
+}
+.upload-zone.dragover { border-style: solid; }
+.upload-zone input[type="file"] { display: none; }
+.upload-zone-icon { font-size: 2rem; margin-bottom: 0.5rem; line-height: 1; }
+.upload-zone-title {
+    font-size: 0.82rem; font-weight: 700; color: var(--accent);
+    margin-bottom: 0.25rem;
+}
+.upload-zone-sub { font-size: 0.7rem; color: #7c3aed; opacity: 0.75; }
+.upload-formats {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center;
+    margin-top: 0.75rem;
+}
+.format-chip {
+    background: white; border: 1px solid #c4b5fd;
+    border-radius: 20px; padding: 2px 8px;
+    font-size: 0.65rem; font-weight: 700; color: #7c3aed;
+}
 
-    .var-group-title {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        font-weight: 800;
-        color: #6c757d;
-        margin-bottom: 0.75rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #dee2e6;
-        letter-spacing: 0.5px;
-    }
+/* Upload progress */
+.upload-progress {
+    display: none;
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+.upload-progress.visible { display: block; }
+.progress-label { font-size: 0.78rem; color: #374151; margin-bottom: 0.5rem; font-weight: 600; }
+.progress { height: 6px; border-radius: 10px; background: #e5e7eb; }
+.progress-bar { background: linear-gradient(90deg, var(--accent) 0%, #7c3aed 100%); border-radius: 10px; }
 
-    .var-btn {
-        text-align: left;
-        margin-bottom: 0.5rem;
-        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-        font-size: 0.8rem;
-        padding: 0.6rem 0.85rem;
-        border-radius: 0.5rem;
-        transition: all 0.2s ease;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        background-color: white;
-        border: 1px solid #dee2e6;
-    }
+/* Variables panel */
+.var-search {
+    position: relative; margin-bottom: 0.75rem;
+}
+.var-search input {
+    width: 100%; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 0.45rem 0.75rem 0.45rem 2rem;
+    font-size: 0.8rem; background: #f9fafb;
+    outline: none; transition: border .18s;
+}
+.var-search input:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+.var-search .search-icon {
+    position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%);
+    font-size: 0.8rem; color: #9ca3af;
+}
 
-    .var-btn:hover {
-        background: linear-gradient(135deg, #e7f1ff 0%, #f0e8ff 100%);
-        border-color: #667eea;
-        color: #667eea;
-        font-weight: 600;
-        transform: translateX(2px);
-    }
+.var-group { margin-bottom: 1.25rem; }
+.var-group-header {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.7px; color: #6b7280; margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+}
+.var-group-header:hover { color: #374151; }
+.var-group-header .group-icon { font-size: 0.9rem; }
+.var-group-header .toggle-arrow {
+    margin-left: auto; font-size: 0.7rem;
+    transition: transform .2s;
+}
+.var-group-header.collapsed .toggle-arrow { transform: rotate(-90deg); }
+.var-group-items { display: flex; flex-direction: column; gap: 0.3rem; }
+.var-group-items.collapsed { display: none; }
 
-    .editor-main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
+.var-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: #f9fafb; border: 1px solid #e5e7eb;
+    border-radius: 8px; padding: 0.45rem 0.75rem;
+    cursor: pointer; transition: all .18s;
+    font-size: 0; /* icon hidden until hover */
+}
+.var-chip:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(79,70,229,.1);
+}
+.var-chip .chip-code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.78rem; color: #374151; flex: 1;
+}
+.var-chip:hover .chip-code { color: var(--accent); font-weight: 700; }
+.var-chip .chip-insert {
+    font-size: 0.65rem; color: #a78bfa; display: none;
+    background: white; border-radius: 4px; padding: 1px 5px;
+    border: 1px solid #c4b5fd; white-space: nowrap;
+}
+.var-chip:hover .chip-insert { display: block; }
 
-    .note-editor {
-        border-radius: 1rem;
-        overflow: hidden;
-        border: 2px solid #e9ecef;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    }
+/* ============================================================
+   EDITOR CANVAS (hoja A4)
+   ============================================================ */
+.ed-canvas {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #e8eaed;
+}
 
-    .note-toolbar {
-        background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
-        border-bottom: 1px solid #dee2e6;
-        padding: 0.75rem !important;
-        flex-wrap: wrap;
-    }
+/* Footer de estado */
+.ed-footer {
+    flex: 0 0 var(--footer-h);
+    height: var(--footer-h);
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    gap: 1.5rem;
+    font-size: 0.72rem;
+    color: #6b7280;
+}
+.footer-stat { display: flex; align-items: center; gap: 5px; }
+.footer-stat strong { color: #374151; }
+.footer-sep { color: #d1d5db; }
 
-    .note-toolbar.note-editing-area {
-        padding: 0.75rem !important;
-    }
+/* =====================
+   SUMMERNOTE OVERRIDE para look A4
+   ===================== */
+.note-editor.note-frame {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
 
-    .note-toolbar button {
-        transition: all 0.2s ease;
-    }
+.note-editor.note-frame .note-toolbar {
+    flex-shrink: 0;
+    background: white !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    padding: 6px 16px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    border-radius: 0 !important;
+}
 
-    .note-toolbar button:hover {
-        background-color: #e7f1ff;
-    }
+.note-editor.note-frame .note-editing-area {
+    flex: 1;
+    overflow-y: auto;
+    background: #e8eaed;
+    padding: 2rem 0;
+}
 
-    .note-editable {
-        padding: 2rem;
-        font-size: 1rem;
-        line-height: 1.8;
-    }
+.note-editor.note-frame .note-editable {
+    background: white !important;
+    width: var(--paper-w);
+    max-width: 98%;
+    min-height: 1123px; /* A4 height en 96dpi */
+    margin: 0 auto;
+    padding: var(--paper-pad) !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06) !important;
+    border-radius: 2px !important;
+    font-family: 'Calibri', 'Georgia', serif !important;
+    font-size: 11pt !important;
+    line-height: 1.7 !important;
+    color: #1a1a1a !important;
+    border: none !important;
+    outline: none !important;
+}
 
-    .breadcrumb-editor {
-        margin-bottom: 0;
-        background-color: #f8f9fa;
-        padding: 1rem 2rem;
-        margin: -2rem -2rem 2rem -2rem;
-        border-radius: 1rem 1rem 0 0;
-    }
+/* Toolbar buttons refinement */
+.note-toolbar .btn {
+    border-radius: 5px !important;
+    font-size: 0.82rem !important;
+    transition: background .15s !important;
+}
+.note-toolbar .btn:hover {
+    background: var(--accent-light) !important;
+    color: var(--accent) !important;
+}
+.note-toolbar .btn.active {
+    background: var(--accent-light) !important;
+    color: var(--accent) !important;
+}
+.note-toolbar .note-btn-group { gap: 2px; }
 
-    .breadcrumb {
-        margin-bottom: 0;
-    }
+/* Variable text highlighting in document */
+.note-editable .var-highlight {
+    background: #fef9c3;
+    border: 1px solid #fde047;
+    border-radius: 3px;
+    padding: 0 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #854d0e;
+}
 
-    .btn-group-custom {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.toast-container-custom {
+    position: fixed;
+    top: 70px; right: 20px;
+    z-index: 9999;
+    display: flex; flex-direction: column; gap: 8px;
+    pointer-events: none;
+}
+.toast-custom {
+    background: white;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    min-width: 260px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    pointer-events: all;
+    animation: slideInRight .3s ease;
+    border-left: 4px solid #6b7280;
+}
+.toast-custom.success { border-left-color: #16a34a; }
+.toast-custom.error   { border-left-color: #dc2626; }
+.toast-custom.info    { border-left-color: var(--accent); }
+.toast-custom.warning { border-left-color: #d97706; }
+.toast-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.toast-body { flex: 1; }
+.toast-title { font-weight: 700; font-size: 0.82rem; color: #111; }
+.toast-msg   { font-size: 0.76rem; color: #6b7280; margin-top: 2px; }
+.toast-close { background: none; border: none; cursor: pointer; color: #9ca3af; font-size: 1rem; padding: 0; line-height: 1; }
+.toast-close:hover { color: #374151; }
 
-    .header-actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
+@keyframes slideInRight {
+    from { transform: translateX(110%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideOutRight {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(110%); opacity: 0; }
+}
 
-    .btn-save {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        border: none;
-        color: white;
-        font-weight: 600;
-    }
-
-    .btn-save:hover {
-        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-    }
-
-    @media (max-width: 1200px) {
-        .editor-container {
-            flex-direction: column;
-        }
-
-        .variables-sidebar {
-            flex: 1;
-            max-height: 400px;
-        }
-    }
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+    .ed-sidebar { display: none; }
+    :root { --paper-w: 100%; --paper-pad: 1.5rem; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="editor-wrapper">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb-editor">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'gestor_plantillas' %}">Gestor de Plantillas</a></li>
-                <li class="breadcrumb-item active"><strong>Stage 3: Editor Avanzado</strong></li>
-            </ol>
-        </nav>
-    </div>
+<!-- Root layout -->
+<div class="editor-page-root">
 
-    <!-- Header -->
-    <div class="editor-header">
-        <h2><i class="bi bi-file-earmark-text me-2"></i> Editor de Plantilla Dinamica</h2>
-        <p>{{ plantilla.nombre }}</p>
-        {% if plantilla.categoria %}
-        <div style="margin-top: 1rem;">
-            <span class="badge bg-light text-dark rounded-pill">
-                <i class="bi bi-folder me-1"></i> {{ plantilla.categoria.nombre }}
-            </span>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Main Container -->
-    <div class="container-fluid" style="padding: 0 2rem;">
-        <!-- Controls Bar -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="text-muted small">
-                <i class="bi bi-info-circle me-1"></i>
-                Haz clic en variables para insertar en el cursor | Arrastra documentos al panel izquierdo para cargarlos
+    <!-- TOP BAR -->
+    <div class="ed-topbar">
+        <div class="doc-icon"><i class="bi bi-file-earmark-richtext"></i></div>
+        <div class="doc-info">
+            <div class="doc-title">{{ plantilla.nombre }}</div>
+            <div class="doc-meta">
+                {% if plantilla.categoria %}<i class="bi bi-folder2 me-1"></i>{{ plantilla.categoria.nombre }} &nbsp;·&nbsp; {% endif %}
+                Plantilla Dinámica &nbsp;·&nbsp; Última edición: {{ plantilla.fecha_modificacion|date:"d/m/Y H:i" }}
             </div>
-            <div class="header-actions">
-                <a href="{% url 'gestor_plantillas' %}" class="btn btn-outline-secondary fw-bold rounded-pill">
-                    <i class="bi bi-arrow-left me-2"></i> Cancelar
-                </a>
-                <button type="button" class="btn btn-save fw-bold rounded-pill" onclick="$('#editorForm').submit();">
-                    <i class="bi bi-check-circle me-2"></i> Guardar Plantilla
+        </div>
+
+        <div id="autosaveBadge" class="autosave-badge">
+            <span class="autosave-dot"></span>
+            <span id="autosaveText">Sin cambios</span>
+        </div>
+
+        <div class="topbar-actions">
+            <a href="{% url 'gestor_plantillas' %}" class="btn-topbar secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <button type="button" class="btn-topbar primary" onclick="previewDoc()">
+                <i class="bi bi-eye"></i> Vista previa
+            </button>
+            <button type="button" class="btn-topbar success" onclick="guardarPlantilla()">
+                <i class="bi bi-check-lg"></i> Guardar
+            </button>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="ed-body">
+
+        <!-- SIDEBAR -->
+        <div class="ed-sidebar">
+            <div class="sidebar-header">
+                <h6><i class="bi bi-layout-sidebar-reverse me-1"></i> Panel de trabajo</h6>
+            </div>
+
+            <!-- Tabs -->
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" onclick="switchTab(this, 'tab-upload')">
+                    <i class="bi bi-upload me-1"></i> Cargar
+                </button>
+                <button class="sidebar-tab" onclick="switchTab(this, 'tab-vars')">
+                    <i class="bi bi-code-slash me-1"></i> Variables
                 </button>
             </div>
-        </div>
 
-        <!-- Editor Layout -->
-        <div class="editor-container">
-            <!-- Sidebar de Variables y Upload -->
-            <div class="variables-sidebar">
-                <!-- Upload Section -->
-                <div class="sidebar-section">
-                    <div class="upload-zone" id="uploadZone" onclick="$('#fileInput').click();">
-                        <div class="upload-icon">📄</div>
-                        <div class="upload-text">Arrastra un documento aqui o haz clic para cargar</div>
-                        <div class="small text-muted" style="margin-top: 0.5rem;">Soporta: Word, PDF, TXT, HTML</div>
+            <!-- Tab: Upload -->
+            <div id="tab-upload" class="sidebar-content">
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fileInput" accept=".docx,.txt,.html,.htm" />
+                    <div class="upload-zone-icon">📂</div>
+                    <div class="upload-zone-title">Arrastra tu documento aquí</div>
+                    <div class="upload-zone-sub">o haz clic para explorar</div>
+                    <div class="upload-formats">
+                        <span class="format-chip">DOCX</span>
+                        <span class="format-chip">TXT</span>
+                        <span class="format-chip">HTML</span>
                     </div>
-                    <input type="file" id="fileInput" accept=".doc,.docx,.pdf,.txt,.html,.htm,.odt" />
                 </div>
 
-                <!-- Divider -->
-                <hr class="my-3" />
-
-                <!-- Variables Header -->
-                <h6 class="sidebar-title mb-3">
-                    <i class="bi bi-tags-fill me-2" style="color: #667eea;"></i> Variables Disponibles
-                </h6>
-
-                <!-- Datos Personales -->
-                <div class="var-group">
-                    <div class="var-group-title">Datos Personales</div>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{nombre_colaborador}')" title="Nombre completo del colaborador">{nombre_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{nombres}')">{nombres}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{apellidos}')">{apellidos}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{dni_colaborador}')">{dni_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{correo}')">{correo}</button>
+                <!-- Progress bar -->
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="progress-label" id="uploadLabel">Procesando...</div>
+                    <div class="progress">
+                        <div class="progress-bar" id="uploadBar" style="width: 0%"></div>
+                    </div>
                 </div>
 
-                <!-- Datos Laborales -->
-                <div class="var-group">
-                    <div class="var-group-title">Datos Laborales</div>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{cargo_colaborador}')">{cargo_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{area_colaborador}')">{area_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{sueldo_base}')">{sueldo_base}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{fecha_ingreso}')">{fecha_ingreso}</button>
-                </div>
-
-                <!-- Datos Corporativos -->
-                <div class="var-group">
-                    <div class="var-group-title">Corporativos</div>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{fecha_actual}')">{fecha_actual}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{empresa}')">{empresa}</button>
+                <!-- Tips -->
+                <div style="background:#f9fafb; border-radius:8px; padding:0.85rem; border:1px solid #e5e7eb;">
+                    <p style="font-size:0.75rem; font-weight:700; color:#374151; margin:0 0 0.5rem 0;">
+                        <i class="bi bi-lightbulb text-warning me-1"></i> Cómo funciona
+                    </p>
+                    <ul style="font-size:0.72rem; color:#6b7280; margin:0; padding-left:1.1rem; line-height:1.8;">
+                        <li>Carga un .docx y se importa conservando estilos</li>
+                        <li>Agrega variables del panel al cursor donde estés</li>
+                        <li>Las variables se ven resaltadas en amarillo</li>
+                        <li>Guarda para aplicar a colaboradores desde Despacho</li>
+                    </ul>
                 </div>
             </div>
 
-            <!-- Editor Summernote -->
-            <div class="editor-main">
-                <form id="editorForm" method="POST">
-                    {% csrf_token %}
-                    <textarea id="summernote" name="contenido_html">{{ plantilla.contenido_html|safe }}</textarea>
-                </form>
+            <!-- Tab: Variables -->
+            <div id="tab-vars" class="sidebar-content" style="display:none;">
+                <div class="var-search">
+                    <span class="search-icon"><i class="bi bi-search"></i></span>
+                    <input type="text" id="varSearch" placeholder="Buscar variable..." oninput="filtrarVariables(this.value)" />
+                </div>
+
+                <!-- Grupo: Identificación -->
+                <div class="var-group" data-group>
+                    <div class="var-group-header" onclick="toggleGroup(this)">
+                        <span class="group-icon">👤</span> Identificación
+                        <span class="toggle-arrow">▾</span>
+                    </div>
+                    <div class="var-group-items">
+                        <div class="var-chip" onclick="insertarVariable('{nombre_colaborador}')">
+                            <span class="chip-code">{nombre_colaborador}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{nombres}')">
+                            <span class="chip-code">{nombres}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{apellidos}')">
+                            <span class="chip-code">{apellidos}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{dni_colaborador}')">
+                            <span class="chip-code">{dni_colaborador}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{correo}')">
+                            <span class="chip-code">{correo}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grupo: Cargo -->
+                <div class="var-group" data-group>
+                    <div class="var-group-header" onclick="toggleGroup(this)">
+                        <span class="group-icon">💼</span> Cargo & Área
+                        <span class="toggle-arrow">▾</span>
+                    </div>
+                    <div class="var-group-items">
+                        <div class="var-chip" onclick="insertarVariable('{cargo_colaborador}')">
+                            <span class="chip-code">{cargo_colaborador}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{area_colaborador}')">
+                            <span class="chip-code">{area_colaborador}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{sueldo_base}')">
+                            <span class="chip-code">{sueldo_base}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{fecha_ingreso}')">
+                            <span class="chip-code">{fecha_ingreso}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grupo: Empresa -->
+                <div class="var-group" data-group>
+                    <div class="var-group-header" onclick="toggleGroup(this)">
+                        <span class="group-icon">🏢</span> Empresa & Fechas
+                        <span class="toggle-arrow">▾</span>
+                    </div>
+                    <div class="var-group-items">
+                        <div class="var-chip" onclick="insertarVariable('{empresa}')">
+                            <span class="chip-code">{empresa}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                        <div class="var-chip" onclick="insertarVariable('{fecha_actual}')">
+                            <span class="chip-code">{fecha_actual}</span>
+                            <span class="chip-insert">+ Insertar</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CANVAS: Summernote full-height -->
+        <div class="ed-canvas">
+            <form id="editorForm" method="POST" style="display:flex; flex-direction:column; height:100%;">
+                {% csrf_token %}
+                <textarea id="summernote" name="contenido_html" style="display:none;">{{ plantilla.contenido_html|safe }}</textarea>
+                <!-- Summernote se montará aquí ocupando todo el espacio -->
+            </form>
+
+            <!-- Footer de estado -->
+            <div class="ed-footer">
+                <div class="footer-stat">
+                    <i class="bi bi-file-text"></i>
+                    <strong id="wordCount">0</strong> palabras
+                </div>
+                <div class="footer-sep">|</div>
+                <div class="footer-stat">
+                    <i class="bi bi-fonts"></i>
+                    <strong id="charCount">0</strong> caracteres
+                </div>
+                <div class="footer-sep">|</div>
+                <div class="footer-stat">
+                    <i class="bi bi-file-earmark"></i> A4 · 96 ppp
+                </div>
+                <div style="margin-left:auto; display:flex; align-items:center; gap:0.5rem;">
+                    <span style="font-size:0.7rem;">Zoom:</span>
+                    <select id="zoomSelect" onchange="applyZoom(this.value)"
+                        style="border:1px solid #e5e7eb; border-radius:5px; font-size:0.7rem; padding:2px 6px; color:#374151;">
+                        <option value="0.7">70%</option>
+                        <option value="0.85">85%</option>
+                        <option value="1" selected>100%</option>
+                        <option value="1.15">115%</option>
+                        <option value="1.3">130%</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container-custom" id="toastContainer"></div>
+
+<!-- Modal: Vista previa -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#4f46e5,#7c3aed); color:white; border:none;">
+                <h5 class="modal-title fw-bold"><i class="bi bi-eye me-2"></i> Vista Previa del Documento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="background:#e8eaed; padding:2rem;">
+                <div id="previewContent"
+                    style="background:white; max-width:794px; margin:0 auto;
+                           padding:72px; box-shadow:0 4px 24px rgba(0,0,0,0.2);
+                           font-family:'Calibri','Georgia',serif; font-size:11pt; line-height:1.7;">
+                </div>
+            </div>
+            <div class="modal-footer" style="border:none; background:#f9fafb;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Imprimir
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Initialize Summernote with comprehensive toolbar (Word-like)
-    $(document).ready(function() {
-        $('#summernote').summernote({
-            lang: 'es-ES',
-            placeholder: 'Escribe tu documento aqui. Usa el panel izquierdo para insertar variables dinamicas...',
-            tabsize: 2,
-            height: 700,
-            minHeight: 400,
-            maxHeight: null,
-            toolbar: [
-                // Style and Format
-                ['style', ['style', 'normal', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']],
-                
-                // Font styling
-                ['font', ['bold', 'underline', 'italic', 'strikethrough', 'superscript', 'subscript']],
-                
-                // Font and size
-                ['fontname', ['fontname']],
-                ['fontsize', ['fontsize']],
-                
-                // Color and highlight
-                ['color', ['color', 'highlight']],
-                
-                // Paragraph alignment and spacing
-                ['para', ['ul', 'ol', 'paragraph', 'height']],
-                
-                // Indentation
-                ['indent', ['indent', 'outdent']],
-                
-                // Divider
-                ['insert', ['table', 'picture', 'link', 'video', 'hr']],
-                
-                // View
-                ['view', ['fullscreen', 'codeview', 'undo', 'redo']],
-                
-                // Clear formatting
-                ['misc', ['undo', 'redo', 'codeview']],
+/* ====================================================
+   INIT SUMMERNOTE
+   ==================================================== */
+$(document).ready(function () {
+    $('#summernote').summernote({
+        lang: 'es-ES',
+        placeholder: 'Comienza a escribir aquí o carga un documento desde el panel izquierdo...',
+        tabsize: 2,
+        height: null,        // sin altura fija, el contenedor flex maneja el alto
+        minHeight: null,
+        maxHeight: null,
+        toolbar: [
+            ['history',   ['undo', 'redo']],
+            ['style',     ['style']],
+            ['font',      ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'clear']],
+            ['fontname',  ['fontname']],
+            ['fontsize',  ['fontsize']],
+            ['color',     ['color', 'highlight']],
+            ['para',      ['ul', 'ol', 'paragraph']],
+            ['height',    ['height']],
+            ['indent',    ['indent', 'outdent']],
+            ['table',     ['table']],
+            ['insert',    ['link', 'picture', 'hr']],
+            ['view',      ['fullscreen', 'codeview']],
+        ],
+        fontNames: ['Arial','Calibri','Cambria','Comic Sans MS','Courier New','Georgia','Palatino Linotype','Times New Roman','Trebuchet MS','Verdana'],
+        fontSizes:  ['8','9','10','11','12','13','14','16','18','20','22','24','26','28','32','36','40','48','60','72'],
+        prettifyHtml: true,
+        disableDragAndDrop: false,
+        popover: {
+            image: [
+                ['imagesize', ['imageSize100','imageSize50','imageSize25']],
+                ['float',     ['floatLeft','floatRight','floatNone']],
+                ['remove',    ['removeMedia']]
             ],
-            popover: {
-                image: [
-                    ['imagesize', ['imageSize100', 'imageSize50', 'imageSize25']],
-                    ['float', ['floatLeft', 'floatRight', 'floatNone']],
-                    ['remove', ['removeMedia']]
-                ],
-                link: [
-                    ['link', ['linkDialogShow', 'unlink']]
-                ],
-                table: [
-                    ['add', ['addRowDown', 'addRowUp', 'addColLeft', 'addColRight']],
-                    ['delete', ['deleteRow', 'deleteCol', 'deleteTable']],
-                ]
-            },
-            prettifyHtml: true,
-            spellCheck: true,
-            dialogsFade: true,
-            disableDragAndDrop: false,
-            callbacks: {
-                onInit: function() {
-                    console.log('Summernote inicializado correctamente');
-                },
-                onKeyDown: function(e) {
-                    // Allow standard shortcuts
-                },
-                onImageUpload: function(files) {
-                    handleImageUpload(files[0]);
-                }
-            },
-            fontNames: [
-                'Arial',
-                'Times New Roman',
-                'Courier New',
-                'Verdana',
-                'Georgia',
-                'Comic Sans MS',
-                'Trebuchet MS',
-                'Palatino Linotype',
-                'Calibri',
-                'Cambria'
-            ],
-            fontSizes: ['8', '9', '10', '11', '12', '13', '14', '16', '18', '20', '22', '24', '28', '32', '36', '40', '44', '48', '64', '72', '96'],
-            colors: [
-                ['#000000', '#424242', '#636363', '#9C9C94', '#CEC6C6', '#D0CECE', '#EFEFEF', '#F2F2F2', '#FFFFFF'],
-                ['#FF0000', '#FF9C00', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#9C00FF', '#FF00FF', '#FFB6C1'],
-                ['#F4CCCC', '#FCE5CD', '#FFFACD', '#D9EAD3', '#D0E8F2', '#D9D2E9', '#EBD6D2', '#FBE4D6', '#F3F3F3'],
+            link:  [['link',  ['linkDialogShow','unlink']]],
+            table: [
+                ['add',    ['addRowDown','addRowUp','addColLeft','addColRight']],
+                ['delete', ['deleteRow','deleteCol','deleteTable']]
             ]
-        });
-
-        // Focus editor when initialized
-        setTimeout(() => {
-            $('#summernote').summernote('focus');
-        }, 100);
+        },
+        colors: [
+            ['#000000','#434343','#666666','#999999','#b7b7b7','#cccccc','#d9d9d9','#efefef','#f3f3f3','#ffffff'],
+            ['#ff0000','#ff4444','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#0000ff','#9900ff','#ff00ff'],
+            ['#e6b8a2','#f9cb9c','#ffe599','#b6d7a8','#a2c4c9','#9fc5e8','#b4a7d6','#d5a6bd','#fce5cd','#d0e0e3'],
+        ],
+        callbacks: {
+            onInit: function () {
+                // Forzar que note-editing-area ocupe el espacio restante
+                const frame = document.querySelector('.note-editor.note-frame');
+                if (frame) {
+                    frame.style.cssText = 'flex:1; display:flex; flex-direction:column; border:none; border-radius:0; height:100%;';
+                    const editArea = frame.querySelector('.note-editing-area');
+                    if (editArea) editArea.style.cssText = 'flex:1; overflow-y:auto; background:#e8eaed;';
+                }
+                // Insertar Summernote dentro del form que está en .ed-canvas
+                const $frame = $('.note-editor.note-frame');
+                $frame.insertBefore($('#editorForm'));
+                $('#editorForm').hide();
+                updateCounts();
+            },
+            onChange: function () {
+                updateCounts();
+                marcarCambio();
+            },
+            onImageUpload: function (files) {
+                const reader = new FileReader();
+                reader.onload = e => $('#summernote').summernote('insertImage', e.target.result);
+                reader.readAsDataURL(files[0]);
+            }
+        }
     });
 
-    // Insert variable at cursor position
-    function insertarVariable(variable) {
-        $('#summernote').summernote('focus');
-        // Use insertNode to ensure insertion at cursor
-        const node = document.createTextNode(variable);
-        $('#summernote').summernote('insertNode', node);
+    // Wrap en el canvas
+    // Summernote se instancia en el body; lo movemos al .ed-canvas
+    const canvas = document.querySelector('.ed-canvas');
+    const footer = document.querySelector('.ed-footer');
+    const noteFrame = document.querySelector('.note-editor.note-frame');
+    if (noteFrame && canvas && footer) {
+        canvas.insertBefore(noteFrame, footer);
+        noteFrame.style.flex = '1';
+        noteFrame.style.display = 'flex';
+        noteFrame.style.flexDirection = 'column';
+        noteFrame.style.overflow = 'hidden';
     }
+});
 
-    // File upload handling
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
+/* ====================================================
+   INSERTAR VARIABLE → resaltada en amarillo
+   ==================================================== */
+function insertarVariable(variable) {
+    $('#summernote').summernote('focus');
+    const $chip = $(`<span class="var-highlight" contenteditable="false">${variable}</span>`);
+    // insertamos como plain text si el span da problemas con el motor de plantillas
+    $('#summernote').summernote('editor.insertText', variable);
+    showToast('Variable insertada', `${variable} agregada en el cursor`, 'info');
+}
 
-    // Click to upload
-    uploadZone.addEventListener('click', () => fileInput.click());
+/* ====================================================
+   GUARDAR
+   ==================================================== */
+function guardarPlantilla() {
+    marcarGuardando();
+    document.getElementById('editorForm').style.display = 'block';
+    // Forzar sync de summernote al textarea
+    $('#summernote').summernote('trigger', 'summernote.blur');
+    setTimeout(() => {
+        document.getElementById('editorForm').submit();
+    }, 100);
+}
 
-    // Drag and drop
-    uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('dragover');
-    });
+/* ====================================================
+   AUTOSAVE (localStorage)
+   ==================================================== */
+const AUTOSAVE_KEY = 'plantilla_autosave_{{ plantilla.id }}';
+let autosaveTimer = null;
+let hasChanges = false;
 
-    uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
-    });
+function marcarCambio() {
+    hasChanges = true;
+    setAutosaveBadge('saving', 'Guardando...');
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+        const html = $('#summernote').summernote('code');
+        localStorage.setItem(AUTOSAVE_KEY, html);
+        setAutosaveBadge('saved', 'Guardado localmente');
+        hasChanges = false;
+    }, 2000);
+}
 
-    uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
-        }
-    });
+function marcarGuardando() {
+    setAutosaveBadge('saving', 'Guardando en servidor...');
+}
 
-    // File input change
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleFileUpload(e.target.files[0]);
-        }
-    });
+function setAutosaveBadge(state, text) {
+    const badge = document.getElementById('autosaveBadge');
+    const textEl = document.getElementById('autosaveText');
+    badge.className = 'autosave-badge ' + state;
+    textEl.textContent = text;
+}
 
-    function handleFileUpload(file) {
-        const fileName = file.name;
-        const fileType = file.type;
-        const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+// Recuperar autosave
+window.addEventListener('load', () => {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if (saved) {
+        showToast('Autoguardado encontrado',
+            'Se detectó una versión guardada localmente. Si quieres usarla recarga la página.',
+            'warning', 6000);
+    }
+});
 
-        if (fileSize > 10) {
-            alert('El archivo es muy grande. Maximo 10MB.');
-            return;
-        }
+// Confirmar antes de salir con cambios
+window.addEventListener('beforeunload', e => {
+    if (hasChanges) { e.preventDefault(); e.returnValue = ''; }
+});
 
-        // Show loading
-        uploadZone.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="small text-muted mt-2">Procesando archivo...</p>';
+/* ====================================================
+   WORD & CHAR COUNT
+   ==================================================== */
+function updateCounts() {
+    const html = $('#summernote').summernote('code');
+    const text = $('<div>').html(html).text().trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    document.getElementById('wordCount').textContent = words;
+    document.getElementById('charCount').textContent = text.length;
+}
 
-        // Read file
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            let htmlContent = '';
-
-            if (fileType === 'text/plain') {
-                // For TXT files
-                htmlContent = '<p>' + e.target.result.replace(/\n/g, '</p><p>') + '</p>';
-            } else if (fileType.includes('wordprocessingml') || fileType === 'application/msword') {
-                // For Word files - show message
-                htmlContent = `<div style="background-color: #fff3cd; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                    <p><strong>Documento Word importado: ${fileName}</strong></p>
-                    <p style="font-size: 0.9rem; color: #666;">Los formatos complejos de Word pueden no convertirse perfectamente. Revisa el contenido.</p>
-                </div>`;
-            } else if (fileType === 'text/html') {
-                // For HTML files
-                htmlContent = e.target.result;
-            }
-
-            if (htmlContent) {
-                const currentContent = $('#summernote').summernote('code');
-                $('#summernote').summernote('code', htmlContent + currentContent);
-                
-                // Reset upload zone
-                resetUploadZone();
-                
-                alert('Archivo cargado correctamente en el editor.');
-            } else {
-                alert('Tipo de archivo no soportado directamente. Copia el contenido manualmente.');
-                resetUploadZone();
-            }
-        };
-
-        reader.onerror = function() {
-            alert('Error al leer el archivo.');
-            resetUploadZone();
-        };
-
-        // Read based on file type
-        if (fileType === 'text/plain' || fileType === 'text/html' || fileType.includes('wordprocessingml') || fileType === 'application/msword') {
-            reader.readAsText(file);
+/* ====================================================
+   ZOOM
+   ==================================================== */
+function applyZoom(scale) {
+    const editable = document.querySelector('.note-editable');
+    if (editable) {
+        editable.style.transform = `scale(${scale})`;
+        editable.style.transformOrigin = 'top center';
+        if (scale < 1) {
+            editable.parentElement.style.paddingTop = '0';
         } else {
-            alert('Por favor sube un archivo TXT, HTML o Word.');
-            resetUploadZone();
+            editable.parentElement.style.paddingTop = '2rem';
         }
     }
+}
 
-    function resetUploadZone() {
-        uploadZone.innerHTML = `
-            <div class="upload-icon">📄</div>
-            <div class="upload-text">Arrastra un documento aqui o haz clic para cargar</div>
-            <div class="small text-muted" style="margin-top: 0.5rem;">Soporta: Word, PDF, TXT, HTML</div>
-        `;
+/* ====================================================
+   VISTA PREVIA
+   ==================================================== */
+function previewDoc() {
+    const html = $('#summernote').summernote('code');
+    document.getElementById('previewContent').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+
+/* ====================================================
+   SIDEBAR TABS
+   ==================================================== */
+function switchTab(btn, tabId) {
+    document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sidebar-content').forEach(c => c.style.display = 'none');
+    btn.classList.add('active');
+    document.getElementById(tabId).style.display = 'block';
+}
+
+/* ====================================================
+   VARIABLE GROUPS COLLAPSIBLE
+   ==================================================== */
+function toggleGroup(header) {
+    const items = header.nextElementSibling;
+    const arrow = header.querySelector('.toggle-arrow');
+    const collapsed = items.classList.toggle('collapsed');
+    header.classList.toggle('collapsed', collapsed);
+}
+
+/* ====================================================
+   VARIABLE SEARCH FILTER
+   ==================================================== */
+function filtrarVariables(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('.var-chip').forEach(chip => {
+        const code = chip.querySelector('.chip-code').textContent.toLowerCase();
+        chip.style.display = code.includes(q) ? '' : 'none';
+    });
+}
+
+/* ====================================================
+   FILE UPLOAD (mammoth.js para .docx)
+   ==================================================== */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFileUpload(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => {
+    if (e.target.files.length) handleFileUpload(e.target.files[0]);
+});
+
+function showProgress(label, pct) {
+    const prog = document.getElementById('uploadProgress');
+    prog.classList.add('visible');
+    document.getElementById('uploadLabel').textContent = label;
+    document.getElementById('uploadBar').style.width = pct + '%';
+    document.getElementById('uploadBar').style.transition = 'width .4s ease';
+}
+function hideProgress() {
+    setTimeout(() => {
+        document.getElementById('uploadProgress').classList.remove('visible');
+        document.getElementById('uploadBar').style.width = '0%';
+    }, 800);
+}
+
+async function handleFileUpload(file) {
+    const ext  = file.name.split('.').pop().toLowerCase();
+    const sizeMB = file.size / 1024 / 1024;
+
+    if (sizeMB > 15) {
+        showToast('Archivo muy grande', 'El límite es 15 MB.', 'error');
+        return;
+    }
+
+    showProgress('Leyendo archivo...', 20);
+
+    if (ext === 'docx') {
+        // ── DOCX → HTML con mammoth.js (conversión real, preserva estilos) ──
+        try {
+            showProgress('Convirtiendo Word a HTML...', 50);
+            const arrayBuffer = await file.arrayBuffer();
+            showProgress('Procesando estilos...', 75);
+            const result = await mammoth.convertToHtml(
+                { arrayBuffer },
+                {
+                    styleMap: [
+                        "p[style-name='Heading 1'] => h1",
+                        "p[style-name='Heading 2'] => h2",
+                        "p[style-name='Heading 3'] => h3",
+                        "p[style-name='Heading 4'] => h4",
+                        "b => strong",
+                        "i => em",
+                    ]
+                }
+            );
+            showProgress('Cargando en editor...', 95);
+            const currentHtml = $('#summernote').summernote('code');
+            const separator   = currentHtml.replace(/<[^>]*>/g,'').trim() ? '<hr/>' : '';
+            $('#summernote').summernote('code', separator + result.value);
+            showToast('Word importado', `"${file.name}" cargado correctamente.`, 'success');
+            if (result.messages.length) {
+                console.warn('Mammoth warnings:', result.messages);
+            }
+        } catch (err) {
+            showToast('Error al importar', 'No se pudo convertir el archivo Word.', 'error');
+            console.error(err);
+        } finally {
+            hideProgress();
+            fileInput.value = '';
+        }
+
+    } else if (ext === 'txt') {
+        showProgress('Leyendo texto...', 60);
+        const reader = new FileReader();
+        reader.onload = e => {
+            const html = '<p>' + e.target.result.replace(/\r?\n\r?\n/g, '</p><p>').replace(/\r?\n/g, '<br>') + '</p>';
+            const current = $('#summernote').summernote('code');
+            const sep = current.replace(/<[^>]*>/g,'').trim() ? '<hr/>' : '';
+            $('#summernote').summernote('code', sep + html);
+            showToast('TXT importado', `"${file.name}" cargado.`, 'success');
+            hideProgress();
+            fileInput.value = '';
+        };
+        reader.readAsText(file, 'UTF-8');
+
+    } else if (ext === 'html' || ext === 'htm') {
+        showProgress('Leyendo HTML...', 60);
+        const reader = new FileReader();
+        reader.onload = e => {
+            // Extraer solo el body si tiene estructura completa
+            let html = e.target.result;
+            const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+            if (bodyMatch) html = bodyMatch[1];
+            const current = $('#summernote').summernote('code');
+            const sep = current.replace(/<[^>]*>/g,'').trim() ? '<hr/>' : '';
+            $('#summernote').summernote('code', sep + html);
+            showToast('HTML importado', `"${file.name}" cargado.`, 'success');
+            hideProgress();
+            fileInput.value = '';
+        };
+        reader.readAsText(file, 'UTF-8');
+
+    } else {
+        hideProgress();
+        showToast('Formato no soportado', 'Usa archivos .docx, .txt o .html', 'error');
         fileInput.value = '';
     }
+}
 
-    function handleImageUpload(file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            $('#summernote').summernote('insertImage', e.target.result);
-        };
-        reader.readAsDataURL(file);
-    }
+/* ====================================================
+   TOAST SYSTEM
+   ==================================================== */
+function showToast(title, msg, type='info', duration=3500) {
+    const icons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-custom ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+        <div class="toast-body">
+            <div class="toast-title">${title}</div>
+            <div class="toast-msg">${msg}</div>
+        </div>
+        <button class="toast-close" onclick="this.closest('.toast-custom').remove()">✕</button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight .3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
 </script>
 {% endblock %}
