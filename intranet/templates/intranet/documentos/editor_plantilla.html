@@ -623,10 +623,45 @@ $(document).ready(function () {
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
 function insertarVariable(variable) {
-    // Insertar usando pasteHTML directo.
-    // El foco no se pierde porque los botones tienen onmousedown="event.preventDefault()"
-    const html = `<span class="var-highlight" contenteditable="false">${variable}</span>&#8203;`;
-    $('#summernote').summernote('pasteHTML', html);
+    const editable = document.querySelector('.note-editable');
+    if (!editable) return;
+    
+    editable.focus();
+    const sel = window.getSelection();
+    let range;
+
+    if (sel.rangeCount > 0) {
+        range = sel.getRangeAt(0);
+        if (!editable.contains(range.commonAncestorContainer)) {
+            // Si el cursor está fuera del editor, ponerlo al final
+            range = document.createRange();
+            range.selectNodeContents(editable);
+            range.collapse(false);
+        }
+    } else {
+        range = document.createRange();
+        range.selectNodeContents(editable);
+        range.collapse(false);
+    }
+
+    const span = document.createElement('span');
+    span.className = 'var-highlight';
+    span.contentEditable = 'false';
+    span.textContent = variable;
+    const space = document.createTextNode('\u200B');
+
+    range.deleteContents();
+    range.insertNode(space);
+    range.insertNode(span);
+
+    // Mover cursor justo después del espacio insertado
+    range.setStartAfter(space);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    // Notificar a Summernote que hubo cambios
+    $('#summernote').summernote('triggerEvent', 'change');
     
     showToast('Variable insertada', `${variable} agregada en el documento`, 'info');
 }
