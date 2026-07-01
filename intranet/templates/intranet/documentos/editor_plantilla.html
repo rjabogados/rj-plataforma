@@ -640,44 +640,42 @@ function insertarVariable(variable) {
     if (!editable) return;
     
     let targetRange = null;
+    let valid = false;
     
     // Validar rigurosamente que el rango guardado siga vivo en el documento
     if (mySavedRange && document.body.contains(mySavedRange.commonAncestorContainer)) {
         targetRange = mySavedRange.cloneRange();
-    } else {
-        // Si el nodo murió (ej. se importó un DOCX), forzamos el cursor al último párrafo
-        targetRange = document.createRange();
-        const lastP = editable.lastElementChild;
-        if (lastP) {
-            targetRange.selectNodeContents(lastP);
-        } else {
-            targetRange.selectNodeContents(editable);
-        }
-        targetRange.collapse(false);
+        valid = true;
     }
-
-    // Inserción de DOM nativa y microscópica (inmune a particiones de bloque)
-    const span = document.createElement('span');
-    span.className = 'var-highlight';
-    span.textContent = variable;
-    targetRange.insertNode(span);
     
-    const space = document.createTextNode('\u00A0');
-    targetRange.setStartAfter(span);
-    targetRange.collapse(true);
-    targetRange.insertNode(space);
+    if (!valid) {
+        // Fallback ultra-seguro: Si el cursor murió (por importación DOCX),
+        // creamos un párrafo nuevo limpio al final. 
+        // Evita inyectar en tablas/listas que rompen el DOM y "parten" la página.
+        const newP = document.createElement('p');
+        editable.appendChild(newP);
+        targetRange = document.createRange();
+        targetRange.selectNodeContents(newP);
+        targetRange.collapse(true);
+    }
     
-    // Mover el cursor al final de lo insertado
-    targetRange.setStartAfter(space);
-    targetRange.collapse(true);
-    
+    // Preparamos el cursor del navegador
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(targetRange);
-    mySavedRange = targetRange.cloneRange();
+
+    // Usamos el estándar execCommand con estilos en línea para máxima compatibilidad
+    // sin contenteditable="false" y sin etiquetas raras.
+    const html = `<span class="var-highlight" style="background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-weight:600; color:#92400e;">${variable}</span>&nbsp;`;
+    document.execCommand('insertHTML', false, html);
+    
+    // Guardamos la nueva posición real
+    if (sel.rangeCount > 0) {
+        mySavedRange = sel.getRangeAt(0).cloneRange();
+    }
 
     $('#summernote').summernote('triggerEvent', 'change');
-    showToast('Variable insertada', `${variable} agregada en el documento`, 'info');
+    showToast('Variable insertada', `${variable} agregada al documento`, 'info');
 }
 
 /* ====================================================
