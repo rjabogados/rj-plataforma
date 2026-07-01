@@ -1191,6 +1191,10 @@ def sincronizar_taxonomia(request):
 def encuestas_personal(request):
     perfil = getattr(request.user, 'perfil', None)
 
+    if request.method == 'POST' and not perfil:
+        messages.error(request, 'Tu usuario no tiene perfil asociado, no se pudo registrar la encuesta.')
+        return redirect('encuestas_personal')
+
     if request.method == 'POST' and request.POST.get('enviar_encuesta') == '1' and perfil:
         encuesta = get_object_or_404(Encuesta.objects.prefetch_related('preguntas__opciones'), id=request.POST.get('encuesta_id'), activa=True)
 
@@ -1255,6 +1259,10 @@ def encuestas_personal(request):
         if errores:
             for error in errores[:3]:
                 messages.error(request, error)
+            return redirect('encuestas_personal')
+
+        if not payload:
+            messages.warning(request, 'No se detectaron respuestas válidas para registrar en este formulario.')
             return redirect('encuestas_personal')
 
         with transaction.atomic():
