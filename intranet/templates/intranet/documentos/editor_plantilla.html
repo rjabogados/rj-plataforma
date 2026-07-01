@@ -625,19 +625,52 @@ $(document).ready(function () {
    ==================================================== */
 // El rastreo del cursor se delega 100% a la API nativa de Summernote.
 
+// RASTREO MANUAL A PRUEBA DE FALLOS: 
+// Sólo guardamos la posición cuando el usuario explícitamente hace clic o escribe dentro del editor.
+// Esto evade el bug crítico donde Chrome resetea el cursor a index 0 al perder el foco (blur).
+let myPerfectRange = null;
+
+$(document).on('mouseup keyup input', '.note-editable', function() {
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+        myPerfectRange = sel.getRangeAt(0).cloneRange();
+    }
+});
+
 function insertarVariable(variable) {
-    // 1. Restaurar la última posición conocida del cursor guardada automáticamente por Summernote
-    $('#summernote').summernote('restoreRange');
+    const editable = document.querySelector('.note-editable');
+    if (!editable) return;
     
-    // 2. Crear el HTML puro, SIN atributos que rompan el bloque (como contenteditable="false")
+    // Si el nodo guardado murió (ej. se subió un DOCX), lo anulamos para usar el fallback
+    if (myPerfectRange && !document.body.contains(myPerfectRange.commonAncestorContainer)) {
+        myPerfectRange = null;
+    }
+    
+    // Si no hay rango válido, usamos el último párrafo para no romper el documento
+    if (!myPerfectRange) {
+        myPerfectRange = document.createRange();
+        const lastP = editable.lastElementChild;
+        if (lastP) myPerfectRange.selectNodeContents(lastP);
+        else myPerfectRange.selectNodeContents(editable);
+        myPerfectRange.collapse(false);
+    }
+    
+    // Restaurar nuestro rango perfecto al navegador
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(myPerfectRange);
+    
+    // Usar la inyección nativa del navegador para EVADIR el caché roto de Summernote (que tiene el index 0)
     const html = `<span class="var-highlight" style="background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-weight:600; color:#92400e;">${variable}</span>&nbsp;`;
+    document.execCommand('insertHTML', false, html);
     
-    // 3. Usar el inyector oficial de Summernote que respeta la estructura DOM y el historial de Deshacer
-    $('#summernote').summernote('pasteHTML', html);
+    // Actualizar el rango por si inserta otra variable inmediatamente después
+    if (sel.rangeCount > 0) {
+        myPerfectRange = sel.getRangeAt(0).cloneRange();
+    }
     
-    // 4. Actualizar el autoguardado
-    $('#summernote').summernote('triggerEvent', 'change');
-    
+    // Llamar directamente al guardado para no disparar eventos en cadena de Summernote
+    marcarCambio();
     showToast('Variable insertada', `${variable} agregada al documento`, 'info');
 }
 
