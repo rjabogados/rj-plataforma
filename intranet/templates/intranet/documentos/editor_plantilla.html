@@ -25,14 +25,25 @@
     --paper-pad: 80px;
 }
 
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
 
-.editor-page-root {
+/* Sobrescribir paddings/margins del main layout de base.html para fullscreen real */
+main.flex-grow-1 {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: calc(100vh - 60px); /* Asumiendo que el navbar mide ~60px */
+    max-height: calc(100vh - 60px);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 60px);
-    background: #f8fafc; /* Color de fondo muy suave */
+}
+
+.editor-page-root {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f8fafc;
     font-family: 'Inter', 'Segoe UI', sans-serif;
+    overflow: hidden;
 }
 
 /* TOP BAR */
