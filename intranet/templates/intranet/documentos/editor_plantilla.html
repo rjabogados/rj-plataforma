@@ -623,31 +623,21 @@ $(document).ready(function () {
 /* ====================================================
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
-// El rastreo del cursor ahora es 100% nativo al evitar el focus loss real mediante CSS
+// El rastreo del cursor se delega 100% a la API nativa de Summernote.
 
 function insertarVariable(variable) {
-    const editable = document.querySelector('.note-editable');
-    if (!editable) return;
+    // 1. Restaurar la última posición conocida del cursor guardada automáticamente por Summernote
+    $('#summernote').summernote('restoreRange');
     
-    // Obtener la posición actual y real. Nunca se pierde gracias a pointer-events: none.
-    const sel = window.getSelection();
-    
-    // Si la selección está vacía o fuera del editor (ej. página recién cargada)
-    if (sel.rangeCount === 0 || !editable.contains(sel.getRangeAt(0).commonAncestorContainer)) {
-        const newP = document.createElement('p');
-        editable.appendChild(newP);
-        const range = document.createRange();
-        range.selectNodeContents(newP);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-    }
-    
-    // Insertar nativamente como HTML, el navegador lo unirá correctamente
+    // 2. Crear el HTML puro, SIN atributos que rompan el bloque (como contenteditable="false")
     const html = `<span class="var-highlight" style="background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-weight:600; color:#92400e;">${variable}</span>&nbsp;`;
-    document.execCommand('insertHTML', false, html);
-
+    
+    // 3. Usar el inyector oficial de Summernote que respeta la estructura DOM y el historial de Deshacer
+    $('#summernote').summernote('pasteHTML', html);
+    
+    // 4. Actualizar el autoguardado
     $('#summernote').summernote('triggerEvent', 'change');
+    
     showToast('Variable insertada', `${variable} agregada al documento`, 'info');
 }
 
