@@ -792,17 +792,17 @@ def onboarding_admin(request):
             dni_val = request.POST.get('dni')
             telefono_val = request.POST.get('telefono', '')
             puesto_val = request.POST.get('puesto_esperado', 'ASESOR')
-            negocio_id = request.POST.get('campaÃ±a_destino')
+            negocio_id = request.POST.get('campaña_destino')
             
             if CandidatoOnboarding.objects.filter(dni=dni_val).exists():
                 messages.error(request, f"El DNI {dni_val} ya se encuentra registrado.")
             else:
-                CandidatoOnboarding.objects.create(nombres=nombres_val, apellidos=apellidos_val, dni=dni_val, telefono=telefono_val, puesto_esperado=puesto_val, campaÃ±a_destino_id=negocio_id if negocio_id else None)
+                CandidatoOnboarding.objects.create(nombres=nombres_val, apellidos=apellidos_val, dni=dni_val, telefono=telefono_val, puesto_esperado=puesto_val, campaña_destino_id=negocio_id if negocio_id else None)
                 messages.success(request, "Postulante registrado correctamente.")
         return redirect('onboarding_admin')
 
     # --- DATOS PARA EL DASHBOARD DE RRHH ---
-    onboardings_activos = CandidatoOnboarding.objects.all().select_related('colaborador__user', 'campaÃ±a_destino')
+    onboardings_activos = CandidatoOnboarding.objects.all().select_related('colaborador__user', 'campaña_destino')
     lista_candidatos_progreso = []
     for item in onboardings_activos:
         if item.colaborador:
@@ -981,7 +981,7 @@ def actualizar_expediente(request, candidato_id):
         correo = (request.POST.get('correo') or '').strip().lower() or None
         telefono = (request.POST.get('telefono') or '').strip() or None
         puesto_esperado = request.POST.get('puesto_esperado') or candidato.puesto_esperado
-        campaÃ±a_destino_id = request.POST.get('campaÃ±a_destino') or None
+        campaña_destino_id = request.POST.get('campaña_destino') or None
 
         if dni_input and len(dni_input) != 8:
             messages.error(request, 'El DNI debe tener exactamente 8 dÃ­gitos.')
@@ -993,7 +993,7 @@ def actualizar_expediente(request, candidato_id):
         candidato.correo = correo
         candidato.telefono = telefono
         candidato.puesto_esperado = puesto_esperado
-        candidato.campaÃ±a_destino_id = campaÃ±a_destino_id
+        candidato.campaña_destino_id = campaña_destino_id
         candidato.doc_cv = request.POST.get('doc_cv') == 'on'
         candidato.doc_dni = request.POST.get('doc_dni') == 'on'
         candidato.doc_antecedentes = request.POST.get('doc_antecedentes') == 'on'
@@ -1009,7 +1009,7 @@ def actualizar_expediente(request, candidato_id):
             if candidato.dni:
                 candidato.colaborador.dni = candidato.dni
             candidato.colaborador.rol = candidato.puesto_esperado
-            candidato.colaborador.negocio = candidato.campaÃ±a_destino
+            candidato.colaborador.negocio = candidato.campaña_destino
             candidato.colaborador.save(update_fields=['dni', 'rol', 'negocio'])
 
         messages.success(request, f"Expediente de {candidato.nombres} actualizado.")
@@ -2969,4 +2969,5 @@ def eliminar_evaluacion_lms(request, pk):
     curso_id = evaluacion.curso.id
     evaluacion.delete()
     messages.success(request, "EvaluaciÃ³n eliminada correctamente.")
-    return redirect('curso_curriculum', pk=curso_id)
+    return redirect('curso_curriculum', pk=curso_id)
+
