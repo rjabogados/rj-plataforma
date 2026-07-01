@@ -143,10 +143,7 @@
                         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-datos">Datos y Limpieza</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-historial">Línea de Tiempo</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-observaciones">Gestión de Asesores</button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-historial">Seguimiento e Historial</button>
                     </li>
                 </ul>
 
@@ -216,36 +213,34 @@
                     </div>
 
                     <div class="tab-pane fade" id="tab-historial">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold mb-0">Historial de Cambios</h6>
-                            <span class="badge text-bg-light border" id="contador-historial">0 eventos</span>
-                        </div>
-                        <div id="lista-historial" class="vstack gap-3"></div>
-                    </div>
-
-                    <div class="tab-pane fade" id="tab-observaciones">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Registrar Interacción</label>
-                            <div class="input-group input-group-sm mb-2">
-                                <select class="form-select" style="max-width: 180px;" id="nuevo-asesor-default" onchange="toggleAsesorManual()">
-                                    <option value="">Asesor por defecto...</option>
+                        <!-- Novedad: Formulario de Registro aquí mismo para ser más intuitivo -->
+                        <div class="bg-white border rounded-3 p-3 mb-4 shadow-sm">
+                            <label class="form-label small fw-bold text-primary mb-2"><i class="bi bi-chat-left-dots-fill me-1"></i>Registrar Interacción Rápida</label>
+                            <div class="input-group input-group-sm mb-1">
+                                <select class="form-select" style="max-width: 150px;" id="nuevo-asesor-default" onchange="toggleAsesorManual()">
+                                    <option value="">Asesor...</option>
                                     <option value="Pierina">Pierina</option>
                                     <option value="Beatriz">Beatriz</option>
                                     <option value="Jacqueline">Jacqueline</option>
                                     <option value="Monica">Monica</option>
                                     <option value="Otro">Otro...</option>
                                 </select>
-                                <input type="text" class="form-control d-none" id="nuevo-asesor-manual" placeholder="Escribe el asesor...">
-                                <select class="form-select" style="max-width: 130px;" id="nuevo-tipo-contacto">
+                                <input type="text" class="form-control d-none" id="nuevo-asesor-manual" placeholder="Escribe...">
+                                <select class="form-select" style="max-width: 120px;" id="nuevo-tipo-contacto">
                                     <option value="Llamada">Llamada</option>
                                     <option value="WhatsApp">WhatsApp</option>
                                     <option value="Correo">Correo</option>
                                 </select>
                                 <input type="text" class="form-control" id="nuevo-detalle-contacto" placeholder="Detalle de la comunicación...">
-                                <button class="btn btn-success" type="button" onclick="registrarContacto()"><i class="bi bi-send-fill"></i></button>
+                                <button class="btn btn-success fw-bold" type="button" onclick="registrarContacto()">Guardar</button>
                             </div>
-                            <div class="small text-muted">La comunicación queda registrada en el historial del candidato.</div>
                         </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Línea de Tiempo</h6>
+                            <span class="badge text-bg-light border" id="contador-historial">0 eventos</span>
+                        </div>
+                        <div id="lista-historial" class="vstack gap-3" style="max-height: 400px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </div>
@@ -476,8 +471,12 @@
         }
 
         contenedor.innerHTML = items.map(item => `
-            <div class="border rounded-4 bg-white p-3 shadow-sm">
-                <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="border rounded-3 bg-white p-3 shadow-sm position-relative">
+                <button class="btn btn-sm text-danger position-absolute top-0 end-0 m-1 bg-transparent border-0" 
+                        onclick="eliminarRegistroHistorial(${item.id}, '${item.tipo}')" title="Eliminar registro">
+                    <i class="bi bi-trash3-fill"></i>
+                </button>
+                <div class="d-flex justify-content-between align-items-start gap-3 pe-4">
                     <div>
                         <div class="fw-bold text-dark">${item.titulo}</div>
                         <div class="small text-muted">${item.detalle || ''}</div>
@@ -487,6 +486,37 @@
                 <div class="small text-muted mt-2"><i class="bi bi-clock me-1"></i>${item.fecha}</div>
             </div>
         `).join('');
+    }
+
+    function eliminarRegistroHistorial(registroId, tipo) {
+        if(!confirm('¿Estás seguro de que deseas eliminar este registro de la línea de tiempo?')) return;
+        
+        const candidatoId = $('#edit-id').val();
+        
+        fetch('/api/eliminar-historial/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                id: registroId,
+                tipo: tipo,
+                candidato_id: candidatoId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderHistorial(data.historial || []);
+            } else {
+                alert('No se pudo eliminar: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Error al intentar eliminar el registro.');
+        });
     }
 
     function refreshFilaCandidato(id, estado) {

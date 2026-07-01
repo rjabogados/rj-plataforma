@@ -95,6 +95,37 @@ class Reconocimiento(models.Model):
     tipo = models.CharField(max_length=50, choices=TIPOS_MEDALLA)
     mensaje = models.TextField()
     fecha = models.DateTimeField(auto_now_add=True)
+    puntos_otorgados = models.PositiveIntegerField(default=10, help_text="Puntos sumados al receptor por este Kudo")
 
     def __str__(self):
-        return f"{self.get_tipo_display()} para {self.receptor.user.first_name}"
+        return f"{self.get_tipo_display()} para {self.receptor.user.first_name} (+{self.puntos_otorgados} pts)"
+
+# --- CATÁLOGO Y CANJES DE PREMIOS (GAMIFICACIÓN) ---
+
+class CatalogoPremio(models.Model):
+    nombre = models.CharField(max_length=150)
+    descripcion = models.TextField(blank=True, null=True)
+    costo_puntos = models.PositiveIntegerField(help_text="Costo en puntos para canjear")
+    stock = models.PositiveIntegerField(default=10, help_text="Cantidad disponible")
+    imagen = models.ImageField(upload_to='gamificacion/premios/', null=True, blank=True)
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.costo_puntos} pts)"
+
+class CanjePremio(models.Model):
+    ESTADOS = [
+        ('PENDIENTE', 'Pendiente de Entrega'),
+        ('ENTREGADO', 'Entregado'),
+        ('RECHAZADO', 'Rechazado'),
+    ]
+    colaborador = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='canjes_solicitados')
+    premio = models.ForeignKey(CatalogoPremio, on_delete=models.CASCADE, related_name='canjes')
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
+    observaciones = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Canje de {self.colaborador.user.first_name} - {self.premio.nombre} ({self.estado})"

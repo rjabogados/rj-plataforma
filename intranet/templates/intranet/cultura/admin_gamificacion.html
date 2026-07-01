@@ -1,0 +1,308 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-primary">
+                <i class="bi bi-controller me-2"></i> Admin Gamificación
+            </h2>
+            <p class="text-secondary mb-0">Gestiona los canjes de premios, regala puntos y visualiza el ranking global.</p>
+        </div>
+        <button class="btn btn-primary fw-bold shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalDarPuntos">
+            <i class="bi bi-gift-fill me-2"></i> Otorgar Puntos Manuales
+        </button>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Navegación por Pestañas -->
+    <ul class="nav nav-tabs mb-4" id="adminGamificacionTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold text-dark" id="canjes-tab" data-bs-toggle="tab" data-bs-target="#canjes" type="button" role="tab"><i class="bi bi-inbox-fill me-2 text-warning"></i> Solicitudes y Ranking</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-dark" id="premios-tab" data-bs-toggle="tab" data-bs-target="#premios" type="button" role="tab"><i class="bi bi-gift-fill me-2 text-danger"></i> Gestión de Premios</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="adminGamificacionTabsContent">
+        <!-- PESTAÑA 1: CANJES Y RANKING -->
+        <div class="tab-pane fade show active" id="canjes" role="tabpanel">
+            <div class="row">
+        <!-- Panel Izquierdo: Solicitudes de Canje -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4 bg-white mb-4">
+                <div class="card-header bg-white border-bottom pt-4 pb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-bag-plus-fill text-warning me-2"></i> Solicitudes de Canje Pendientes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Colaborador</th>
+                                    <th>Premio Solicitado</th>
+                                    <th>Costo</th>
+                                    <th>Fecha</th>
+                                    <th class="text-end pe-4">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for canje in canjes_pendientes %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">{{ canje.colaborador.user.first_name }} {{ canje.colaborador.user.last_name }}</td>
+                                    <td>{{ canje.premio.nombre }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ canje.premio.costo_puntos }} pts</span></td>
+                                    <td class="text-muted small">{{ canje.fecha_solicitud|date:"d M Y, h:i a" }}</td>
+                                    <td class="text-end pe-4">
+                                        <form method="POST" class="d-inline-block">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="resolver_canje">
+                                            <input type="hidden" name="canje_id" value="{{ canje.id }}">
+                                            <button type="submit" name="estado" value="ENTREGADO" class="btn btn-sm btn-success fw-bold rounded-pill shadow-sm" onclick="return confirm('¿Confirmas que ya entregaste este premio?');">
+                                                Aprobar
+                                            </button>
+                                            <button type="submit" name="estado" value="RECHAZADO" class="btn btn-sm btn-outline-danger fw-bold rounded-pill ms-1" onclick="return confirm('¿Rechazar canje? Se le devolverán los puntos.');">
+                                                Rechazar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No hay solicitudes pendientes.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Canjes -->
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-header bg-white border-bottom pt-4 pb-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-clock-history text-secondary me-2"></i> Historial Reciente de Canjes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Colaborador</th>
+                                    <th>Premio</th>
+                                    <th>Estado</th>
+                                    <th class="text-end pe-4">Fecha Resolución</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for canje in canjes_historico %}
+                                <tr>
+                                    <td class="ps-4">{{ canje.colaborador.user.first_name }} {{ canje.colaborador.user.last_name }}</td>
+                                    <td class="text-muted">{{ canje.premio.nombre }}</td>
+                                    <td>
+                                        {% if canje.estado == 'ENTREGADO' %}
+                                        <span class="badge bg-success rounded-pill">Entregado</span>
+                                        {% else %}
+                                        <span class="badge bg-danger rounded-pill">Rechazado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4 text-muted small">{{ canje.fecha_resolucion|date:"d M Y" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No hay historial.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Ranking Global -->
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
+                    <i class="bi bi-trophy-fill text-warning mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="fw-bold text-dark">Ranking Global (Puntos)</h5>
+                    <p class="small text-muted mb-0">Posiciones de todos los tiempos</p>
+                </div>
+                <div class="card-body pt-3">
+                    <div class="list-group list-group-flush rounded-4">
+                        {% for colab in colaboradores|slice:":15" %}
+                        <div class="list-group-item bg-transparent border-bottom px-2 py-3 d-flex align-items-center">
+                            <span class="fw-bold {% if forloop.counter == 1 %}text-warning fs-4{% elif forloop.counter == 2 %}text-secondary fs-5{% elif forloop.counter == 3 %}text-danger fs-5{% else %}text-muted{% endif %} me-3" style="width: 20px; text-align: center;">
+                                {{ forloop.counter }}
+                            </span>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold text-dark">{{ colab.user.first_name }} {{ colab.user.last_name }}</h6>
+                                <small class="text-secondary">{{ colab.get_rol_display }}</small>
+                            </div>
+                            <span class="badge rounded-pill bg-light text-dark border fw-bold px-3 py-2 shadow-sm">
+                                {{ colab.puntos_acumulados }} pts
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PESTAÑA 2: GESTIÓN DE PREMIOS -->
+        <div class="tab-pane fade" id="premios" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-shop me-2 text-danger"></i> Catálogo Actual</h5>
+                <button class="btn btn-success fw-bold shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalCrearPremio">
+                    <i class="bi bi-plus-lg me-2"></i> Nuevo Premio
+                </button>
+            </div>
+            
+            <div class="row g-4">
+                {% for premio in premios %}
+                <div class="col-md-4 col-xl-3">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-white overflow-hidden {% if not premio.activo %}opacity-75{% endif %}">
+                        {% if premio.imagen %}
+                        <img src="{{ premio.imagen.url }}" class="card-img-top object-fit-cover" alt="Premio" style="height: 140px;">
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 140px;">
+                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body d-flex flex-column p-3">
+                            <h6 class="fw-bold text-dark mb-1">{{ premio.nombre }}</h6>
+                            <p class="small text-secondary mb-2 flex-grow-1 text-truncate" title="{{ premio.descripcion }}">{{ premio.descripcion|default:"Sin descripción" }}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="bi bi-coin"></i> {{ premio.costo_puntos }} pts</span>
+                                <small class="fw-bold text-muted">Stock: {{ premio.stock }}</small>
+                            </div>
+                            
+                            <form method="POST" class="mt-auto">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle_premio">
+                                <input type="hidden" name="premio_id" value="{{ premio.id }}">
+                                {% if premio.activo %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 fw-bold rounded-pill">Desactivar</button>
+                                {% else %}
+                                <button type="submit" class="btn btn-sm btn-success w-100 fw-bold rounded-pill">Activar</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">No hay premios creados en el catálogo.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal para Otorgar Puntos Manuales -->
+<div class="modal fade" id="modalDarPuntos" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0 bg-primary rounded-top-4 p-4 text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-gift-fill me-2"></i> Otorgar Puntos Manuales</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="dar_puntos">
+                
+                <div class="modal-body p-4">
+                    <div class="alert alert-info border-0 shadow-sm rounded-3 mb-4">
+                        <i class="bi bi-info-circle-fill me-2"></i> Usa esta opción para premiar cumpleaños, concursos internos o bonos especiales. Los puntos se suman directamente al saldo.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">¿A quién deseas premiar?</label>
+                        <select name="colaborador_id" class="form-select rounded-3 shadow-sm border-0 bg-light" required>
+                            <option value="">Selecciona al colaborador...</option>
+                            {% for colab in colaboradores %}
+                            <option value="{{ colab.id }}">{{ colab.user.first_name }} {{ colab.user.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Cantidad de Puntos</label>
+                        <input type="number" name="puntos" class="form-control rounded-3 shadow-sm border-0 bg-light" min="1" max="1000" placeholder="Ej: 100" required>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-dark">Motivo (Opcional)</label>
+                        <textarea name="motivo" class="form-control rounded-3 shadow-sm border-0 bg-light" rows="2" placeholder="Ej: Ganador del concurso de disfraces"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><i class="bi bi-check2-circle me-2"></i> Otorgar Puntos</button>
+                </div>
+    </div>
+</div>
+
+<!-- Modal para Crear Nuevo Premio -->
+<div class="modal fade" id="modalCrearPremio" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0 bg-success rounded-top-4 p-4 text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-gift-fill me-2"></i> Crear Nuevo Premio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="crear_premio">
+                
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Nombre del Premio</label>
+                        <input type="text" name="nombre" class="form-control rounded-3 shadow-sm border-0 bg-light" required placeholder="Ej: Entradas al Cine">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Descripción</label>
+                        <textarea name="descripcion" class="form-control rounded-3 shadow-sm border-0 bg-light" rows="3" placeholder="Detalles de lo que incluye el premio..."></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark">Costo (Puntos)</label>
+                            <input type="number" name="costo_puntos" class="form-control rounded-3 shadow-sm border-0 bg-light" required min="1" value="100">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark">Stock Inicial</label>
+                            <input type="number" name="stock" class="form-control rounded-3 shadow-sm border-0 bg-light" required min="1" value="10">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Imagen del Premio</label>
+                        <input type="file" name="imagen" class="form-control rounded-3 shadow-sm border-0 bg-light" accept="image/*">
+                        <div class="form-text">Sube una imagen cuadrada (JPG o PNG) para que se vea mejor en el catálogo.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm"><i class="bi bi-cloud-arrow-up-fill me-2"></i> Publicar Premio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

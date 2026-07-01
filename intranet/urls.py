@@ -66,6 +66,8 @@ urlpatterns = [
     # ==========================================
     path('cultura/cumpleanos/', views.muro_celebraciones, name='muro_celebraciones'),
     path('cultura/kudos/', views.muro_kudos, name='muro_kudos'),
+    path('cultura/premios/', views.catalogo_premios, name='catalogo_premios'),
+    path('cultura/admin-gamificacion/', views.admin_gamificacion, name='admin_gamificacion'),
 
     path('academia/rendir/<int:matricula_id>/', lms.rendir_evaluacion, name='rendir_evaluacion'),
     path('academia/curso/<int:curso_id>/editar/', lms.editar_curso_lms, name='editar_curso_lms'),
@@ -179,6 +181,7 @@ urlpatterns = [
     path('api/actualizar-candidato/', actualizar_candidato_ajax, name='api_actualizar_candidato'),
     path('api/registrar-contacto/', views.registrar_contacto_ajax, name='api_registrar_contacto'),
     path('api/descartar-candidato/', descartar_candidato_ajax, name='api_descartar_candidato'),
+    path('api/eliminar-historial/', views.eliminar_historial_ajax, name='api_eliminar_historial'),
     path('api/metricas-dashboard/', views.metricas_dashboard_ajax, name='api_metricas_dashboard'),
 
     # ==========================================

@@ -44,6 +44,7 @@ def _serializar_historial_estado(candidato):
 
     for item in candidato.historial_estados.all().order_by('-fecha_cambio')[:12]:
         historial.append({
+            'id': item.id,
             'tipo': 'estado',
             'titulo': f"{item.estado_anterior or 'Sin estado'} → {item.estado_nuevo or 'Sin estado'}",
             'detalle': 'Actualización de estado del candidato',
@@ -52,6 +53,7 @@ def _serializar_historial_estado(candidato):
 
     for item in candidato.contactos.all().order_by('-fecha_contacto')[:12]:
         historial.append({
+            'id': item.id,
             'tipo': 'contacto',
             'titulo': f"{item.tipo} - {item.asesor}",
             'detalle': item.detalle or '',
@@ -338,6 +340,36 @@ def descartar_candidato_ajax(request):
         )
         
         return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
+        
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def eliminar_historial_ajax(request):
+    try:
+        if not usuario_puede_reclutamiento(request.user):
+            return respuesta_no_autorizado()
+            
+        data = json.loads(request.body)
+        registro_id = data.get('id')
+        tipo = data.get('tipo')
+        candidato_id = data.get('candidato_id')
+        
+        if not registro_id or not tipo or not candidato_id:
+            return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
+            
+        candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
+        
+        if tipo == 'contacto':
+            RegistroContacto.objects.filter(id=registro_id, candidato=candidato).delete()
+        elif tipo == 'estado':
+            HistorialEstado.objects.filter(id=registro_id, candidato=candidato).delete()
+            
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Registro eliminado',
+            'historial': _serializar_historial_estado(candidato),
+        })
     except Exception as e:
         return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
         

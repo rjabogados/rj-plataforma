@@ -10,7 +10,8 @@ from .reclutamiento import (
     descartar_candidato_ajax,
     metricas_dashboard_ajax,
     registrar_contacto_ajax,
-    exportar_candidatos_csv
+    exportar_candidatos_csv,
+    eliminar_historial_ajax
 )
 
 from .asistencia import (
@@ -43,5 +44,5 @@ from .lms import (
     ver_adjunto_mensaje, ver_adjunto_comunicado
 )
 
-from .cultura import muro_celebraciones, muro_kudos
+from .cultura import muro_celebraciones, muro_kudos, catalogo_premios, admin_gamificacion
 from .desempeno import dashboard_desempeno, mis_evaluaciones, evaluar_equipo, form_evaluacion

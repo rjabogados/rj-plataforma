@@ -77,6 +77,10 @@ class Colaborador(models.Model):
     regimen_laboral = models.CharField(max_length=50, default='Regimen General Mype')
     foto_perfil = models.ImageField(upload_to='perfiles/fotos/', null=True, blank=True)
     descripcion_perfil = models.TextField(null=True, blank=True)
+    
+    # --- SISTEMA DE GAMIFICACIÓN (KUDOS) ---
+    puntos_acumulados = models.PositiveIntegerField(default=0, help_text="Total histórico para ranking")
+    puntos_disponibles = models.PositiveIntegerField(default=0, help_text="Saldo actual para canjear premios")
 
     def __str__(self):
         return f"{self.user.last_name}, {self.user.first_name} ({self.get_rol_display()})"
