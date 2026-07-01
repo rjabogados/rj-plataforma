@@ -1,4 +1,4 @@
-{% extends 'intranet/base.html' %}
+﻿{% extends 'intranet/base.html' %}
 {% load static %}
 
 {% block content %}
@@ -7,7 +7,7 @@
         <div>
             <h2 class="fw-bold mb-1"
                 style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                <i class="bi bi-calendar-heart-fill me-2"></i> Cumpleaños del Mes
+                <i class="bi bi-calendar-heart-fill me-2"></i> CumpleaÃ±os del Mes
             </h2>
             <p class="text-secondary mb-0">Celebra junto a tu equipo y deja un mensaje especial.</p>
         </div>
@@ -23,25 +23,25 @@
     {% endif %}
 
     <div class="row">
-        <!-- Lado Izquierdo: Lista de Cumpleañeros -->
+        <!-- Lado Izquierdo: Lista de CumpleaÃ±eros -->
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm border-0 rounded-4"
                 style="background: linear-gradient(180deg, #fff 0%, #fff0f5 100%);">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
-                    <h5 class="fw-bold text-danger"><i class="bi bi-gift-fill me-2"></i> Cumpleañeros de {{
+                    <h5 class="fw-bold text-danger"><i class="bi bi-gift-fill me-2"></i> CumpleaÃ±eros de {{
                         hoy|date:"F"|title }}</h5>
                 </div>
                 <div class="card-body">
-                    {% if cumpleañeros %}
+                    {% if cumpleaÃ±eros %}
                     <div class="d-flex flex-column gap-3">
-                        {% for c in cumpleañeros %}
+                        {% for c in cumpleaÃ±eros %}
                         <div class="d-flex align-items-center p-3 bg-white rounded-3 shadow-sm border border-light position-relative"
                             style="{% if c.fecha_nacimiento.day == hoy.day %}border: 2px solid #ff6b6b !important;{% endif %}">
                             {% if c.fecha_nacimiento.day == hoy.day %}
                             <span
                                 class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                                 style="font-size: 0.7rem;">
-                                ¡HOY!
+                                Ã‚Â¡HOY!
                             </span>
                             {% endif %}
                             <div class="avatar-circle bg-danger text-white d-flex align-items-center justify-content-center fw-bold me-3"
@@ -58,17 +58,23 @@
                                 <small class="text-secondary"><i class="bi bi-calendar2-event me-1"></i> {{
                                     c.fecha_nacimiento|date:"d" }} de {{ c.fecha_nacimiento|date:"F" }}</small>
                             </div>
+                            {% if c.permitir_mensajes_cumpleanos %}
                             <button class="btn btn-sm btn-outline-danger rounded-circle" data-bs-toggle="modal"
                                 data-bs-target="#modalFelicitacion-{{ c.id }}" title="Dejar un saludo">
                                 <i class="bi bi-send-fill"></i>
                             </button>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border" title="Este usuario ha desactivado los mensajes">
+                                <i class="bi bi-dash-circle"></i>
+                            </span>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-emoji-smile text-secondary opacity-50" style="font-size: 3rem;"></i>
-                        <p class="text-secondary mt-3">No hay cumpleaños registrados este mes.</p>
+                        <p class="text-secondary mt-3">No hay cumpleaÃ±os registrados este mes.</p>
                     </div>
                     {% endif %}
                 </div>
@@ -109,7 +115,7 @@
                 </div>
                 {% empty %}
                 <div class="col-12 text-center py-5">
-                    <p class="text-secondary">Sé el primero en dejar un saludo en el muro.</p>
+                    <p class="text-secondary">SÃƒÂ© el primero en dejar un saludo en el muro.</p>
                 </div>
                 {% endfor %}
             </div>
@@ -134,7 +140,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         {% if es_su_cumple %}
-        // Disparar confeti si es su cumpleaños
+        // Disparar confeti si es su cumpleaÃ±os
         var duration = 15 * 1000;
         var animationEnd = Date.now() + duration;
         var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
@@ -157,7 +163,7 @@
 
         // Mostrar modal sorpresa
         setTimeout(() => {
-            alert("🎉 ¡FELIZ CUMPLEAÑOS! 🎉\nDe parte de toda la familia RJ Abogados, te deseamos un día espectacular.");
+            alert("Ã°Å¸Å½â€° Ã‚Â¡FELIZ CUMPLEAÃƒâ€˜OS! Ã°Å¸Å½â€°\nDe parte de toda la familia RJ Abogados, te deseamos un dÃƒÂ­a espectacular.");
         }, 1000);
         {% endif %}
     });
@@ -165,14 +171,15 @@
 {% endblock %}
 
 {% block modals %}
-{% for c in cumpleañeros %}
-<!-- Modal para Enviar Felicitación -->
+{% for c in cumpleaÃ±eros %}
+{% if c.permitir_mensajes_cumpleanos %}
+<!-- Modal para Enviar FelicitaciÃ³n -->
 <div class="modal fade" id="modalFelicitacion-{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold text-danger">Felicitar a {{ c.user.first_name }}
-                    🎂</h5>
+                    ðŸŽ‚</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                     aria-label="Close"></button>
             </div>
@@ -184,15 +191,15 @@
                         <label class="form-label text-secondary fw-medium">Escribe tu
                             mensaje</label>
                         <textarea name="mensaje" class="form-control rounded-3" rows="3"
-                            placeholder="¡Que pases un lindo día lleno de bendiciones!"
+                            placeholder="Ã‚Â¡Que pases un lindo dÃƒÂ­a lleno de bendiciones!"
                             required></textarea>
                     </div>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch"
                             id="privado-{{ c.id }}" name="privado">
                         <label class="form-check-label text-secondary small"
-                            for="privado-{{ c.id }}">Mensaje Privado (No saldrá en el muro
-                            público)</label>
+                            for="privado-{{ c.id }}">Mensaje Privado (No saldrÃƒÂ¡ en el muro
+                            pÃƒÂºblico)</label>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -204,5 +211,8 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endfor %}
 {% endblock %}
+
+

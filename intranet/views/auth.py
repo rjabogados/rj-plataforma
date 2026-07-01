@@ -62,6 +62,7 @@ def perfil(request):
 
         if accion == 'datos' and perfil:
             perfil.descripcion_perfil = request.POST.get('descripcion_perfil', '').strip() or None
+            perfil.permitir_mensajes_cumpleanos = request.POST.get('permitir_mensajes_cumpleanos') == 'on'
             if request.FILES.get('foto_perfil'):
                 perfil.foto_perfil = request.FILES['foto_perfil']
             perfil.save()

@@ -82,7 +82,14 @@
                                 <label class="form-label fw-semibold">Descripción breve</label>
                                 <textarea class="form-control" name="descripcion_perfil" rows="4" placeholder="Cuéntale al equipo qué haces, tu foco o cómo prefieres que te contacten.">{% if perfil and perfil.descripcion_perfil %}{{ perfil.descripcion_perfil }}{% endif %}</textarea>
                             </div>
-                            <div class="col-12">
+                            <div class="col-12 mt-3 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="checkCumpleanos" name="permitir_mensajes_cumpleanos" {% if perfil.permitir_mensajes_cumpleanos %}checked{% endif %}>
+                                    <label class="form-check-label fw-semibold" for="checkCumpleanos">Permitir mensajes en el muro de cumpleaños</label>
+                                </div>
+                                <small class="text-muted">Si lo desactivas, los demás no podrán enviarte felicitaciones virtuales por tu cumpleaños.</small>
+                            </div>
+                            <div class="col-12 mt-4">
                                 <button type="submit" class="btn btn-primary fw-bold px-4">Guardar cambios de perfil</button>
                             </div>
                         </div>

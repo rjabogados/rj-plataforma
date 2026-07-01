@@ -26,6 +26,10 @@ def muro_celebraciones(request):
         
         destinatario = get_object_or_404(Colaborador, id=destinatario_id)
         
+        if not destinatario.permitir_mensajes_cumpleanos:
+            messages.error(request, f"{destinatario.user.first_name} ha desactivado los mensajes de cumpleaños en su perfil.")
+            return redirect('muro_celebraciones')
+
         FelicitacionCumpleaños.objects.create(
             remitente=request.user.perfil,
             destinatario=destinatario,

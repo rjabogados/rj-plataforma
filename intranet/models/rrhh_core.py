@@ -77,6 +77,7 @@ class Colaborador(models.Model):
     regimen_laboral = models.CharField(max_length=50, default='Regimen General Mype')
     foto_perfil = models.ImageField(upload_to='perfiles/fotos/', null=True, blank=True)
     descripcion_perfil = models.TextField(null=True, blank=True)
+    permitir_mensajes_cumpleanos = models.BooleanField(default=True, verbose_name="Permitir Mensajes de Cumpleaños")
     
     # --- SISTEMA DE GAMIFICACIÓN (KUDOS) ---
     puntos_acumulados = models.PositiveIntegerField(default=0, help_text="Total histórico para ranking")
