@@ -596,6 +596,13 @@ $(document).ready(function () {
             onChange: function () {
                 updateCounts();
                 marcarCambio();
+                saveNativeRange();
+            },
+            onKeyup: function () {
+                saveNativeRange();
+            },
+            onMouseup: function () {
+                saveNativeRange();
             },
             onImageUpload: function (files) {
                 const reader = new FileReader();
@@ -622,45 +629,40 @@ $(document).ready(function () {
 /* ====================================================
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
+let mySavedRange = null;
+
+function saveNativeRange() {
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+        const r = sel.getRangeAt(0);
+        const editable = document.querySelector('.note-editable');
+        if (editable && editable.contains(r.commonAncestorContainer)) {
+            mySavedRange = r.cloneRange();
+        }
+    }
+}
+
 function insertarVariable(variable) {
     const editable = document.querySelector('.note-editable');
     if (!editable) return;
     
     editable.focus();
     const sel = window.getSelection();
-    let range;
+    sel.removeAllRanges();
 
-    if (sel.rangeCount > 0) {
-        range = sel.getRangeAt(0);
-        if (!editable.contains(range.commonAncestorContainer)) {
-            // Si el cursor está fuera del editor, ponerlo al final
-            range = document.createRange();
-            range.selectNodeContents(editable);
-            range.collapse(false);
-        }
+    if (mySavedRange) {
+        sel.addRange(mySavedRange);
     } else {
-        range = document.createRange();
+        const range = document.createRange();
         range.selectNodeContents(editable);
         range.collapse(false);
+        sel.addRange(range);
     }
 
-    const span = document.createElement('span');
-    span.className = 'var-highlight';
-    span.contentEditable = 'false';
-    span.textContent = variable;
-    const space = document.createTextNode('\u200B');
-
-    range.deleteContents();
-    range.insertNode(space);
-    range.insertNode(span);
-
-    // Mover cursor justo después del espacio insertado
-    range.setStartAfter(space);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
-
-    // Notificar a Summernote que hubo cambios
+    const html = `<span class="var-highlight" contenteditable="false">${variable}</span>&#8203;`;
+    document.execCommand('insertHTML', false, html);
+    
+    saveNativeRange();
     $('#summernote').summernote('triggerEvent', 'change');
     
     showToast('Variable insertada', `${variable} agregada en el documento`, 'info');
