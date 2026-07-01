@@ -11,7 +11,9 @@ from .reclutamiento import (
     metricas_dashboard_ajax,
     registrar_contacto_ajax,
     exportar_candidatos_csv,
-    eliminar_historial_ajax
+    eliminar_historial_ajax,
+    importar_matriz_excel,
+    procesar_mapeo_matriz
 )
 
 from .asistencia import (
@@ -23,7 +25,7 @@ from .busqueda import buscador_global
 
 from .solicitudes import (
     tickets, tickets_admin, revisar_ticket, 
-    vacaciones, vacaciones_admin, eliminar_vacaciones, ver_adjunto_ticket, centro_ayuda,
+    vacaciones, vacaciones_admin, eliminar_vacaciones, eliminar_ticket, ver_adjunto_ticket, centro_ayuda,
     calendario_ausencias
 )
 

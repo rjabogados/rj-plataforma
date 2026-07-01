@@ -115,6 +115,14 @@
                                     {% else %}
                                     <span class="badge-status rejected">Rechazado</span>
                                     {% endif %}
+                                    {% if s.estado == 'PENDIENTE_N1' %}
+                                    <form method="POST" action="{% url 'eliminar_vacaciones' s.id %}" class="d-inline" onsubmit="return confirm('¿Estás seguro de que deseas anular esta solicitud?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-pill fw-bold ms-2">
+                                            <i class="bi bi-trash-fill"></i> Anular
+                                        </button>
+                                    </form>
+                                    {% endif %}
                                 </td>
                                 <td class="small text-muted">{{ s.comentarios_rrhh|default:"-" }}</td>
                             </tr>

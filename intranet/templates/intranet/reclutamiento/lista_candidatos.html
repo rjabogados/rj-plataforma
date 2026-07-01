@@ -12,12 +12,19 @@
             <h2 class="fw-bold m-0 text-primary">Base de Talentos RJ</h2>
             <p class="text-muted small mb-0">Matriz con IA de limpieza, historial y auditoría de contactos.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{% url 'exportar_candidatos' %}" class="btn btn-success btn-pill fw-semibold shadow-sm">
-                <i class="bi bi-file-earmark-excel-fill me-2"></i>Exportar a CSV
+        <div class="d-flex gap-2 align-items-center">
+            <form method="POST" action="{% url 'importar_matriz_excel' %}" enctype="multipart/form-data" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="file" name="archivo_excel" accept=".xlsx, .xls" class="form-control form-control-sm" style="max-width: 220px;" required>
+                <button type="submit" class="btn btn-warning btn-sm btn-pill fw-semibold shadow-sm text-dark">
+                    <i class="bi bi-cloud-arrow-up-fill"></i> Importar Excel
+                </button>
+            </form>
+            <a href="{% url 'exportar_candidatos' %}" class="btn btn-success btn-sm btn-pill fw-semibold shadow-sm">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i>Exportar
             </a>
-            <a href="{% url 'dashboard_reclutamiento' %}" class="btn btn-outline-primary btn-pill fw-semibold shadow-sm">
-                <i class="bi bi-graph-up-arrow me-2"></i>Ver dashboard
+            <a href="{% url 'dashboard_reclutamiento' %}" class="btn btn-outline-primary btn-sm btn-pill fw-semibold shadow-sm">
+                <i class="bi bi-graph-up-arrow me-1"></i>Dashboard
             </a>
         </div>
     </div>
@@ -168,7 +175,8 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label small fw-bold text-muted mb-1">Documento (DNI/CE - Solo Números)</label>
-                                    <input type="text" class="form-control font-monospace" id="edit-documento">
+                                    <input type="text" class="form-control font-monospace" id="edit-documento" maxlength="12"
+                                           oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                                     <div id="alerta-mini-ia" class="small text-danger mt-1 fw-bold d-none"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">

@@ -121,12 +121,13 @@ urlpatterns = [
     # ==========================================
     path('centro-ayuda/', views.centro_ayuda, name='centro_ayuda'),
     path('tickets/', views.tickets, name='tickets'),
+    path('tickets/<int:pk>/eliminar/', views.eliminar_ticket, name='eliminar_ticket'),
     path('tickets-admin/', views.tickets_admin, name='tickets_admin'),
     path('tickets/adjunto/<int:pk>/', views.ver_adjunto_ticket, name='ver_adjunto_ticket'),
     path('tickets/revisar/<int:pk>/<str:estado>/', views.revisar_ticket, name='revisar_ticket'),
     path('vacaciones/', views.vacaciones, name='vacaciones'),
-    path('vacaciones-admin/', views.vacaciones_admin, name='vacaciones_admin'),
     path('vacaciones/eliminar/<int:pk>/', views.eliminar_vacaciones, name='eliminar_vacaciones'),
+    path('vacaciones-admin/', views.vacaciones_admin, name='vacaciones_admin'),
     path('calendario-ausencias/', views.calendario_ausencias, name='calendario_ausencias'),
 
     # ==========================================
@@ -176,6 +177,9 @@ urlpatterns = [
     path('televisor/', views.modo_televisor, name='modo_televisor'),
     path('api/webhook/', views.webhook_receptor, name='webhook_receptor'),
     path('reclutamiento/dashboard/', views.dashboard_reclutamiento, name='dashboard_reclutamiento'),
+    path('reclutamiento/exportar/', views.exportar_candidatos_csv, name='exportar_candidatos'),
+    path('reclutamiento/importar/', views.importar_matriz_excel, name='importar_matriz_excel'),
+    path('reclutamiento/importar/procesar/', views.procesar_mapeo_matriz, name='procesar_mapeo_matriz'),
     path('reclutamiento/candidatos/', views.lista_candidatos, name='lista_candidatos'),
     path('reclutamiento/candidatos/exportar/', views.exportar_candidatos_csv, name='exportar_candidatos'),
     path('api/actualizar-estado/', actualizar_estado_ajax, name='ajax_actualizar_estado'),

@@ -93,10 +93,39 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                <div class="mb-2 small text-muted">
-                                    {% if t.aprobado_por_n1 %}<i class="bi bi-check-all text-success"></i> N1 {% endif %}
-                                    {% if t.aprobado_por_n2 %}<i class="bi bi-check-all text-success"></i> N2 {% endif %}
-                                    {% if t.aprobado_por_n3 %}<i class="bi bi-check-all text-success"></i> N3 {% endif %}
+                                <div class="mb-2">
+                                    {% if t.estado == 'RECHAZADO' %}
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-danger w-100"></div>
+                                    </div>
+                                    <small class="text-danger fw-bold mt-1 d-block"><i class="bi bi-x-circle-fill"></i> Rechazado</small>
+                                    {% elif t.estado == 'ELIMINADO_POR_USUARIO' %}
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-secondary w-100"></div>
+                                    </div>
+                                    <small class="text-secondary fw-bold mt-1 d-block"><i class="bi bi-trash-fill"></i> Anulado por Autor</small>
+                                    {% else %}
+                                    <div class="progress" style="height: 6px;">
+                                        {% if t.estado == 'PENDIENTE_N1' %}
+                                        <div class="progress-bar bg-warning" style="width: 33%"></div>
+                                        {% elif t.estado == 'PENDIENTE_N2' %}
+                                        <div class="progress-bar bg-info" style="width: 66%"></div>
+                                        {% elif t.estado == 'PENDIENTE_N3' %}
+                                        <div class="progress-bar bg-primary" style="width: 90%"></div>
+                                        {% elif t.estado == 'APROBADO' %}
+                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <small class="text-muted fw-bold" style="font-size: 0.7rem;">
+                                            {% if t.estado == 'PENDIENTE_N1' %}1/3 (Supervisor)
+                                            {% elif t.estado == 'PENDIENTE_N2' %}2/3 (Sede)
+                                            {% elif t.estado == 'PENDIENTE_N3' %}3/3 (RRHH)
+                                            {% elif t.estado == 'APROBADO' %}Aprobado
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 {% if 'PENDIENTE' in t.estado %}
                                     <div class="d-flex flex-column gap-2 justify-content-center">

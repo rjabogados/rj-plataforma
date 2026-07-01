@@ -237,7 +237,12 @@ def actualizar_candidato_ajax(request):
         
         # Actualizar con validación
         candidato.nombre = _limpiar_texto(data.get('nombre', candidato.nombre)) or candidato.nombre
-        candidato.documento = _limpiar_documento(data.get('documento', candidato.documento)) or candidato.documento
+        
+        doc_limpio = _limpiar_documento(data.get('documento', candidato.documento))
+        if doc_limpio and (len(doc_limpio) < 8 or len(doc_limpio) > 12):
+            return JsonResponse({'success': False, 'error': 'DNI/CE debe tener entre 8 y 12 dígitos.'}, status=400)
+        candidato.documento = doc_limpio or candidato.documento
+        
         candidato.telefono = _limpiar_telefono(data.get('telefono', candidato.telefono)) or candidato.telefono
         candidato.observaciones = _limpiar_texto(data.get('observaciones', candidato.observaciones or '')) or candidato.observaciones
         
@@ -439,3 +444,124 @@ def exportar_candidatos_csv(request):
         ])
         
     return response
+
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import openpyxl
+
+def _parse_index(val):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return -1
+
+def _get_excel_value(row, index):
+    if index < 0 or index >= len(row):
+        return ''
+    val = row[index]
+    if val is None:
+        return ''
+    return str(val).strip()
+
+@login_required(login_url='login')
+def importar_matriz_excel(request):
+    if not usuario_puede_reclutamiento(request.user):
+        return respuesta_no_autorizado()
+        
+    if request.method == 'POST' and request.FILES.get('archivo_excel'):
+        excel_file = request.FILES['archivo_excel']
+        nombre_tmp = default_storage.save(f'tmp/{request.user.id}_matriz_import.xlsx', ContentFile(excel_file.read()))
+        wb = openpyxl.load_workbook(default_storage.open(nombre_tmp))
+        cabeceras_excel = [str(celda.value).strip() for celda in wb.active[1] if celda.value is not None]
+        request.session['ruta_matriz_tmp'] = nombre_tmp
+        return render(request, 'intranet/reclutamiento/importar_matriz.html', {'cabeceras': cabeceras_excel})
+    return redirect('lista_candidatos')
+
+
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def procesar_mapeo_matriz(request):
+    if not usuario_puede_reclutamiento(request.user):
+        return respuesta_no_autorizado()
+
+    ruta_archivo = request.session.get('ruta_matriz_tmp')
+    if not ruta_archivo or not default_storage.exists(ruta_archivo):
+        messages.error(request, 'El archivo expiró. Sube el Excel nuevamente.')
+        return redirect('lista_candidatos')
+
+    try:
+        idx_nombre = _parse_index(request.POST.get('prop_nombre'))
+        idx_documento = _parse_index(request.POST.get('prop_documento'))
+        idx_telefono = _parse_index(request.POST.get('prop_telefono'))
+        idx_sede = _parse_index(request.POST.get('prop_sede'))
+        idx_canal = _parse_index(request.POST.get('prop_canal'))
+        idx_estado = _parse_index(request.POST.get('prop_estado'))
+        idx_observaciones = _parse_index(request.POST.get('prop_observaciones'))
+
+        archivo_excel = default_storage.open(ruta_archivo)
+        wb = openpyxl.load_workbook(archivo_excel, data_only=True, read_only=True)
+        ws = wb.active
+
+        creados = 0
+        actualizados = 0
+        omitidos = 0
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            nombre = _limpiar_texto(_get_excel_value(row, idx_nombre))
+            if not nombre:
+                omitidos += 1
+                continue
+                
+            documento = _limpiar_documento(_get_excel_value(row, idx_documento))
+            if documento and (len(documento) < 8 or len(documento) > 12):
+                documento = None
+                
+            telefono = _limpiar_telefono(_get_excel_value(row, idx_telefono))
+            sede = _limpiar_texto(_get_excel_value(row, idx_sede)) or 'No Asignado'
+            canal = _limpiar_texto(_get_excel_value(row, idx_canal)) or 'Por Definir'
+            estado = _normalizar_estado(_get_excel_value(row, idx_estado)) or 'Nuevo'
+            observaciones = _limpiar_texto(_get_excel_value(row, idx_observaciones))
+
+            if documento:
+                candidato, created = CandidatoReclutamiento.objects.get_or_create(
+                    documento=documento,
+                    defaults={
+                        'nombre': nombre,
+                        'telefono': telefono,
+                        'sede': sede,
+                        'canal': canal,
+                        'estado_candidato': estado,
+                        'observaciones': observaciones
+                    }
+                )
+                if created:
+                    creados += 1
+                else:
+                    candidato.nombre = nombre
+                    candidato.telefono = telefono
+                    candidato.sede = sede
+                    candidato.canal = canal
+                    candidato.estado_candidato = estado
+                    candidato.observaciones = observaciones
+                    candidato.save()
+                    actualizados += 1
+            else:
+                CandidatoReclutamiento.objects.create(
+                    nombre=nombre,
+                    telefono=telefono,
+                    sede=sede,
+                    canal=canal,
+                    estado_candidato=estado,
+                    observaciones=observaciones
+                )
+                creados += 1
+
+        messages.success(request, f'Importación completada: {creados} creados, {actualizados} actualizados, {omitidos} omitidos.')
+    except Exception as e:
+        messages.error(request, f'Error al importar: {str(e)}')
+    finally:
+        if default_storage.exists(ruta_archivo):
+            default_storage.delete(ruta_archivo)
+        request.session.pop('ruta_matriz_tmp', None)
+
+    return redirect('lista_candidatos')

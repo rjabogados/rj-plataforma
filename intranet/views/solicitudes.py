@@ -140,8 +140,24 @@ def tickets(request):
             messages.error(request, msg)
         return redirect('tickets')
         
-    lista_tickets = Ticket.objects.filter(colaborador=perfil).order_by('-fecha_registro') if perfil else []
+    lista_tickets = Ticket.objects.filter(colaborador=perfil).exclude(estado='ELIMINADO_POR_USUARIO').order_by('-fecha_registro') if perfil else []
     return render(request, 'intranet/tickets/tickets_personal.html', {'tickets': lista_tickets})
+
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def eliminar_ticket(request, pk):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil:
+        return redirect('tickets')
+        
+    ticket = get_object_or_404(Ticket, pk=pk, colaborador=perfil)
+    if ticket.estado == 'PENDIENTE_N1':
+        ticket.estado = 'ELIMINADO_POR_USUARIO'
+        ticket.save()
+        messages.success(request, 'Ticket eliminado correctamente.')
+    else:
+        messages.error(request, 'No puedes eliminar un ticket que ya está en proceso de revisión.')
+    return redirect('tickets')
 
 @login_required(login_url='login')
 def tickets_admin(request):
@@ -215,13 +231,29 @@ def vacaciones(request):
             messages.error(request, msg)
         return redirect('vacaciones')
         
-    lista_solicitudes = SolicitudVacaciones.objects.filter(colaborador=perfil).order_by('-fecha_solicitud') if perfil else []
+    lista_solicitudes = SolicitudVacaciones.objects.filter(colaborador=perfil).exclude(estado='ELIMINADO_POR_USUARIO').order_by('-fecha_solicitud') if perfil else []
     saldo = getattr(perfil, 'saldo_vacaciones', None) if perfil else None
     
     return render(request, 'intranet/solicitudes/vacaciones_personal.html', {
         'solicitudes': lista_solicitudes,
         'saldo': saldo
     })
+
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def eliminar_vacaciones(request, pk):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil:
+        return redirect('vacaciones')
+        
+    vacacion = get_object_or_404(SolicitudVacaciones, pk=pk, colaborador=perfil)
+    if vacacion.estado == 'PENDIENTE_N1':
+        vacacion.estado = 'ELIMINADO_POR_USUARIO'
+        vacacion.save()
+        messages.success(request, 'Solicitud de vacaciones eliminada correctamente.')
+    else:
+        messages.error(request, 'No puedes eliminar una solicitud que ya está en proceso de revisión.')
+    return redirect('vacaciones')
 
 @login_required(login_url='login')
 def vacaciones_admin(request):

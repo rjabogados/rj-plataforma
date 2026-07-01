@@ -9,7 +9,8 @@ class SolicitudBase(models.Model):
         ('PENDIENTE_N2', 'Pendiente (Sede)'),
         ('PENDIENTE_N3', 'Pendiente (RRHH)'),
         ('APROBADO', 'Aprobado'),
-        ('RECHAZADO', 'Rechazado')
+        ('RECHAZADO', 'Rechazado'),
+        ('ELIMINADO_POR_USUARIO', 'Eliminado por Autor')
     ]
     
     estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE_N1', db_index=True)
