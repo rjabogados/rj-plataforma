@@ -20,6 +20,23 @@
         {% endif %}
     </div>
 
+    {% if curso %}
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body py-3 px-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div>
+                <div class="fw-bold text-dark mb-1"><i class="bi bi-list-check me-2 text-danger"></i>Checklist del creador</div>
+                <div class="small text-muted">Completa cada etapa para publicar un curso robusto y sin retrabajo.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge rounded-pill {% if curso.titulo and curso.descripcion %}bg-success{% else %}bg-secondary{% endif %}">1. Base {% if curso.titulo and curso.descripcion %}OK{% else %}Pendiente{% endif %}</span>
+                <span class="badge rounded-pill {% if lecciones_count > 0 %}bg-success{% else %}bg-secondary{% endif %}">2. Clases ({{ lecciones_count }})</span>
+                <span class="badge rounded-pill {% if tiene_evaluacion %}bg-success{% else %}bg-secondary{% endif %}">3. Evaluación {% if tiene_evaluacion %}OK{% else %}Pendiente{% endif %}</span>
+                <span class="badge rounded-pill {% if curso.estado_publicacion == 'PUBLICADO' %}bg-primary{% else %}bg-warning text-dark{% endif %}">4. {{ curso.get_estado_publicacion_display }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Barra de Progreso Stepper -->
     <div class="stepper-wrapper mb-5">
         <div class="stepper-item {% if request.GET.step == '1' or not request.GET.step %}active{% endif %}" id="step-indicator-1">
@@ -152,9 +169,16 @@
                         <h5 class="fw-bold mb-1"><i class="bi bi-collection-play-fill text-danger me-2"></i>Constructor de Clases</h5>
                         <p class="text-secondary small mb-0">Agrega el contenido multimedia de tu curso (Videos, Canva, SCORM, Simuladores).</p>
                     </div>
-                    <button type="button" class="btn btn-danger fw-bold rounded-pill shadow-sm" onclick="abrirModalNuevaClase()">
-                        <i class="bi bi-plus-lg me-1"></i>Añadir Nueva Clase
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="estadoGuardadoLecciones" class="small text-muted fw-semibold">Sin cambios recientes</span>
+                        <button type="button" class="btn btn-danger fw-bold rounded-pill shadow-sm" onclick="abrirModalNuevaClase()">
+                            <i class="bi bi-plus-lg me-1"></i>Añadir Nueva Clase
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border small mb-4">
+                    <strong>Paso guiado:</strong> crea al menos 1 clase, edita su contenido y ordénalas según el recorrido de aprendizaje.
                 </div>
 
                 <!-- Lista de clases creadas -->
@@ -167,7 +191,7 @@
         </div>
         <div class="d-flex justify-content-between">
             <a href="?step=1" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold"><i class="bi bi-arrow-left me-2"></i> Atrás</a>
-            <a href="?step=3" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></a>
+            <button type="button" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm" onclick="irPaso3()">Siguiente Paso <i class="bi bi-arrow-right ms-2"></i></button>
         </div>
         {% else %}
         <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center py-5">
@@ -181,7 +205,7 @@
 
     <!-- PASO 3: Evaluación -->
     <div class="step-content {% if request.GET.step == '3' %}active-step{% else %}d-none{% endif %}" id="step-3">
-        {% if curso %}
+        {% if curso and lecciones_count > 0 %}
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-4 p-md-5">
                 <h5 class="fw-bold mb-4"><i class="bi bi-list-check text-success me-2"></i>Evaluación del Curso</h5>
@@ -243,14 +267,16 @@
         </div>
         {% else %}
         <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center py-5">
-            <h5 class="fw-bold">Debes completar los pasos anteriores</h5>
+            <h5 class="fw-bold">Debes crear al menos 1 clase antes de configurar la evaluación</h5>
+            <p class="text-muted mb-3">Regresa al paso 2, crea el contenido y luego continúa.</p>
+            <a href="?step=2" class="btn btn-warning fw-bold px-4 rounded-pill">Ir al Paso 2</a>
         </div>
         {% endif %}
     </div>
 
     <!-- PASO 4: Publicación -->
     <div class="step-content {% if request.GET.step == '4' %}active-step{% else %}d-none{% endif %}" id="step-4">
-        {% if curso %}
+        {% if curso and lecciones_count > 0 and tiene_evaluacion %}
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-4 p-md-5 text-center">
                 <i class="bi bi-rocket-fill text-danger fs-1 mb-3"></i>
@@ -276,7 +302,9 @@
         </div>
         {% else %}
         <div class="alert alert-warning rounded-4 border-0 shadow-sm text-center py-5">
-            <h5 class="fw-bold">Debes completar los pasos anteriores</h5>
+            <h5 class="fw-bold">Debes completar clases y evaluación antes de publicar</h5>
+            <p class="text-muted mb-3">Paso requerido: mínimo 1 clase y examen configurado.</p>
+            <a href="?step=2" class="btn btn-warning fw-bold px-4 rounded-pill">Volver al flujo</a>
         </div>
         {% endif %}
     </div>
@@ -288,12 +316,13 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header bg-danger text-white border-0 rounded-top-4">
-                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Agregar Lección</h5>
+                <h5 class="modal-title fw-bold" id="modalClaseTitulo"><i class="bi bi-plus-circle me-2"></i>Agregar Lección</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form id="formClase">
                     {% csrf_token %}
+                    <input type="hidden" name="leccion_id" id="leccion_id">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Título de la Lección</label>
                         <input type="text" class="form-control" name="titulo" required>
@@ -301,6 +330,10 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción (Opcional)</label>
                         <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Orden</label>
+                        <input type="number" class="form-control" name="orden" min="1" value="1">
                     </div>
                     
                     <h6 class="fw-bold text-secondary mt-4 mb-3 border-bottom pb-2">Material Multimedia (Elige los que apliquen)</h6>
@@ -326,7 +359,7 @@
             </div>
             <div class="modal-footer border-0 p-4 pt-0">
                 <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" onclick="guardarClase()">Guardar Lección</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" id="btnGuardarClase" onclick="guardarClase()">Guardar Lección</button>
             </div>
         </div>
     </div>
@@ -439,11 +472,35 @@ function toggleFiltros() {
 const cursoId = {{ curso.id }};
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const apiURL = `/intranet/lms/api/curso/${cursoId}/lecciones/`;
+let leccionesCache = [];
+let dragId = null;
+
+function marcarGuardando() {
+    const el = document.getElementById('estadoGuardadoLecciones');
+    if (!el) return;
+    el.className = 'small text-warning fw-semibold';
+    el.textContent = 'Guardando cambios...';
+}
+
+function marcarGuardado(msg = 'Cambios guardados') {
+    const el = document.getElementById('estadoGuardadoLecciones');
+    if (!el) return;
+    el.className = 'small text-success fw-semibold';
+    el.textContent = msg;
+}
+
+function marcarError(msg = 'No se pudo guardar') {
+    const el = document.getElementById('estadoGuardadoLecciones');
+    if (!el) return;
+    el.className = 'small text-danger fw-semibold';
+    el.textContent = msg;
+}
 
 function cargarLecciones() {
     fetch(apiURL)
     .then(r => r.json())
     .then(data => {
+        leccionesCache = data.lecciones || [];
         const container = document.getElementById('listaLecciones');
         container.innerHTML = '';
         if(data.lecciones.length === 0) {
@@ -457,28 +514,123 @@ function cargarLecciones() {
                 let iconos = '';
                 if(l.url_video) iconos += '<i class="bi bi-youtube text-danger me-2" title="Video"></i>';
                 if(l.url_presentacion_canva) iconos += '<i class="bi bi-file-earmark-slides text-info me-2" title="Canva"></i>';
+                if(l.tiene_pdf) iconos += '<i class="bi bi-file-earmark-pdf-fill text-primary me-2" title="PDF"></i>';
                 if(l.paquete_scorm_url) iconos += '<i class="bi bi-box-seam text-dark me-2" title="SCORM"></i>';
+                if(l.url_simulador) iconos += '<i class="bi bi-controller text-success me-2" title="Simulador"></i>';
 
                 container.innerHTML += `
-                <div class="clase-card">
+                <div class="clase-card" data-id="${l.id}" draggable="true">
                     <div>
-                        <span class="badge bg-danger rounded-pill mb-1">Clase ${idx + 1}</span>
+                        <span class="badge bg-danger rounded-pill mb-1">Clase ${l.orden}</span>
                         <h5 class="fw-bold mb-1">${l.titulo}</h5>
+                        <p class="small text-muted mb-2">${l.descripcion || 'Sin descripción'}</p>
                         <div class="text-muted small">${iconos}</div>
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-dark rounded-circle" title="Arrastrar">
+                            <i class="bi bi-grip-vertical"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-circle" title="Subir" onclick="moverClase(${l.id}, 'up')">
+                            <i class="bi bi-chevron-up"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-circle" title="Bajar" onclick="moverClase(${l.id}, 'down')">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary rounded-circle" title="Editar" onclick="abrirModalEditarClase(${l.id})">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
                         <button class="btn btn-light text-danger rounded-circle p-2" onclick="eliminarClase(${l.id})">
                             <i class="bi bi-trash-fill"></i>
                         </button>
                     </div>
                 </div>`;
             });
+            inicializarDragAndDrop();
         }
+    });
+}
+
+function inicializarDragAndDrop() {
+    const container = document.getElementById('listaLecciones');
+    container.querySelectorAll('.clase-card').forEach(card => {
+        card.addEventListener('dragstart', () => {
+            dragId = card.dataset.id;
+            card.classList.add('opacity-50');
+        });
+        card.addEventListener('dragend', () => {
+            card.classList.remove('opacity-50');
+            dragId = null;
+        });
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const targetId = card.dataset.id;
+            if (!dragId || dragId === targetId) return;
+            const dragged = container.querySelector(`.clase-card[data-id="${dragId}"]`);
+            const target = container.querySelector(`.clase-card[data-id="${targetId}"]`);
+            if (!dragged || !target) return;
+
+            const cards = Array.from(container.querySelectorAll('.clase-card'));
+            const draggedIndex = cards.indexOf(dragged);
+            const targetIndex = cards.indexOf(target);
+            if (draggedIndex < targetIndex) {
+                target.after(dragged);
+            } else {
+                target.before(dragged);
+            }
+            persistirOrdenLecciones();
+        });
+    });
+}
+
+function persistirOrdenLecciones() {
+    const ids = Array.from(document.querySelectorAll('#listaLecciones .clase-card')).map(el => Number(el.dataset.id));
+    marcarGuardando();
+    fetch(apiURL, {
+        method: 'PUT',
+        body: JSON.stringify({ order_ids: ids }),
+        headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            marcarGuardado('Orden guardado');
+            cargarLecciones();
+        } else {
+            marcarError(data.message || 'No se pudo guardar el orden');
+        }
+    })
+    .catch(() => {
+        marcarError('No se pudo guardar el orden');
     });
 }
 
 function abrirModalNuevaClase() {
     document.getElementById('formClase').reset();
+    document.getElementById('leccion_id').value = '';
+    document.getElementById('modalClaseTitulo').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Agregar Lección';
+    document.getElementById('btnGuardarClase').textContent = 'Guardar Lección';
+    new bootstrap.Modal(document.getElementById('modalClase')).show();
+}
+
+function abrirModalEditarClase(leccionId) {
+    const leccion = leccionesCache.find(item => item.id === leccionId);
+    if (!leccion) {
+        return;
+    }
+    const form = document.getElementById('formClase');
+    form.titulo.value = leccion.titulo || '';
+    form.descripcion.value = leccion.descripcion || '';
+    form.url_video.value = leccion.url_video || '';
+    form.url_presentacion_canva.value = leccion.url_presentacion_canva || '';
+    form.url_simulador.value = leccion.url_simulador || '';
+    form.paquete_scorm_url.value = leccion.paquete_scorm_url || '';
+    form.orden.value = leccion.orden || 1;
+    document.getElementById('leccion_id').value = leccion.id;
+    document.getElementById('modalClaseTitulo').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Lección';
+    document.getElementById('btnGuardarClase').textContent = 'Guardar Cambios';
     new bootstrap.Modal(document.getElementById('modalClase')).show();
 }
 
@@ -488,8 +640,43 @@ function guardarClase() {
         alert("El título es obligatorio");
         return;
     }
+    const leccionId = document.getElementById('leccion_id').value;
+
+    if (leccionId) {
+        const payload = {
+            leccion_id: Number(leccionId),
+            titulo: form.titulo.value,
+            descripcion: form.descripcion.value,
+            orden: Number(form.orden.value || 1),
+            url_video: form.url_video.value,
+            url_presentacion_canva: form.url_presentacion_canva.value,
+            url_simulador: form.url_simulador.value,
+            paquete_scorm_url: form.paquete_scorm_url.value,
+        };
+        fetch(apiURL, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.status === 'ok') {
+                bootstrap.Modal.getInstance(document.getElementById('modalClase')).hide();
+                marcarGuardado('Clase actualizada');
+                cargarLecciones();
+            } else {
+                marcarError(data.message || 'Error al actualizar la clase');
+                alert(data.message || 'Error al actualizar la clase');
+            }
+        })
+        .catch(() => {
+            marcarError('Error al actualizar la clase');
+        });
+        return;
+    }
+
     const formData = new FormData(form);
-    
+    marcarGuardando();
     fetch(apiURL, {
         method: 'POST',
         body: formData,
@@ -499,15 +686,50 @@ function guardarClase() {
     .then(data => {
         if(data.status === 'ok') {
             bootstrap.Modal.getInstance(document.getElementById('modalClase')).hide();
+            marcarGuardado('Clase creada');
             cargarLecciones();
         } else {
-            alert('Error al guardar la lección');
+            marcarError(data.message || 'Error al crear la clase');
+            alert(data.message || 'Error al crear la clase');
         }
+    })
+    .catch(() => {
+        marcarError('Error al crear la clase');
     });
+}
+
+function moverClase(id, direccion) {
+    marcarGuardando();
+    fetch(apiURL, {
+        method: 'PUT',
+        body: JSON.stringify({ leccion_id: id, move: direccion }),
+        headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            marcarGuardado('Orden guardado');
+            cargarLecciones();
+        } else {
+            marcarError(data.message || 'No se pudo mover la clase');
+        }
+    })
+    .catch(() => {
+        marcarError('No se pudo mover la clase');
+    });
+}
+
+function irPaso3() {
+    if (!leccionesCache.length) {
+        alert('Debes crear al menos una clase antes de pasar al paso de evaluación.');
+        return;
+    }
+    window.location.href = '?step=3';
 }
 
 function eliminarClase(id) {
     if(confirm('¿Estás seguro de eliminar esta lección?')) {
+        marcarGuardando();
         fetch(apiURL, {
             method: 'DELETE',
             body: JSON.stringify({leccion_id: id}),
@@ -516,8 +738,14 @@ function eliminarClase(id) {
         .then(r => r.json())
         .then(data => {
             if(data.status === 'ok') {
+                marcarGuardado('Clase eliminada');
                 cargarLecciones();
+            } else {
+                marcarError(data.message || 'No se pudo eliminar la clase');
             }
+        })
+        .catch(() => {
+            marcarError('No se pudo eliminar la clase');
         });
     }
 }

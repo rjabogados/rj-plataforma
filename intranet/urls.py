@@ -101,7 +101,7 @@ urlpatterns = [
     path('lms/editar-curso/<int:curso_id>/', crear_curso_avanzado, name='editar_curso_avanzado'),
     path('lms/api/curso/<int:curso_id>/lecciones/', lms.api_gestionar_lecciones, name='api_gestionar_lecciones'),
     path('induccion/modulo/crear/', lms.crear_curso_induccion, name='crear_curso_induccion'),
-    path('induccion/modulo/editar/<int:curso_id>/', lms.crear_curso_induccion, name='editar_curso_induccion'),
+    path('induccion/modulo/editar/<int:curso_id>/', lms.crear_curso_induccion, name='editar_curso_induccion_stepper'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS

@@ -12,6 +12,9 @@
             <p class="text-secondary mb-0">{{ curso.descripcion|truncatechars:120 }}</p>
         </div>
         <div class="text-end">
+            <button class="btn btn-sm btn-outline-primary btn-pill fw-semibold mb-2" data-bs-toggle="modal" data-bs-target="#modalEditarCurso">
+                <i class="bi bi-sliders me-1"></i> Editar Datos del Curso
+            </button><br>
             <span class="badge badge-soft fs-6 mb-2"><i class="bi bi-play-btn-fill me-1"></i> {{ lecciones.count }} Clases</span><br>
             {% if curso.evaluacion %}
                 <span class="badge badge-soft-success fs-6"><i class="bi bi-check-circle-fill me-1"></i> Evaluación Activa</span>
@@ -30,9 +33,21 @@
         {% endfor %}
     {% endif %}
 
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3 d-flex flex-wrap gap-2">
+            <a href="#seccion-contenido" class="btn btn-sm btn-outline-primary btn-pill fw-semibold">1. Clases y Material</a>
+            <a href="#seccion-evaluacion" class="btn btn-sm btn-outline-success btn-pill fw-semibold">2. Evaluación</a>
+            {% if curso.evaluacion %}
+            <a href="{% url 'importar_excel_balotario' curso.evaluacion.id %}" class="btn btn-sm btn-outline-dark btn-pill fw-semibold">3. Balotario</a>
+            <a href="{% url 'resultados_evaluacion' curso.evaluacion.id %}" class="btn btn-sm btn-outline-info btn-pill fw-semibold">4. Analítica</a>
+            {% endif %}
+            <span id="estadoOrdenCurriculum" class="small text-muted fw-semibold align-self-center ms-auto">Arrastra clases para ordenar</span>
+        </div>
+    </div>
+
     <div class="row g-4">
         <!-- Columna Izquierda: Clases y Lecciones -->
-        <div class="col-lg-7 col-xl-8">
+        <div class="col-lg-7 col-xl-8" id="seccion-contenido">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold text-dark mb-0"><i class="bi bi-collection-play-fill me-2"></i>Contenido del Curso</h5>
@@ -44,10 +59,11 @@
                     {% if lecciones %}
                         <div class="list-group list-group-flush gap-3">
                             {% for leccion in lecciones %}
-                            <div class="list-group-item border rounded-4 p-3 shadow-sm lms-input-soft transition-hover">
+                            <div class="list-group-item border rounded-4 p-3 shadow-sm lms-input-soft transition-hover leccion-draggable" data-id="{{ leccion.id }}" draggable="true">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         <div class="d-flex align-items-center gap-2 mb-2">
+                                            <span class="text-secondary" title="Arrastrar"><i class="bi bi-grip-vertical"></i></span>
                                             <span class="badge bg-primary rounded-pill">Clase {{ leccion.orden }}</span>
                                             <h6 class="fw-bold mb-0 text-dark">{{ leccion.titulo }}</h6>
                                         </div>
@@ -55,6 +71,9 @@
                                         <div class="d-flex flex-wrap gap-2">
                                             {% if leccion.url_video %}
                                             <span class="badge badge-soft text-danger"><i class="bi bi-youtube me-1"></i>Video</span>
+                                            {% endif %}
+                                            {% if leccion.url_presentacion_canva %}
+                                            <span class="badge badge-soft text-info"><i class="bi bi-file-earmark-slides me-1"></i>Canva</span>
                                             {% endif %}
                                             {% if leccion.archivo_pdf %}
                                             <span class="badge badge-soft text-primary"><i class="bi bi-file-pdf-fill me-1"></i>PDF Adjunto</span>
@@ -104,7 +123,7 @@
         </div>
 
         <!-- Columna Derecha: Configuración de Examen -->
-        <div class="col-lg-5 col-xl-4">
+        <div class="col-lg-5 col-xl-4" id="seccion-evaluacion">
             <div class="card lms-form-card position-relative border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
                     {% if curso.evaluacion %}
@@ -207,6 +226,16 @@
                                 <label class="form-check-label small fw-semibold text-secondary" for="mostrar_resultado_inmediato">Resultado inmediato</label>
                             </div>
 
+                            <div class="form-check form-switch mb-3 lms-input-soft p-3 rounded-3 border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" role="switch" name="permitir_revision_respuestas" id="permitir_revision_respuestas" checked>
+                                <label class="form-check-label small fw-semibold text-secondary" for="permitir_revision_respuestas">Permitir revisión de respuestas</label>
+                            </div>
+
+                            <div class="mb-4 lms-input-soft">
+                                <label class="form-label small fw-semibold text-secondary">Retroalimentación final (opcional)</label>
+                                <textarea class="form-control" name="retroalimentacion_final" rows="2" placeholder="Mensaje al finalizar el examen"></textarea>
+                            </div>
+
                             <button type="submit" class="btn btn-primary w-100 btn-pill fw-semibold py-2 shadow-sm">
                                 <i class="bi bi-save me-1"></i> Guardar Evaluación
                             </button>
@@ -214,6 +243,160 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Curso -->
+<div class="modal fade" id="modalEditarCurso" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-sliders me-2"></i>Editor Dedicado del Curso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'editar_curso_lms' curso.id %}?next=curriculum" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="alert alert-info border-0 bg-info bg-opacity-10 small">
+                        Puedes ajustar segmentación, prerrequisitos, versión y estado sin salir del currículum.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Título</label>
+                            <input type="text" class="form-control" name="titulo" value="{{ curso.titulo }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Categoría LMS</label>
+                            <select class="form-select" name="categoria_lms">
+                                <option value="">-- Sin categoría --</option>
+                                {% for cat in categorias_lms %}
+                                <option value="{{ cat.id }}" {% if curso.categoria_lms_id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Descripción</label>
+                            <textarea class="form-control" name="descripcion" rows="3">{{ curso.descripcion }}</textarea>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Nivel</label>
+                            <select class="form-select" name="nivel">
+                                <option value="BASICO" {% if curso.nivel == 'BASICO' %}selected{% endif %}>Básico</option>
+                                <option value="INTERMEDIO" {% if curso.nivel == 'INTERMEDIO' %}selected{% endif %}>Intermedio</option>
+                                <option value="AVANZADO" {% if curso.nivel == 'AVANZADO' %}selected{% endif %}>Avanzado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Duración (horas)</label>
+                            <input type="number" class="form-control" name="duracion_estimada_horas" min="1" value="{{ curso.duracion_estimada_horas|default:1 }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Orden sugerido</label>
+                            <input type="number" class="form-control" name="orden_sugerido" min="1" value="{{ curso.orden_sugerido|default:1 }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Versión</label>
+                            <input type="number" class="form-control" name="version" min="1" value="{{ curso.version|default:1 }}">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Estado de publicación</label>
+                            <select class="form-select" name="estado_publicacion">
+                                <option value="PUBLICADO" {% if curso.estado_publicacion == 'PUBLICADO' %}selected{% endif %}>Publicado</option>
+                                <option value="BORRADOR" {% if curso.estado_publicacion == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                                <option value="ARCHIVADO" {% if curso.estado_publicacion == 'ARCHIVADO' %}selected{% endif %}>Archivado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Prerrequisito</label>
+                            <select class="form-select" name="prerequisito_curso">
+                                <option value="">-- Sin prerrequisito --</option>
+                                {% for c_ref in cursos_referencia %}
+                                <option value="{{ c_ref.id }}" {% if curso.prerequisito_curso_id == c_ref.id %}selected{% endif %}>{{ c_ref.titulo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Módulo padre</label>
+                            <select class="form-select" name="modulo_padre">
+                                <option value="">-- Sin módulo padre --</option>
+                                {% for c_ref in cursos_referencia %}
+                                <option value="{{ c_ref.id }}" {% if curso.modulo_padre_id == c_ref.id %}selected{% endif %}>{{ c_ref.titulo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch p-3 rounded-3 border bg-light mb-3">
+                                <input class="form-check-input me-2" type="checkbox" name="publico_general" id="switchPublicoCurriculum" {% if curso.publico_general %}checked{% endif %} onchange="toggleSegmentacionCurso()">
+                                <label class="form-check-label fw-semibold" for="switchPublicoCurriculum">Curso para toda la empresa</label>
+                            </div>
+                        </div>
+
+                        <div id="segmentacionCurso" class="row g-3 {% if curso.publico_general %}d-none{% endif %}">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Rol permitido</label>
+                                <select class="form-select" name="rol_permitido">
+                                    <option value="">-- Todos --</option>
+                                    {% for valor, etiqueta in roles %}
+                                    <option value="{{ valor }}" {% if curso.rol_permitido == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Área permitida</label>
+                                <select class="form-select" name="area_permitida">
+                                    <option value="">-- Todas --</option>
+                                    {% for area in areas %}
+                                    <option value="{{ area.id }}" {% if curso.area_permitida_id == area.id %}selected{% endif %}>{{ area.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Cargo permitido</label>
+                                <select class="form-select" name="cargo_permitido">
+                                    <option value="">-- Todos --</option>
+                                    {% for cargo in cargos %}
+                                    <option value="{{ cargo.id }}" {% if curso.cargo_permitido_id == cargo.id %}selected{% endif %}>{{ cargo.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Cartera</label>
+                                <select class="form-select" name="cartera_vinculada">
+                                    <option value="">-- Todas --</option>
+                                    {% for n in negocios %}
+                                    <option value="{{ n.id }}" {% if curso.cartera_vinculada_id == n.id %}selected{% endif %}>{{ n.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Subcartera / Categoría textual</label>
+                                <input type="text" class="form-control" name="categoria" value="{{ curso.subcartera_vinculada|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="col-12 d-flex flex-wrap gap-3 mt-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="obligatorio" id="checkObligatorio" {% if curso.obligatorio %}checked{% endif %}>
+                                <label class="form-check-label fw-semibold" for="checkObligatorio">Curso obligatorio</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="certificado_habilitado" id="checkCertificado" {% if curso.certificado_habilitado %}checked{% endif %}>
+                                <label class="form-check-label fw-semibold" for="checkCertificado">Emitir certificado</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-light btn-pill fw-semibold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-pill fw-semibold">Guardar Cambios del Curso</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -251,6 +434,10 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-danger"><i class="bi bi-youtube"></i> Enlace de Video</label>
                                 <input type="url" class="form-control" name="url_video" value="{{ leccion.url_video|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-info"><i class="bi bi-file-earmark-slides"></i> Enlace Canva</label>
+                                <input type="url" class="form-control" name="url_presentacion_canva" value="{{ leccion.url_presentacion_canva|default:'' }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> Actualizar PDF</label>
@@ -313,6 +500,10 @@
                                 <small class="text-muted d-block mt-1">Usa el enlace "Embed" de YouTube.</small>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold text-info"><i class="bi bi-file-earmark-slides"></i> Enlace Canva / Slides</label>
+                                <input type="url" class="form-control" name="url_presentacion_canva" placeholder="https://...">
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> O subir archivo PDF</label>
                                 <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
                             </div>
@@ -334,5 +525,80 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleSegmentacionCurso() {
+    const sw = document.getElementById('switchPublicoCurriculum');
+    const box = document.getElementById('segmentacionCurso');
+    if (!sw || !box) return;
+    box.classList.toggle('d-none', sw.checked);
+}
+
+let dragLessonId = null;
+
+function estadoOrden(msg, tipo = 'muted') {
+    const el = document.getElementById('estadoOrdenCurriculum');
+    if (!el) return;
+    el.className = `small fw-semibold align-self-center ms-auto text-${tipo}`;
+    el.textContent = msg;
+}
+
+function persistirOrdenCurriculum() {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    const csrfToken = csrfInput ? csrfInput.value : '';
+    const ids = Array.from(document.querySelectorAll('.leccion-draggable')).map(el => Number(el.dataset.id));
+    estadoOrden('Guardando orden...', 'warning');
+    fetch(`/intranet/lms/api/curso/{{ curso.id }}/lecciones/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ order_ids: ids }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            estadoOrden('Orden guardado', 'success');
+            setTimeout(() => window.location.reload(), 250);
+        } else {
+            estadoOrden(data.message || 'No se pudo guardar', 'danger');
+        }
+    })
+    .catch(() => {
+        estadoOrden('No se pudo guardar', 'danger');
+    });
+}
+
+function initDragCurriculum() {
+    const container = document.querySelector('#seccion-contenido .list-group');
+    if (!container) return;
+    const cards = container.querySelectorAll('.leccion-draggable');
+    cards.forEach(card => {
+        card.addEventListener('dragstart', () => {
+            dragLessonId = card.dataset.id;
+            card.classList.add('opacity-50');
+        });
+        card.addEventListener('dragend', () => {
+            card.classList.remove('opacity-50');
+            dragLessonId = null;
+        });
+        card.addEventListener('dragover', (e) => e.preventDefault());
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const targetId = card.dataset.id;
+            if (!dragLessonId || dragLessonId === targetId) return;
+            const dragged = container.querySelector(`.leccion-draggable[data-id="${dragLessonId}"]`);
+            const target = container.querySelector(`.leccion-draggable[data-id="${targetId}"]`);
+            if (!dragged || !target) return;
+            const all = Array.from(container.querySelectorAll('.leccion-draggable'));
+            const idxDragged = all.indexOf(dragged);
+            const idxTarget = all.indexOf(target);
+            if (idxDragged < idxTarget) target.after(dragged);
+            else target.before(dragged);
+            persistirOrdenCurriculum();
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initDragCurriculum);
+</script>
 
 {% endblock %}

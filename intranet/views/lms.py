@@ -118,6 +118,14 @@ def usuario_es_directivo(user):
     return bool(perfil and perfil.rol in ['ADMINISTRATIVO', 'RRHH', 'GERENCIA'])
 
 
+def _destino_panel_por_tipo(tipo_curso):
+    return 'onboarding_admin' if tipo_curso == 'INDUCCION' else 'gestor_lms'
+
+
+def _leccion_tiene_contenido_minimo(url_video, archivo_pdf):
+    return bool((url_video or '').strip() or archivo_pdf)
+
+
 def build_storage_response(field_file):
     if not field_file or not field_file.name:
         raise Http404("Archivo no disponible")
@@ -603,10 +611,11 @@ def procesar_mapeo_personal(request):
 def procesar_mapeo_balotario(request):
     if request.method == 'POST':
         try:
+            destino = request.session.get('balotario_return_to', 'gestor_lms')
             ruta_archivo = request.session.get('ruta_excel_balotario')
             if not ruta_archivo or not default_storage.exists(ruta_archivo):
                 messages.error(request, "El archivo expirÃ³. Vuelve a subirlo.")
-                return redirect('gestor_lms')
+                return redirect(destino)
 
             idx_pregunta = int(request.POST.get('prop_pregunta', -1))
             idx_correcta = int(request.POST.get('prop_correcta', -1))
@@ -653,7 +662,7 @@ def procesar_mapeo_balotario(request):
         except Exception as e:
             error_texto = traceback.format_exc()
             return HttpResponse(f"<div style='padding:20px; font-family: monospace; background:#ffe6e6; color:red; border:2px solid red;'><h2>Â¡EL ERROR FUE ATRAPADO!</h2><pre>{error_texto}</pre></div>", status=200)
-    return redirect('gestor_lms')
+    return redirect(request.session.get('balotario_return_to', 'gestor_lms'))
 
 
 # ==========================================
@@ -1039,6 +1048,13 @@ def pasar_a_planilla(request, candidato_id):
                 if User.objects.filter(username=username_final).exists():
                     username_final = f"{username_final}{dni_limpio[-2:]}"
                 nuevo_user = User.objects.create_user(username=username_final, email=candidato.correo or '', password=dni_limpio, first_name=candidato.nombres, last_name=candidato.apellidos)
+                nuevo_colaborador = Colaborador.objects.create(
+                    user=nuevo_user,
+                    dni=dni_limpio,
+                    rol=candidato.puesto_esperado,
+                    negocio=candidato.campaña_destino,
+                    fecha_ingreso=date.today(),
+                )
                 candidato.colaborador = nuevo_colaborador
                 candidato.estado = 'COMPLETADO'
                 candidato.save()
@@ -1864,7 +1880,9 @@ def editar_curso_lms(request, curso_id):
         
         curso.save()
         messages.success(request, f"Â¡Curso '{curso.titulo}' actualizado correctamente!")
-        
+
+    if request.GET.get('next') == 'curriculum':
+        return redirect('curso_curriculum', pk=curso.id)
     return redirect('gestor_lms')
 
 
@@ -1897,7 +1915,7 @@ def duplicar_version_curso(request, curso_id):
         activo=True,
     )
     messages.success(request, f'Se creÃ³ la versiÃ³n {nueva_version.version} en borrador para {curso.titulo}.')
-    return redirect('gestor_lms')
+    return redirect(_destino_panel_por_tipo(curso.tipo))
 
 @login_required(login_url='login')
 @solo_directivos
@@ -1990,6 +2008,7 @@ def academia(request):
 @solo_directivos
 def importar_excel_balotario(request, evaluacion_id):
     evaluacion = get_object_or_404(EvaluacionCurso, id=evaluacion_id)
+    destino = _destino_panel_por_tipo(evaluacion.curso.tipo)
     if request.method == 'POST' and request.FILES.get('archivo_excel'):
         excel_file = request.FILES['archivo_excel']
         try:
@@ -1998,12 +2017,13 @@ def importar_excel_balotario(request, evaluacion_id):
             cabeceras_excel = [str(celda.value).strip() for celda in wb.active[1] if celda.value is not None]
             request.session['ruta_excel_balotario'] = nombre_tmp
             request.session['evaluacion_id_temporal'] = evaluacion.id
+            request.session['balotario_return_to'] = destino
             request.session.modified = True
-            return render(request, 'intranet/lms/mapear_balotario.html', {'cabeceras': cabeceras_excel, 'evaluacion': evaluacion})
+            return render(request, 'intranet/lms/mapear_balotario.html', {'cabeceras': cabeceras_excel, 'evaluacion': evaluacion, 'return_url': destino})
         except Exception as e:
             messages.error(request, f"OcurriÃ³ un error leyendo el Excel: {str(e)}")
-            return redirect('gestor_lms')
-    return render(request, 'intranet/lms/subir_excel.html', {'evaluacion': evaluacion})
+            return redirect(destino)
+    return render(request, 'intranet/lms/subir_excel.html', {'evaluacion': evaluacion, 'return_url': destino})
 
 @login_required(login_url='login')
 @solo_directivos
@@ -2011,10 +2031,11 @@ def previsualizar_y_guardar_balotario(request):
     try:
         preguntas = request.session.get('balotario_temporal')
         eval_id = request.session.get('evaluacion_id_temporal')
+        destino = request.session.get('balotario_return_to', 'gestor_lms')
 
         if not preguntas or not eval_id:
             messages.warning(request, "No hay ningÃºn balotario pendiente en memoria.")
-            return redirect('gestor_lms')
+            return redirect(destino)
 
         evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
 
@@ -2064,15 +2085,16 @@ def previsualizar_y_guardar_balotario(request):
 
             del request.session['balotario_temporal']
             del request.session['evaluacion_id_temporal']
+            request.session.pop('balotario_return_to', None)
 
             messages.success(request, "Â¡Balotario mapeado e inyectado con Ã©xito!")
-            return redirect('gestor_lms')
+            return redirect(destino)
 
-        return render(request, 'intranet/lms/previsualizar_balotario.html', {'preguntas': preguntas, 'evaluacion': evaluacion})
+        return render(request, 'intranet/lms/previsualizar_balotario.html', {'preguntas': preguntas, 'evaluacion': evaluacion, 'return_url': destino})
 
     except Exception as e:
         messages.error(request, "OcurriÃ³ un error procesando el balotario. Contacte a soporte.")
-        return redirect('gestor_lms')
+        return redirect(request.session.get('balotario_return_to', 'gestor_lms'))
 
 @login_required(login_url='login')
 def rendir_evaluacion(request, matricula_id):
@@ -2574,6 +2596,10 @@ def crear_curso_avanzado(request, curso_id=None):
         elif paso == '3':
             # Guardar evaluaciÃ³n
             if curso:
+                if curso.lecciones.count() == 0:
+                    messages.error(request, "Debes crear al menos una clase antes de configurar la evaluaciÃ³n.")
+                    return redirect(f"/intranet/lms/editar-curso/{curso.id}/?step=2")
+
                 titulo_eval = request.POST.get('titulo')
                 instrucciones = request.POST.get('instrucciones', '')
                 puntaje_maximo = request.POST.get('puntaje_maximo', 20.00)
@@ -2611,6 +2637,13 @@ def crear_curso_avanzado(request, curso_id=None):
         elif paso == '4':
             # Publicar Curso
             if curso:
+                if curso.lecciones.count() == 0:
+                    messages.error(request, "No puedes publicar sin clases. Agrega al menos una clase en el paso 2.")
+                    return redirect(f"/intranet/lms/editar-curso/{curso.id}/?step=2")
+                if not hasattr(curso, 'evaluacion'):
+                    messages.error(request, "No puedes publicar sin evaluaciÃ³n. Configura el paso 3.")
+                    return redirect(f"/intranet/lms/editar-curso/{curso.id}/?step=3")
+
                 curso.estado_publicacion = 'PUBLICADO'
                 curso.save()
                 messages.success(request, f"Â¡Curso '{curso.titulo}' publicado exitosamente!")
@@ -2621,7 +2654,9 @@ def crear_curso_avanzado(request, curso_id=None):
         'categorias': [c[0] for c in CursoInduccion.CATEGORIAS_LMS],
         'categorias_lms': CategoriaModuloLMS.objects.filter(activa=True).order_by('nombre'),
         'negocios': Negocio.objects.all(),
-        'roles': Colaborador.ROLES
+        'roles': Colaborador.ROLES,
+        'lecciones_count': curso.lecciones.count() if curso else 0,
+        'tiene_evaluacion': bool(getattr(curso, 'evaluacion', None)) if curso else False,
     }
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -2648,6 +2683,7 @@ def api_gestionar_lecciones(request, curso_id):
             'url_presentacion_canva': l.url_presentacion_canva,
             'url_simulador': l.url_simulador,
             'paquete_scorm_url': l.paquete_scorm_url,
+            'tiene_pdf': bool(l.archivo_pdf),
             'orden': l.orden
         } for l in lecciones]
         return JsonResponse({'lecciones': data})
@@ -2661,6 +2697,9 @@ def api_gestionar_lecciones(request, curso_id):
         url_simulador = request.POST.get('url_simulador')
         paquete_scorm_url = request.POST.get('paquete_scorm_url')
         archivo_pdf = request.FILES.get('archivo_pdf')
+
+        if not _leccion_tiene_contenido_minimo(url_video, archivo_pdf):
+            return JsonResponse({'status': 'error', 'message': 'Cada clase debe tener al menos un video o un PDF.'}, status=400)
 
         orden = curso.lecciones.count() + 1
 
@@ -2676,6 +2715,52 @@ def api_gestionar_lecciones(request, curso_id):
             orden=orden
         )
         return JsonResponse({'status': 'ok', 'id': leccion.id, 'titulo': leccion.titulo})
+
+    elif request.method == 'PUT':
+        try:
+            body = json.loads(request.body)
+
+            order_ids = body.get('order_ids')
+            if isinstance(order_ids, list) and order_ids:
+                with transaction.atomic():
+                    for idx, lid in enumerate(order_ids, start=1):
+                        curso.lecciones.filter(id=lid).update(orden=idx)
+                return JsonResponse({'status': 'ok'})
+
+            leccion_id = body.get('leccion_id')
+            leccion = get_object_or_404(LeccionCurso, id=leccion_id, curso=curso)
+
+            movimiento = body.get('move')
+            if movimiento in ('up', 'down'):
+                if movimiento == 'up':
+                    vecina = curso.lecciones.filter(orden__lt=leccion.orden).order_by('-orden').first()
+                else:
+                    vecina = curso.lecciones.filter(orden__gt=leccion.orden).order_by('orden').first()
+
+                if vecina:
+                    orden_actual = leccion.orden
+                    leccion.orden = vecina.orden
+                    vecina.orden = orden_actual
+                    leccion.save(update_fields=['orden'])
+                    vecina.save(update_fields=['orden'])
+                return JsonResponse({'status': 'ok'})
+
+            leccion.titulo = body.get('titulo', leccion.titulo)
+            leccion.descripcion = body.get('descripcion', leccion.descripcion)
+            leccion.url_video = body.get('url_video', leccion.url_video)
+            leccion.url_presentacion_canva = body.get('url_presentacion_canva', leccion.url_presentacion_canva)
+            leccion.url_simulador = body.get('url_simulador') or None
+            leccion.paquete_scorm_url = body.get('paquete_scorm_url') or None
+            if body.get('orden') is not None:
+                leccion.orden = int(body.get('orden') or leccion.orden)
+
+            if not _leccion_tiene_contenido_minimo(leccion.url_video, leccion.archivo_pdf):
+                return JsonResponse({'status': 'error', 'message': 'Cada clase debe tener al menos un video o un PDF.'}, status=400)
+
+            leccion.save()
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     elif request.method == 'DELETE':
         try:
@@ -2727,6 +2812,10 @@ def crear_curso_induccion(request, curso_id=None):
         elif paso == '3':
             # Guardar evaluaciÃ³n
             if curso:
+                if curso.lecciones.count() == 0:
+                    messages.error(request, "Debes crear al menos una clase antes de configurar la evaluaciÃ³n.")
+                    return redirect(f"/intranet/induccion/modulo/editar/{curso.id}/?step=2")
+
                 titulo_eval = request.POST.get('titulo')
                 instrucciones = request.POST.get('instrucciones', '')
                 puntaje_maximo = request.POST.get('puntaje_maximo', 20.00)
@@ -2763,6 +2852,13 @@ def crear_curso_induccion(request, curso_id=None):
 
         elif paso == '4':
             if curso:
+                if curso.lecciones.count() == 0:
+                    messages.error(request, "No puedes publicar sin clases. Agrega al menos una clase en el paso 2.")
+                    return redirect(f"/intranet/induccion/modulo/editar/{curso.id}/?step=2")
+                if not hasattr(curso, 'evaluacion'):
+                    messages.error(request, "No puedes publicar sin evaluaciÃ³n. Configura el paso 3.")
+                    return redirect(f"/intranet/induccion/modulo/editar/{curso.id}/?step=3")
+
                 curso.estado_publicacion = 'PUBLICADO'
                 curso.save()
                 messages.success(request, f"Â¡MÃ³dulo de InducciÃ³n '{curso.titulo}' publicado exitosamente!")
@@ -2771,7 +2867,9 @@ def crear_curso_induccion(request, curso_id=None):
     return render(request, 'intranet/lms/crear_curso_stepper.html', {
         'curso': curso, 
         'is_induccion': True,
-        'action_url': reverse('editar_curso_induccion', args=[curso.id]) if curso else reverse('crear_curso_induccion')
+        'action_url': reverse('editar_curso_induccion_stepper', args=[curso.id]) if curso else reverse('crear_curso_induccion'),
+        'lecciones_count': curso.lecciones.count() if curso else 0,
+        'tiene_evaluacion': bool(getattr(curso, 'evaluacion', None)) if curso else False,
     })
 
 @login_required(login_url='login')
@@ -2812,10 +2910,10 @@ def crear_ruta_induccion_view(request):
                 pass
         
         messages.success(request, f"Â¡Ruta '{nombre}' creada exitosamente!")
-        return redirect('gestor_lms')
+        return redirect('onboarding_admin')
 
     # Pasar cursos al frontend para el buscador JS
-    cursos_qs = CursoInduccion.objects.filter(estado_publicacion='PUBLICADO').select_related('categoria_lms')
+    cursos_qs = CursoInduccion.objects.filter(estado_publicacion='PUBLICADO', tipo='INDUCCION').select_related('categoria_lms')
     cursos_json = []
     for c in cursos_qs:
         cursos_json.append({
@@ -2830,7 +2928,8 @@ def crear_ruta_induccion_view(request):
         'roles': Colaborador.ROLES,
         'areas': Area.objects.filter(activa=True).order_by('nombre'),
         'negocios': Negocio.objects.all(),
-        'cursos_json': json.dumps(cursos_json)
+        'cursos_json': json.dumps(cursos_json),
+        'modo_onboarding': True,
     })
 
 @login_required(login_url='login')
@@ -2894,14 +2993,21 @@ def curso_curriculum(request, pk):
     
     if request.method == 'POST':
         if 'crear_leccion' in request.POST:
+            video = request.POST.get('url_video')
+            archivo_pdf = request.FILES.get('archivo_pdf')
+            if not _leccion_tiene_contenido_minimo(video, archivo_pdf):
+                messages.error(request, "Cada clase debe incluir al menos un video o un PDF.")
+                return redirect('curso_curriculum', pk=curso.id)
+
             LeccionCurso.objects.create(
                 curso=curso,
                 titulo=request.POST.get('titulo'),
                 descripcion=request.POST.get('descripcion'),
-                url_video=request.POST.get('url_video'),
+                url_video=video,
+                url_presentacion_canva=request.POST.get('url_presentacion_canva') or None,
                 url_simulador=request.POST.get('url_simulador') or None,
                 paquete_scorm_url=request.POST.get('paquete_scorm_url') or None,
-                archivo_pdf=request.FILES.get('archivo_pdf'),
+                archivo_pdf=archivo_pdf,
                 orden=request.POST.get('orden', 1)
             )
             messages.success(request, f"Â¡Clase agregada correctamente al curso!")
@@ -2931,7 +3037,13 @@ def curso_curriculum(request, pk):
 
     return render(request, 'intranet/lms/curso_curriculum.html', {
         'curso': curso,
-        'lecciones': curso.lecciones.all().order_by('orden')
+        'lecciones': curso.lecciones.all().order_by('orden'),
+        'categorias_lms': CategoriaModuloLMS.objects.filter(activa=True).order_by('nombre'),
+        'negocios': Negocio.objects.all(),
+        'areas': Area.objects.filter(activa=True).order_by('nombre'),
+        'cargos': Cargo.objects.filter(activa=True).select_related('area').order_by('nombre'),
+        'roles': Colaborador.ROLES,
+        'cursos_referencia': CursoInduccion.objects.filter(tipo=curso.tipo).exclude(id=curso.id).order_by('titulo'),
     })
 
 @login_required(login_url='login')
@@ -2943,11 +3055,18 @@ def editar_leccion_lms(request, pk):
         leccion.titulo = request.POST.get('titulo')
         leccion.descripcion = request.POST.get('descripcion')
         leccion.url_video = request.POST.get('url_video')
+        leccion.url_presentacion_canva = request.POST.get('url_presentacion_canva') or None
         leccion.url_simulador = request.POST.get('url_simulador') or None
         leccion.paquete_scorm_url = request.POST.get('paquete_scorm_url') or None
         leccion.orden = request.POST.get('orden', leccion.orden)
-        if request.FILES.get('archivo_pdf'):
+        nuevo_pdf = request.FILES.get('archivo_pdf')
+        if nuevo_pdf:
             leccion.archivo_pdf = request.FILES.get('archivo_pdf')
+
+        if not _leccion_tiene_contenido_minimo(leccion.url_video, leccion.archivo_pdf):
+            messages.error(request, "Cada clase debe incluir al menos un video o un PDF.")
+            return redirect('curso_curriculum', pk=curso_id)
+
         leccion.save()
         messages.success(request, f"LecciÃ³n '{leccion.titulo}' actualizada.")
     return redirect('curso_curriculum', pk=curso_id)
