@@ -1,4 +1,4 @@
-from .auth import login_view, salir, inicio, guardar_atajos, perfil, dashboard, dashboard_rrhh, exportar_directorio_rrhh, dashboard_supervisor, exportar_equipo_supervisor, perfil_admin, notificaciones, leer_notificacion, marcar_todas_leidas
+from .auth import login_view, salir, inicio, guardar_atajos, perfil, dashboard, dashboard_rrhh, exportar_directorio_rrhh, dashboard_supervisor, exportar_equipo_supervisor, perfil_admin, notificaciones, leer_notificacion, marcar_todas_leidas, notificaciones_push_ajax
 
 from .api import webhook_receptor
 
@@ -27,11 +27,9 @@ from .solicitudes import (
     calendario_ausencias
 )
 
-from .documentos import (
-    documentos_admin, gestionar_plantillas, documentos_personal, 
-    firmar_documento, eliminar_documento, eliminar_plantilla, 
-    eliminar_documento_generado, ver_documento_personal, ver_documento_admin
-)
+from .documentos import documentos_admin, gestor_plantillas, editor_plantilla, documentos_personal, \
+    firmar_documento, eliminar_plantilla, eliminar_documento_generado, \
+    ver_documento_personal, ver_documento_admin
 
 from .lms import (
     colaboradores, editar_colaborador, eliminar_colaborador, mapear_excel, procesar_mapeo_personal, procesar_mapeo_balotario,

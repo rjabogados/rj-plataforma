@@ -24,6 +24,7 @@ urlpatterns = [
     path('notificaciones/', views.notificaciones, name='notificaciones'),
     path('notificaciones/leer/<int:pk>/', views.leer_notificacion, name='leer_notificacion'),
     path('notificaciones/marcar-todas/', views.marcar_todas_leidas, name='marcar_todas_leidas'),
+    path('api/notificaciones-push/', views.notificaciones_push_ajax, name='notificaciones_push_ajax'),
     path('salir/', views.salir, name='salir'),
     path('login/', views.login_view, name='login'),
 
@@ -106,7 +107,8 @@ urlpatterns = [
     # BÓVEDA DIGITAL Y DOCUMENTOS
     # ==========================================
     path('admin-documentos/despacho/', views.documentos_admin, name='documentos_admin'),
-    path('admin-documentos/plantillas/', views.gestionar_plantillas, name='gestionar_plantillas'),
+    path('admin-documentos/plantillas/', views.gestor_plantillas, name='gestor_plantillas'),
+    path('admin-documentos/plantillas/<int:plantilla_id>/editar/', views.editor_plantilla, name='editor_plantilla'),
     path('admin-documentos/ver/<int:doc_id>/', views.ver_documento_admin, name='ver_documento_admin'),
     path('documentos/borrar-asignacion/<int:doc_id>/', views.eliminar_documento_generado, name='eliminar_doc_generado'),
     path('plantillas/borrar-formato/<int:plantilla_id>/', views.eliminar_plantilla, name='eliminar_plantilla'),

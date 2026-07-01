@@ -47,8 +47,10 @@ class CategoriaDocumento(models.Model):
 class PlantillaDocumento(models.Model):
     nombre = models.CharField(max_length=200)
     categoria = models.ForeignKey(CategoriaDocumento, on_delete=models.SET_NULL, null=True)
-    archivo_word = models.FileField(upload_to='plantillas_docs/') # Las plantillas se quedan fijas
+    contenido_html = models.TextField(blank=True, null=True, help_text="Contenido HTML de la plantilla con variables")
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="plantillas_creadas")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
     activo = models.BooleanField(default=True)
 
 class DocumentoGenerado(models.Model):
@@ -65,6 +67,7 @@ class DocumentoGenerado(models.Model):
     
     # Aplicamos la función dinámica aquí
     archivo_pdf = models.FileField(upload_to=ruta_dinamica_pdf, blank=True, null=True)
+    contenido_generado = models.TextField(blank=True, null=True, help_text="Contenido estático final firmado")
     
     estado = models.CharField(max_length=20, choices=ESTADOS, default='BORRADOR', db_index=True)
     visible_para_empleado = models.BooleanField(default=False)

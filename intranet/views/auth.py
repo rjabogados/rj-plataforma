@@ -482,3 +482,22 @@ def marcar_todas_leidas(request):
     if not url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
         referer = 'inicio'
     return redirect(referer)
+
+from django.http import JsonResponse
+
+@login_required(login_url='login')
+def notificaciones_push_ajax(request):
+    try:
+        # Get unread notifications
+        nuevas = request.user.notificaciones.filter(leida=False).order_by('-id')[:3]
+        data = []
+        for n in nuevas:
+            data.append({
+                'id': n.id,
+                'titulo': n.titulo,
+                'detalle': n.detalle,
+                'url': n.url_destino if n.url_destino else '/notificaciones/'
+            })
+        return JsonResponse({'notificaciones': data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

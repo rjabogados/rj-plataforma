@@ -6,8 +6,8 @@
             <h2><i class="bi bi-cloud-arrow-up-fill me-2"></i>Despacho Documental</h2>
             <p class="text-muted mb-0">Generación y seguimiento de documentos automatizados para el equipo.</p>
         </div>
-        <a href="{% url 'gestionar_plantillas' %}" class="btn btn-outline-secondary btn-pill fw-semibold">
-            <i class="bi bi-folder-plus me-2"></i>Gestionar plantillas Word
+        <a href="{% url 'gestor_plantillas' %}" class="btn btn-outline-secondary btn-pill fw-semibold">
+            <i class="bi bi-folder-plus me-2"></i>Gestor de Plantillas
         </a>
     </div>
 
@@ -84,7 +84,7 @@
                                 {% for c in colaboradores %}<option value="{{ c.id }}">{{ c.user.first_name }} {{ c.user.last_name }} - {{ c.dni }}{% if c.cargo %} - {{ c.cargo.nombre }}{% endif %}{% if c.area %} / {{ c.area.nombre }}{% endif %}</option>{% endfor %}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-pill w-100 fw-semibold py-2"><i class="bi bi-magic me-2"></i>Autocompletar y generar PDF</button>
+                        <button type="submit" class="btn btn-primary btn-pill w-100 fw-semibold py-2"><i class="bi bi-magic me-2"></i>Autocompletar y Asignar</button>
                     </form>
                 </div>
             </div>
@@ -128,7 +128,7 @@
                                         {% else %}<span class="badge-status approved">Cerrado</span>{% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if doc.archivo_pdf %}<a href="{% url 'ver_documento_admin' doc.id %}" target="_blank" class="btn btn-sm btn-outline-danger btn-pill"><i class="bi bi-file-pdf me-1"></i> Ver PDF</a>{% endif %}
+                                        <a href="{% url 'ver_documento_admin' doc.id %}" target="_blank" class="btn btn-sm btn-outline-primary btn-pill"><i class="bi bi-file-text me-1"></i> Ver Doc</a>
                                     </td>
                                     <td class="text-center">
                                         {% if doc.estado == 'PENDIENTE' %}

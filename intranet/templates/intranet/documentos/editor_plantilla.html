@@ -1,0 +1,101 @@
+{% extends 'intranet/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<!-- Summernote CSS/JS -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<style>
+    .variables-sidebar {
+        background-color: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        height: 100%;
+    }
+    .var-btn {
+        text-align: left;
+        margin-bottom: 0.5rem;
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+    .note-editor {
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1"><i class="bi bi-pencil-square me-2"></i> Editor de Plantilla</h2>
+            <p class="text-secondary mb-0">Estás editando: <strong>{{ plantilla.nombre }}</strong></p>
+        </div>
+        <div>
+            <a href="{% url 'gestor_plantillas' %}" class="btn btn-light fw-bold rounded-pill shadow-sm me-2">Cancelar</a>
+            <button type="button" class="btn btn-success fw-bold rounded-pill shadow-sm" onclick="$('#editorForm').submit();">
+                <i class="bi bi-save me-2"></i> Guardar Plantilla
+            </button>
+        </div>
+    </div>
+
+    <div class="row h-100">
+        <!-- Sidebar de Variables -->
+        <div class="col-lg-3 mb-4 mb-lg-0">
+            <div class="variables-sidebar shadow-sm border">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-tags-fill text-primary me-2"></i> Variables Disponibles</h6>
+                <p class="small text-muted mb-4">Haz clic en una variable para insertarla en el documento.</p>
+                
+                <div class="d-flex flex-column">
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{nombre_colaborador}')">{nombre_colaborador}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{nombres}')">{nombres}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{apellidos}')">{apellidos}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{dni_colaborador}')">{dni_colaborador}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{correo}')">{correo}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{cargo_colaborador}')">{cargo_colaborador}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{area_colaborador}')">{area_colaborador}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{sueldo_base}')">{sueldo_base}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{fecha_ingreso}')">{fecha_ingreso}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{fecha_actual}')">{fecha_actual}</button>
+                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{empresa}')">{empresa}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Summernote -->
+        <div class="col-lg-9">
+            <form id="editorForm" method="POST">
+                {% csrf_token %}
+                <textarea id="summernote" name="contenido_html">{{ plantilla.contenido_html|safe }}</textarea>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#summernote').summernote({
+            placeholder: 'Escribe el contenido del documento aquí...',
+            tabsize: 2,
+            height: 600,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'underline', 'clear', 'italic']],
+                ['fontname', ['fontname']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+    });
+
+    function insertarVariable(variable) {
+        $('#summernote').summernote('editor.insertText', variable);
+    }
+</script>
+{% endblock %}

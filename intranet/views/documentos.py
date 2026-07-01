@@ -1,50 +1,68 @@
-import io
 import hashlib
-import mimetypes
 import os
-from urllib.parse import quote
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.core.files.base import ContentFile
-from django.http import FileResponse, Http404
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from PyPDF2 import PdfReader, PdfWriter
+from django.core.mail import send_mail
+from django.conf import settings
 
-# Importamos los modelos y el motor de automatización de Word/PDF
-from intranet.models import CategoriaDocumento, PlantillaDocumento, DocumentoGenerado, FirmaDigital, Colaborador
+from intranet.models import CategoriaDocumento, PlantillaDocumento, DocumentoGenerado, FirmaDigital, Colaborador, Notificacion
 from intranet.servicios.motor_documentos import generar_documento_para_colaborador
 from .utils import solo_directivos, obtener_ip_cliente, filtrar_colaboradores, filtros_personal_disponibles
 
-MAX_TEMPLATE_SIZE = 10 * 1024 * 1024
+@login_required(login_url='login')
+@solo_directivos
+def gestor_plantillas(request):
+    """Biblioteca digital de plantillas HTML."""
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'crear':
+            nombre = request.POST.get('nombre')
+            categoria_id = request.POST.get('categoria_id')
+            
+            if nombre:
+                categoria = CategoriaDocumento.objects.filter(id=categoria_id).first()
+                nueva_plantilla = PlantillaDocumento.objects.create(
+                    nombre=nombre, 
+                    categoria=categoria, 
+                    creado_por=request.user,
+                    contenido_html="<p>Escribe tu documento aquí...</p>"
+                )
+                return redirect('editor_plantilla', plantilla_id=nueva_plantilla.id)
+                
+    plantillas = PlantillaDocumento.objects.all().order_by('-fecha_modificacion')
+    categorias = CategoriaDocumento.objects.all()
+    return render(request, 'intranet/documentos/gestor_plantillas.html', {'plantillas': plantillas, 'categorias': categorias})
 
+@login_required(login_url='login')
+@solo_directivos
+def editor_plantilla(request, plantilla_id):
+    """Editor enriquecido de la plantilla."""
+    plantilla = get_object_or_404(PlantillaDocumento, id=plantilla_id)
+    
+    if request.method == 'POST':
+        contenido = request.POST.get('contenido_html')
+        plantilla.contenido_html = contenido
+        plantilla.save()
+        messages.success(request, "Plantilla guardada correctamente.")
+        return redirect('gestor_plantillas')
+        
+    return render(request, 'intranet/documentos/editor_plantilla.html', {'plantilla': plantilla})
 
-def es_docx_valido(archivo):
-    extension = os.path.splitext(archivo.name)[1].lower()
-    return extension == '.docx' and archivo.size <= MAX_TEMPLATE_SIZE
-
-
-def build_inline_file_response(field_file):
-    if not field_file or not field_file.name:
-        raise Http404("Archivo no disponible")
-
-    storage = field_file.storage
-    if not storage.exists(field_file.name):
-        raise Http404("Archivo no disponible")
-
-    filename = os.path.basename(field_file.name)
-    content_type, _ = mimetypes.guess_type(filename)
-    response = FileResponse(storage.open(field_file.name, 'rb'), content_type=content_type or 'application/octet-stream')
-    response['Content-Disposition'] = f"inline; filename*=UTF-8''{quote(filename)}"
-    return response
+@login_required(login_url='login')
+@solo_directivos
+def eliminar_plantilla(request, plantilla_id):
+    plantilla = get_object_or_404(PlantillaDocumento, id=plantilla_id)
+    plantilla.delete()
+    messages.success(request, "Plantilla eliminada.")
+    return redirect('gestor_plantillas')
 
 @login_required(login_url='login')
 @solo_directivos
 def documentos_admin(request):
-    """Panel de despacho para generar contratos y reportes basados en plantillas."""
+    """Panel de despacho para generar contratos basados en plantillas HTML."""
     plantillas = PlantillaDocumento.objects.filter(activo=True)
     perfil_actual = getattr(request.user, 'perfil', None)
     colaboradores = filtrar_colaboradores(
@@ -60,12 +78,33 @@ def documentos_admin(request):
         if plantilla_id and colaborador_id:
             plantilla = get_object_or_404(PlantillaDocumento, id=plantilla_id)
             colaborador = get_object_or_404(User, id=colaborador_id)
-            nuevo_doc = generar_documento_para_colaborador(plantilla, colaborador)
-
-            if nuevo_doc:
-                messages.success(request, f"¡Éxito! Documento '{plantilla.nombre}' generado para {colaborador.first_name}.")
-            else:
-                messages.error(request, "Error crítico al convertir a PDF. Revisa el Word original.")
+            
+            try:
+                nuevo_doc = generar_documento_para_colaborador(plantilla, colaborador)
+                
+                # Notificación Push Interna
+                Notificacion.objects.create(
+                    usuario=colaborador,
+                    titulo="Nuevo Documento para Firma",
+                    detalle=f"Tienes un nuevo documento pendiente de firma: {plantilla.nombre}",
+                    tipo='ALERTA',
+                    url_destino=f"/mis-documentos/firmar/{nuevo_doc.id}/"
+                )
+                
+                # Enviar Correo
+                if colaborador.email:
+                    send_mail(
+                        subject='Nuevo documento pendiente de firma digital',
+                        message=f'Hola {colaborador.first_name},\nTienes un nuevo documento ("{plantilla.nombre}") pendiente de firma en la plataforma.\n\nPor favor ingresa para firmarlo digitalmente.',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[colaborador.email],
+                        fail_silently=True
+                    )
+                
+                messages.success(request, f"¡Éxito! Documento '{plantilla.nombre}' generado y enviado a {colaborador.first_name}.")
+            except Exception as e:
+                messages.error(request, f"Error al generar documento: {str(e)}")
+                
             return redirect('documentos_admin')
 
     historial = DocumentoGenerado.objects.all().order_by('-fecha_emision')[:15]
@@ -80,51 +119,25 @@ def documentos_admin(request):
     })
 
 @login_required(login_url='login')
-@solo_directivos
-def gestionar_plantillas(request):
-    """Biblioteca digital para subir nuevos formatos .docx con tags {{ variables }}."""
-    if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        categoria_id = request.POST.get('categoria_id')
-        archivo = request.FILES.get('archivo_word')
-        
-        if nombre and archivo:
-            if not es_docx_valido(archivo):
-                messages.error(request, "La plantilla debe ser un archivo .docx de hasta 10 MB.")
-                return redirect('gestionar_plantillas')
-            categoria = CategoriaDocumento.objects.filter(id=categoria_id).first()
-            PlantillaDocumento.objects.create(nombre=nombre, categoria=categoria, archivo_word=archivo, activo=True)
-            messages.success(request, "¡Excelente! La plantilla se ha guardado correctamente en el sistema.")
-            return redirect('gestionar_plantillas')
-        else:
-            messages.error(request, "Hubo un problema. Asegúrate de rellenar el nombre y adjuntar el Word.")
-
-    plantillas = PlantillaDocumento.objects.all().order_by('-fecha_creacion')
-    categorias = CategoriaDocumento.objects.all()
-    return render(request, 'intranet/documentos/gestionar_plantillas.html', {'plantillas': plantillas, 'categorias': categorias})
-
-@login_required(login_url='login')
 def documentos_personal(request):
-    """Bóveda del trabajador para ver y descargar sus documentos/boletas."""
+    """Bóveda del trabajador."""
     mis_docs = DocumentoGenerado.objects.filter(colaborador=request.user).order_by('-fecha_emision')
     return render(request, 'intranet/documentos/documentos_personal.html', {'documentos': mis_docs})
-
 
 @login_required(login_url='login')
 def ver_documento_personal(request, doc_id):
     documento = get_object_or_404(DocumentoGenerado, id=doc_id, colaborador=request.user)
-    return build_inline_file_response(documento.archivo_pdf)
-
+    return render(request, 'intranet/documentos/visor_documento.html', {'documento': documento})
 
 @login_required(login_url='login')
 @solo_directivos
 def ver_documento_admin(request, doc_id):
     documento = get_object_or_404(DocumentoGenerado, id=doc_id)
-    return build_inline_file_response(documento.archivo_pdf)
+    return render(request, 'intranet/documentos/visor_documento.html', {'documento': documento})
 
 @login_required(login_url='login')
 def firmar_documento(request, doc_id):
-    """Motor forense de Firma Digital. Acopla una hoja de certificación legal inalterable."""
+    """Firma digital insertando el certificado al final del HTML."""
     documento = get_object_or_404(DocumentoGenerado, id=doc_id, colaborador=request.user)
 
     if request.method == 'POST' and documento.estado == 'PENDIENTE':
@@ -137,88 +150,47 @@ def firmar_documento(request, doc_id):
             fecha_actual = timezone.now()
             fecha_str = fecha_actual.strftime("%d/%m/%Y a las %H:%M:%S")
             
-            # --- 1. CREAMOS LA HOJA DE AUDITORÍA (CERTIFICADO) ---
-            packet = io.BytesIO()
-            can = canvas.Canvas(packet, pagesize=letter)
+            base_string = f"{documento.id}-{request.user.username}-{fecha_str}-{ip_cliente}"
+            sha256_hash = hashlib.sha256(base_string.encode('utf-8')).hexdigest()
+            token = sha256_hash[:8].upper()
+
+            # Certificado HTML
+            certificado_html = f"""
+            <div style="margin-top: 50px; padding: 20px; border: 2px solid #28a745; border-radius: 8px; background-color: #f8fff9;">
+                <h3 style="color: #28a745; margin-top:0;">✅ CERTIFICADO DE FIRMA ELECTRÓNICA</h3>
+                <p><strong>RJ Abogados - Plataforma Talent</strong></p>
+                <hr>
+                <p>Documento firmado digitalmente por:</p>
+                <p><strong>Nombre:</strong> {request.user.first_name} {request.user.last_name}</p>
+                <p><strong>DNI / Identificación:</strong> {request.user.username}</p>
+                <p><strong>Rastro Forense de Seguridad:</strong></p>
+                <ul>
+                    <li><strong>Fecha y Hora Exacta:</strong> {fecha_str}</li>
+                    <li><strong>Dirección IP de Origen:</strong> {ip_cliente}</li>
+                    <li><strong>Token Hash de Seguridad:</strong> {token}</li>
+                </ul>
+                <p style="font-size: 0.85em; color: #555;">Este anexo garantiza la validez legal y autoría del documento. Cualquier alteración posterior invalidará la firma.</p>
+            </div>
+            """
             
-            can.setFont("Helvetica-Bold", 16)
-            can.drawString(50, 700, "CERTIFICADO DE FIRMA ELECTRÓNICA")
-            can.setFont("Helvetica-Bold", 12)
-            can.drawString(50, 680, "RJ Abogados - Plataforma Talent")
-            
-            can.setFont("Helvetica", 11)
-            can.drawString(50, 640, "Documento firmado digitalmente por:")
-            can.setFont("Helvetica-Bold", 11)
-            can.drawString(50, 620, f"Nombre: {request.user.first_name} {request.user.last_name}")
-            can.drawString(50, 600, f"DNI / Identificación: {request.user.username}")
-            
-            can.setFont("Helvetica", 11)
-            can.drawString(50, 560, "Rastro Forense de Seguridad:")
-            can.drawString(50, 540, f"Fecha y Hora Exacta: {fecha_str}")
-            can.drawString(50, 520, f"Dirección IP de Origen: {ip_cliente}")
-            
-            can.setFont("Helvetica-Oblique", 9)
-            can.drawString(50, 480, "Este anexo garantiza la validez legal y autoría del documento adjunto.")
-            can.drawString(50, 465, "Cualquier alteración posterior al archivo invalidará la firma criptográfica.")
-            
-            can.save()
-            packet.seek(0)
-            pdf_certificado = PdfReader(packet)
-
-            # --- 2. ENGRAPAMOS EL CERTIFICADO AL DOCUMENTO ORIGINAL ---
-            pdf_original = PdfReader(documento.archivo_pdf.path)
-            writer = PdfWriter()
-
-            for page in pdf_original.pages: 
-                writer.add_page(page)
-            writer.add_page(pdf_certificado.pages[0])
-
-            output_pdf = io.BytesIO()
-            writer.write(output_pdf)
-            output_pdf.seek(0)
-
-            # --- 3. CALCULAMOS EL HASH FINAL DE SEGURIDAD ---
-            sha256_hash = hashlib.sha256(output_pdf.read()).hexdigest()
-            output_pdf.seek(0)
-
-            # --- 4. SOBREESCRIBIMOS EL PDF ---
-            documento.archivo_pdf.save(documento.archivo_pdf.name, ContentFile(output_pdf.read()))
-
-            FirmaDigital.objects.create(
-                documento=documento, firmante=request.user, rol_firma='EMPLEADO', firmado=True,
-                fecha_firma=fecha_actual, direccion_ip=ip_cliente, token_utilizado=sha256_hash[:6].upper()
-            )
-
+            documento.contenido_generado = documento.contenido_generado + certificado_html
             documento.estado = 'COMPLETADO'
             documento.fecha_cierre = fecha_actual
             documento.save()
+
+            FirmaDigital.objects.create(
+                documento=documento, firmante=request.user, rol_firma='EMPLEADO', firmado=True,
+                fecha_firma=fecha_actual, direccion_ip=ip_cliente, token_utilizado=token
+            )
+
             messages.success(request, "¡Documento firmado! Se ha adjuntado el certificado legal al archivo.")
             
-        except Exception:
-            messages.error(request, "Error crítico al procesar el certificado de seguridad.")
+        except Exception as e:
+            messages.error(request, f"Error crítico al procesar la firma: {str(e)}")
 
         return redirect('documentos_personal')
 
     return render(request, 'intranet/documentos/confirmar_firma.html', {'documento': documento})
-
-@login_required(login_url='login')
-@solo_directivos
-def eliminar_documento(request, doc_id):
-    documento = get_object_or_404(DocumentoGenerado, id=doc_id)
-    if documento.estado == 'PENDIENTE':
-        documento.delete()
-        messages.success(request, "Documento mal asignado eliminado con éxito.")
-    else:
-        messages.error(request, "No puedes eliminar un documento que ya ha sido firmado legalmente.")
-    return redirect('documentos_admin')
-
-@login_required(login_url='login')
-@solo_directivos
-def eliminar_plantilla(request, plantilla_id):
-    plantilla = get_object_or_404(PlantillaDocumento, id=plantilla_id)
-    plantilla.delete()
-    messages.success(request, "Plantilla eliminada de la biblioteca.")
-    return redirect('gestionar_plantillas')
 
 @login_required(login_url='login')
 @solo_directivos

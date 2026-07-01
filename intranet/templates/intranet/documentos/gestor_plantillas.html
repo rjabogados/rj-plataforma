@@ -1,0 +1,91 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1"><i class="bi bi-file-earmark-code-fill me-2"></i> Gestor de Plantillas Dinámicas</h2>
+            <p class="text-secondary mb-0">Crea plantillas con variables integradas para emitir documentos automáticamente.</p>
+        </div>
+        <a href="{% url 'documentos_admin' %}" class="btn btn-outline-primary fw-bold rounded-pill px-4 shadow-sm">Volver al Despacho</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+                <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-plus-circle-fill text-success me-2"></i> Crear Nueva Plantilla</h5>
+                <form method="POST" action="{% url 'gestor_plantillas' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="crear">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Nombre del Documento</label>
+                        <input type="text" class="form-control rounded-3 shadow-sm border-0 bg-light" name="nombre" placeholder="Ej: Contrato Indeterminado" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">Categoría</label>
+                        <select class="form-select rounded-3 shadow-sm border-0 bg-light" name="categoria_id" required>
+                            <option value="">Selecciona una categoría...</option>
+                            {% for cat in categorias %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill shadow-sm"><i class="bi bi-magic me-2"></i> Crear e Ir al Editor</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100">
+                <div class="card-header bg-white border-bottom pt-4 pb-3">
+                    <h5 class="fw-bold text-dark mb-0">Plantillas Existentes</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Nombre</th>
+                                <th>Categoría</th>
+                                <th>Última Modif.</th>
+                                <th>Creado por</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in plantillas %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-dark">{{ p.nombre }}</td>
+                                <td><span class="badge bg-info text-dark rounded-pill">{{ p.categoria.nombre }}</span></td>
+                                <td class="text-muted small">{{ p.fecha_modificacion|date:"d M Y, h:i a" }}</td>
+                                <td class="text-muted small">{{ p.creado_por.first_name }} {{ p.creado_por.last_name }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="{% url 'editor_plantilla' p.id %}" class="btn btn-sm btn-outline-primary rounded-pill fw-bold me-1" title="Editar">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                    <a href="{% url 'eliminar_plantilla' p.id %}" class="btn btn-sm btn-outline-danger rounded-circle" onclick="return confirm('¿Borrar plantilla?')" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No has creado ninguna plantilla aún.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

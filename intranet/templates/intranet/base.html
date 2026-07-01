@@ -59,6 +59,47 @@
         });
     </script>
     
+    {% if request.user.is_authenticated %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if ("Notification" in window) {
+                // Request permission quietly if not denied
+                if (Notification.permission !== "denied" && Notification.permission !== "granted") {
+                    Notification.requestPermission();
+                }
+                
+                // Polling for Push Notifications
+                setInterval(() => {
+                    fetch("{% url 'notificaciones_push_ajax' %}")
+                        .then(r => r.json())
+                        .then(data => {
+                            if(data.notificaciones && data.notificaciones.length > 0) {
+                                let lastNotifId = localStorage.getItem('last_notif_id_{{ request.user.id }}') || 0;
+                                data.notificaciones.forEach(notif => {
+                                    if(notif.id > lastNotifId) {
+                                        if (Notification.permission === "granted") {
+                                            let n = new Notification(notif.titulo, {
+                                                body: notif.detalle,
+                                                icon: "{% static 'img/logo_compacto.png' %}"
+                                            });
+                                            n.onclick = function() {
+                                                window.location.href = notif.url;
+                                                n.close();
+                                            };
+                                        }
+                                        localStorage.setItem('last_notif_id_{{ request.user.id }}', notif.id);
+                                        lastNotifId = notif.id;
+                                    }
+                                });
+                            }
+                        })
+                        .catch(e => console.error("Push check error", e));
+                }, 15000); // Check every 15 seconds
+            }
+        });
+    </script>
+    {% endif %}
+    
     {% block scripts %}
     {% endblock %}
 </body>
