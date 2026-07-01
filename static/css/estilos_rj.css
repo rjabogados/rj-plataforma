@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --rj-azul: #183D74;
     --rj-azul-hover: #1e4d92;
     --rj-rojo: #D60C3B;
@@ -318,7 +318,7 @@ body {
 .brand-title { letter-spacing: 0.5px; color: #ffffff; }
 .brand-subtitle { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* Enlaces del Menú */
+/* Enlaces del MenÃº */
 .sidebar .nav-link {
     color: #cbd5e1;
     font-weight: 500;
@@ -355,7 +355,7 @@ body {
 .analytics-link { color: #fecdd3 !important; }
 .analytics-link i { color: #fda4af !important; }
 
-/* Submenús Desplegables */
+/* SubmenÃºs Desplegables */
 .arrow-icon { font-size: 0.75rem; transition: transform 0.2s ease; color: #64748b; }
 .nav-link[aria-expanded="true"] .arrow-icon { transform: rotate(180deg); color: #ffffff; }
 .submenu { background-color: rgba(0, 0, 0, 0.12); border-radius: 8px; margin-bottom: 0.4rem; }
@@ -442,8 +442,8 @@ footer {
     width: 100vw;
     height: 100vh;
     background: rgba(15, 23, 42, 0.3);
-    backdrop-filter: blur(2px);
-    z-index: 1035;
+    
+    z-index: 1039;
 }
 
 /* --- TABLAS CORPORATIVAS RJ --- */
@@ -476,7 +476,7 @@ footer {
     border: 1px solid rgba(255, 158, 32, 0.3);
 }
 
-/* --- RESPONSIVE / ADAPTACIÓN MÓVIL --- */
+/* --- RESPONSIVE / ADAPTACIÃ“N MÃ“VIL --- */
 @media (max-width: 991.98px) {
     .sidebar { transform: translateX(-100%); }
     .main-content { margin-left: 0; width: 100%; }
@@ -485,24 +485,24 @@ footer {
 }
 
 /* =========================================
-   OVERRIDE DE BOOTSTRAP (Fidelización Total)
+   OVERRIDE DE BOOTSTRAP (FidelizaciÃ³n Total)
    ========================================= */
 
-/* 1. Textos y Fondos "Primary" (Ahora serán Azul RJ) */
+/* 1. Textos y Fondos "Primary" (Ahora serÃ¡n Azul RJ) */
 .text-primary { color: var(--rj-azul) !important; }
 .bg-primary { background-color: var(--rj-azul) !important; }
 .bg-primary-subtle { background-color: rgba(24, 61, 116, 0.1) !important; } /* Azul transparente para fondos suaves */
 
-/* 2. Textos y Fondos "Warning" (Ahora serán Amarillo RJ) */
+/* 2. Textos y Fondos "Warning" (Ahora serÃ¡n Amarillo RJ) */
 .text-warning { color: var(--rj-amarillo) !important; }
 .bg-warning { background-color: var(--rj-amarillo) !important; }
 .badge.bg-warning { color: #000 !important; } /* Para que el texto resalte sobre el amarillo */
 
-/* 3. Textos y Fondos "Danger" (Ahora serán Rojo RJ) */
+/* 3. Textos y Fondos "Danger" (Ahora serÃ¡n Rojo RJ) */
 .text-danger { color: var(--rj-rojo) !important; }
 .bg-danger { background-color: var(--rj-rojo) !important; }
 
-/* 4. Botones Principales (Botón de acción = Rojo RJ) */
+/* 4. Botones Principales (BotÃ³n de acciÃ³n = Rojo RJ) */
 .btn-primary {
     background-color: var(--rj-rojo) !important;
     border-color: var(--rj-rojo) !important;
@@ -510,9 +510,9 @@ footer {
     box-shadow: 0 4px 6px rgba(214, 12, 59, 0.2); /* Sombra roja sutil */
 }
 .btn-primary:hover, .btn-primary:focus {
-    background-color: #a8092e !important; /* Rojo más oscuro al pasar el mouse */
+    background-color: #a8092e !important; /* Rojo mÃ¡s oscuro al pasar el mouse */
     border-color: #a8092e !important;
-    transform: translateY(-1px); /* Pequeño efecto de levantarse */
+    transform: translateY(-1px); /* PequeÃ±o efecto de levantarse */
 }
 
 /* 5. Botones Secundarios o de Contorno (Azul RJ) */
@@ -777,10 +777,10 @@ footer {
 /* MEJORAS VISUALES A1 (PREMIUM UI)          */
 /* ========================================= */
 
-/* Animaci�n de entrada suave para las p�ginas */
+/* Animación de entrada suave para las páginas */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 .page-fade-in {
     animation: fadeIn 0.4s ease-out forwards;
@@ -806,4 +806,18 @@ footer {
 /* Transiciones suaves en todos los botones y enlaces */
 a, button, .btn {
     transition: all 0.2s ease-in-out;
+}
+
+/* === MODAL Z-INDEX FIX (previene el bloqueo por stacking context) === */
+.modal { z-index: 1055 !important; }
+.modal-backdrop { z-index: 1054 !important; }
+.modal-dialog { z-index: 1056 !important; }
+
+/* === ANTI-STACKING-CONTEXT FIX for modals === */
+/* Bootstrap 5 appends modal+backdrop to <body>, but backdrop-filter on ANY
+   ancestor (even body's stacking context) can trap them.
+   Force modals to escape with isolation */
+body > .modal,
+body > .modal-backdrop {
+    isolation: isolate;
 }
