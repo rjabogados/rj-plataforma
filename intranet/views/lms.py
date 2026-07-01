@@ -2496,19 +2496,45 @@ def detalle_curso(request, curso_id):
 def ver_leccion(request, leccion_id):
     perfil = getattr(request.user, 'perfil', None)
     leccion = get_object_or_404(LeccionCurso, id=leccion_id)
-    
-    # VALIDACIÃ“N IDOR
+
     if not usuario_es_directivo(request.user):
         if not perfil or not MatriculaCurso.objects.filter(colaborador=perfil, curso=leccion.curso).exists():
-            raise Http404("LecciÃ³n no disponible")
-            
-    # Verificamos si ya la habÃ­a marcado como completada antes
-    ya_completada = ProgresoLeccion.objects.filter(colaborador=perfil, leccion=leccion, completada=True).exists()
-    
+            raise Http404("Leccion no disponible")
+
+    ya_completada = ProgresoLeccion.objects.filter(
+        colaborador=perfil, leccion=leccion, completada=True
+    ).exists() if perfil else False
+
+    completadas_ids = set()
+    if perfil:
+        completadas_ids = set(
+            ProgresoLeccion.objects.filter(
+                colaborador=perfil,
+                leccion__curso=leccion.curso,
+                completada=True,
+            ).values_list('leccion_id', flat=True)
+        )
+
+    lecciones = leccion.curso.lecciones.all().order_by('orden')
+    total = lecciones.count()
+    pct_progreso = round(len(completadas_ids) / total * 100) if total else 0
+
+    tipos_contenido = []
+    if leccion.url_video:
+        tipos_contenido.append('video')
+    if leccion.archivo_pdf:
+        tipos_contenido.append('pdf')
+    if leccion.url_presentacion_canva:
+        tipos_contenido.append('ppt')
+
     return render(request, 'intranet/lms/ver_leccion.html', {
         'leccion': leccion,
         'curso': leccion.curso,
-        'ya_completada': ya_completada
+        'ya_completada': ya_completada,
+        'lecciones': lecciones,
+        'completadas_ids': completadas_ids,
+        'pct_progreso': pct_progreso,
+        'tipos_contenido': tipos_contenido,
     })
 
 

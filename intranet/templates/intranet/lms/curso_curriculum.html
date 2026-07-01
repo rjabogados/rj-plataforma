@@ -492,28 +492,42 @@
                     </div>
 
                     <div class="py-3 border-top mb-3 mt-4">
-                        <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-paperclip"></i> Material Multimedia</h6>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="fw-semibold text-secondary mb-0"><i class="bi bi-paperclip me-1"></i> Material Multimedia</h6>
+                            <span class="badge bg-light text-muted border" style="font-size:0.7rem;">Puedes agregar más de un tipo</span>
+                        </div>
                         <div class="row g-3">
+                            <!-- VIDEO -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-danger"><i class="bi bi-youtube"></i> Enlace de Video</label>
-                                <input type="url" class="form-control" name="url_video" placeholder="Ej: https://www.youtube.com/embed/...">
-                                <small class="text-muted d-block mt-1">Usa el enlace "Embed" de YouTube.</small>
+                                <label class="form-label fw-semibold text-danger"><i class="bi bi-play-circle-fill me-1"></i> Enlace de Video</label>
+                                <input type="url" class="form-control" name="url_video" placeholder="YouTube, Vimeo o URL directa .mp4">
+                                <div class="mt-1" style="font-size:0.72rem; color:#6b7280; line-height:1.5;">
+                                    <strong>YouTube:</strong> Compartir &rarr; Insertar &rarr; copia solo la URL del src<br>
+                                    <strong>Firebase:</strong> Pega la URL de descarga directa del .mp4
+                                </div>
                             </div>
+                            <!-- PRESENTACION -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-info"><i class="bi bi-file-earmark-slides"></i> Enlace Canva / Slides</label>
-                                <input type="url" class="form-control" name="url_presentacion_canva" placeholder="https://...">
+                                <label class="form-label fw-semibold text-info"><i class="bi bi-easel2-fill me-1"></i> Presentación (PPT / Canva / Slides)</label>
+                                <input type="url" class="form-control" name="url_presentacion_canva" placeholder="Enlace de insertar / embed">
+                                <div class="mt-1" style="font-size:0.72rem; color:#6b7280; line-height:1.5;">
+                                    <strong>Canva:</strong> Compartir &rarr; Ver públicamente &rarr; copiar URL<br>
+                                    <strong>Google Slides:</strong> Archivo &rarr; Publicar en la web &rarr; Insertar &rarr; URL<br>
+                                    <strong>PowerPoint Online:</strong> Usa
+                                    <code style="font-size:0.68rem;">https://view.officeapps.live.com/op/embed.aspx?src=URL_DE_TU_PPTX</code>
+                                </div>
                             </div>
+                            <!-- PDF -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> O subir archivo PDF</label>
+                                <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill me-1"></i> Subir archivo PDF</label>
                                 <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                                <small class="text-muted d-block mt-1">El sistema lo mostrará con visor de páginas con zoom y navegación.</small>
                             </div>
+                            <!-- SIMULADOR -->
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold text-success"><i class="bi bi-controller"></i> URL Simulador</label>
+                                <label class="form-label fw-semibold text-success"><i class="bi bi-controller me-1"></i> URL Simulador / Práctica</label>
                                 <input type="url" class="form-control" name="url_simulador" placeholder="https://...">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-dark"><i class="bi bi-box-seam"></i> URL SCORM</label>
-                                <input type="url" class="form-control" name="paquete_scorm_url" placeholder="https://...">
+                                <small class="text-muted d-block mt-1">Laboratorio interactivo o entorno de práctica.</small>
                             </div>
                         </div>
                     </div>

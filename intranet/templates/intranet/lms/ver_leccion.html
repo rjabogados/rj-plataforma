@@ -1,127 +1,844 @@
 {% extends 'intranet/base.html' %}
-{% block content %}
+{% block extra_head %}
+<!-- PDF.js (Mozilla) – visualizador PDF profesional -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ================================================================
+   LESSON VIEWER – Diseño tipo Udemy / Coursera
+   ================================================================ */
+:root {
+    --dark-bg:    #1c1d1f;
+    --dark-card:  #2d2f31;
+    --dark-soft:  #3e4143;
+    --accent:     #a435f0;
+    --accent2:    #6b21a8;
+    --green:      #1ea446;
+    --sidebar-w:  330px;
+}
 
-<div class="container-fluid p-0" style="height: calc(100vh - 70px); overflow: hidden; display: flex; flex-direction: column;">
-    
-    <div class="bg-white border-bottom shadow-sm px-4 py-3 d-flex justify-content-between align-items-center" style="z-index: 10;">
-        <div class="d-flex align-items-center">
-            <a href="{% url 'detalle_curso' curso.id %}" class="btn btn-sm btn-outline-secondary fw-bold me-3">
-                <i class="bi bi-arrow-left"></i> Volver al Índice
-            </a>
-            <h5 class="fw-bold text-dark mb-0 m-0">{{ curso.titulo }}</h5>
-        </div>
-        
-        <div>
-            {% if not ya_completada %}
-            <form method="POST" action="{% url 'completar_leccion' leccion.id %}" class="m-0">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-success fw-bold shadow-sm px-4 rounded-pill">
-                    <i class="bi bi-check-circle-fill me-2"></i> Marcar como Completado
-                </button>
-            </form>
-            {% else %}
-            <span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6 rounded-pill shadow-sm">
-                <i class="bi bi-check-all me-1"></i> Módulo Completado
-            </span>
-            {% endif %}
+html, body { height: 100%; }
+
+.lv-root {
+    height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    background: var(--dark-bg);
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* TOP BAR */
+.lv-topbar {
+    flex: 0 0 52px;
+    background: var(--dark-card);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+    gap: 1rem;
+    z-index: 200;
+}
+.back-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #ccc;
+    border-radius: 8px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+    transition: all .18s;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.back-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+.course-title {
+    color: #ccc; font-size: 0.85rem; flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.progress-pill {
+    background: var(--dark-soft);
+    border-radius: 20px;
+    padding: 0.3rem 0.9rem;
+    display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
+}
+.progress-bar-mini {
+    width: 90px; height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px; overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, #7c3aed 100%);
+    border-radius: 10px;
+    transition: width .5s;
+}
+.pct-text { color: white; font-size: 0.78rem; font-weight: 700; }
+
+/* BODY */
+.lv-body { flex: 1; display: flex; overflow: hidden; }
+
+/* VIEWER */
+.lv-viewer { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #000; }
+
+/* Lesson info strip */
+.lesson-strip {
+    flex: 0 0 auto;
+    background: var(--dark-card);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0.7rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.lesson-label { color: rgba(255,255,255,0.4); font-size: 0.7rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+.lesson-name  { color: white; font-size: 0.95rem; font-weight: 700; }
+.btn-complete {
+    background: linear-gradient(135deg, var(--green) 0%, #15803d 100%);
+    border: none; color: white; border-radius: 8px;
+    padding: 0.45rem 1.1rem; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; gap: 7px;
+    transition: all .2s; flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(30,164,70,0.35);
+}
+.btn-complete:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(30,164,70,0.5); }
+.btn-complete:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-done-badge {
+    background: rgba(30,164,70,0.15);
+    border: 1px solid rgba(30,164,70,0.3);
+    color: #4ade80; border-radius: 8px;
+    padding: 0.45rem 1.1rem; font-size: 0.82rem; font-weight: 700;
+    display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+}
+
+/* Content tabs */
+.content-tabs {
+    flex: 0 0 auto;
+    background: var(--dark-card);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    padding: 0 1rem;
+    gap: 2px;
+}
+.ctab {
+    padding: 0.55rem 1rem;
+    font-size: 0.8rem; font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer; border: none; background: none;
+    border-bottom: 3px solid transparent;
+    transition: all .18s;
+    display: flex; align-items: center; gap: 6px;
+}
+.ctab:hover { color: rgba(255,255,255,0.85); }
+.ctab.active { color: white; border-bottom-color: var(--accent); }
+
+/* Content panels */
+.cpanel { display: none; width: 100%; flex: 1; flex-direction: column; overflow: hidden; }
+.cpanel.active { display: flex; }
+
+/* VIDEO */
+.video-wrapper {
+    flex: 1;
+    position: relative;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+}
+.video-wrapper iframe,
+.video-wrapper video {
+    width: 100%; height: 100%;
+    border: none;
+}
+.video-wrapper video { object-fit: contain; }
+
+/* Custom HTML5 controls overlay */
+.vid-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+    padding: 2.5rem 1.5rem 1rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    opacity: 0;
+    transition: opacity .3s;
+}
+.video-wrapper:hover .vid-overlay { opacity: 1; }
+.vid-btn {
+    background: rgba(255,255,255,0.15); border: none;
+    border-radius: 50%; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; cursor: pointer; font-size: 0.9rem; transition: all .15s;
+}
+.vid-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+.vid-progress {
+    flex: 1; height: 5px; background: rgba(255,255,255,0.25);
+    border-radius: 10px; cursor: pointer; position: relative;
+}
+.vid-progress-fill { height: 100%; background: var(--accent); border-radius: 10px; pointer-events: none; }
+.vid-time { color: rgba(255,255,255,0.8); font-size: 0.75rem; white-space: nowrap; }
+
+/* PDF */
+.pdf-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.pdf-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 1.5rem 1rem; gap: 1rem; background: #3a3a4a; }
+.pdf-page-canvas { max-width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.5); border-radius: 3px; background: white; }
+.pdf-ctrls {
+    flex: 0 0 auto;
+    background: var(--dark-card);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.75rem; padding: 0.55rem 1.5rem;
+    flex-wrap: wrap;
+}
+.pdf-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: white; border-radius: 7px;
+    padding: 0.3rem 0.8rem; font-size: 0.78rem;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 5px;
+}
+.pdf-btn:hover { background: rgba(255,255,255,0.18); }
+.pdf-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pdf-info { color: rgba(255,255,255,0.65); font-size: 0.8rem; }
+.pdf-loading {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; color: rgba(255,255,255,0.45); gap: 1rem;
+    background: #3a3a4a;
+}
+
+/* PPT */
+.ppt-panel { flex: 1; display: flex; flex-direction: column; background: #1a1a2e; }
+.ppt-toolbar {
+    flex: 0 0 auto;
+    background: var(--dark-card);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0.45rem 1rem;
+    display: flex; align-items: center; gap: 0.75rem;
+}
+.ppt-badge {
+    font-size: 0.68rem; font-weight: 800;
+    padding: 2px 9px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+}
+.ppt-panel iframe { flex: 1; border: none; }
+
+/* Notes */
+.notes-toggle {
+    flex: 0 0 auto;
+    background: var(--dark-card);
+    border: none; border-top: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.45); padding: 0.5rem 1.5rem;
+    font-size: 0.78rem; cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 8px;
+    transition: color .18s;
+}
+.notes-toggle:hover { color: rgba(255,255,255,0.8); }
+.notes-zone {
+    flex: 0 0 auto; max-height: 0; overflow: hidden;
+    transition: max-height .3s ease;
+    background: var(--dark-card);
+}
+.notes-zone.open { max-height: 180px; }
+.notes-textarea {
+    width: 100%; height: 160px;
+    background: #111; border: none;
+    color: rgba(255,255,255,0.75); font-size: 0.82rem;
+    padding: 0.75rem 1.5rem; resize: none; outline: none;
+}
+.notes-textarea::placeholder { color: rgba(255,255,255,0.25); }
+
+/* Empty state */
+.empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.25); gap: 1rem;
+    background: #1a1a2e;
+}
+
+/* SIDEBAR */
+.lv-sidebar {
+    flex: 0 0 var(--sidebar-w);
+    width: var(--sidebar-w);
+    background: white;
+    border-left: 1px solid #e0e0e0;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-header {
+    flex: 0 0 auto; padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f0f0f0; background: #fafafa;
+}
+.sb-title { font-weight: 800; font-size: 0.88rem; color: #111; margin-bottom: 0.5rem; line-height: 1.3; }
+.sb-bar { height: 8px; border-radius: 10px; background: #e9ecef; overflow: hidden; margin-bottom: 4px; }
+.sb-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #7c3aed);
+    border-radius: 10px; transition: width .5s;
+}
+.sb-pct { font-size: 0.72rem; color: #6b7280; font-weight: 600; }
+
+.sb-lessons { flex: 1; overflow-y: auto; }
+.lesson-item {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.8rem 1.25rem; text-decoration: none;
+    border-bottom: 1px solid #f3f4f6; transition: background .15s;
+}
+.lesson-item:hover { background: #f9fafb; }
+.lesson-item.current { background: #faf5ff; border-left: 3px solid var(--accent); }
+
+.lesson-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #e9ecef; color: #6b7280;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 800; flex-shrink: 0; margin-top: 2px;
+}
+.lesson-item.done .lesson-num { background: #dcfce7; color: var(--green); }
+.lesson-item.current .lesson-num { background: var(--accent); color: white; }
+
+.lesson-info { flex: 1; min-width: 0; }
+.lesson-item-title {
+    font-size: 0.82rem; font-weight: 600; color: #111;
+    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lesson-item.current .lesson-item-title { color: var(--accent2); }
+.lesson-badges { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.lbadge { font-size: 0.62rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; text-transform: uppercase; }
+.lbadge-video { background: #fee2e2; color: #dc2626; }
+.lbadge-pdf   { background: #dbeafe; color: #1d4ed8; }
+.lbadge-ppt   { background: #fef3c7; color: #92400e; }
+.lbadge-done  { background: #dcfce7; color: #15803d; }
+
+.sb-exam { flex: 0 0 auto; padding: 1rem 1.25rem; border-top: 1px solid #f0f0f0; background: #fafafa; }
+.btn-exam {
+    width: 100%;
+    background: linear-gradient(135deg, #111 0%, #374151 100%);
+    color: white; border: none; border-radius: 8px;
+    padding: 0.65rem; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+    text-decoration: none; transition: all .2s;
+}
+.btn-exam:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: white; }
+
+/* Scrollbars */
+.pdf-scroll::-webkit-scrollbar,
+.sb-lessons::-webkit-scrollbar { width: 5px; }
+.pdf-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+.sb-lessons::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+@media (max-width: 900px) {
+    .lv-sidebar { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% with has_tabs=tipos_contenido|length > 1 first_tab=tipos_contenido|first %}
+<div class="lv-root">
+
+    <!-- ╔══ TOP BAR ══╗ -->
+    <div class="lv-topbar">
+        <a href="{% url 'detalle_curso' curso.id %}" class="back-btn">
+            <i class="bi bi-arrow-left"></i> Volver al curso
+        </a>
+        <span class="course-title">
+            <i class="bi bi-mortarboard me-1" style="color:#a78bfa;"></i>{{ curso.titulo }}
+        </span>
+        <div class="progress-pill">
+            <div class="progress-bar-mini">
+                <div class="progress-fill" style="width:{{ pct_progreso }}%;"></div>
+            </div>
+            <span class="pct-text">{{ pct_progreso }}%</span>
         </div>
     </div>
 
-    <div class="row g-0 flex-grow-1 h-100">
-        
-        <div class="col-lg-9 h-100 bg-light position-relative d-flex flex-column">
-            
-            <div class="p-3 bg-white border-bottom">
-                <span class="text-primary fw-bold small text-uppercase">Clase {{ leccion.orden }}</span>
-                <h3 class="fw-bold text-dark mb-1">{{ leccion.titulo }}</h3>
-                {% if leccion.descripcion %}
-                    <p class="text-muted small mb-0">{{ leccion.descripcion }}</p>
-                {% endif %}
-            </div>
+    <!-- ╔══ BODY ══╗ -->
+    <div class="lv-body">
 
-            <div class="flex-grow-1 w-100 bg-dark position-relative" style="overflow: hidden;">
-                
-                {% if leccion.archivo_pdf %}
-                    <iframe src="{% url 'ver_leccion_pdf' leccion.id %}#toolbar=0&navpanes=0&scrollbar=0" 
-                            class="w-100 h-100 border-0" 
-                            allowfullscreen="true"
-                            mozallowfullscreen="true"
-                            webkitallowfullscreen="true"
-                            title="Documento PDF">
-                    </iframe>
+        <!-- ═══ VIEWER ═══ -->
+        <div class="lv-viewer">
 
-                {% elif leccion.url_presentacion_canva %}
-                    <iframe src="{{ leccion.url_presentacion_canva }}" 
-                            class="w-100 h-100 border-0" 
-                            allowfullscreen="true"
-                            mozallowfullscreen="true"
-                            webkitallowfullscreen="true"
-                            allow="fullscreen; autoplay; encrypted-media"
-                            referrerpolicy="no-referrer"
-                            title="Presentación Interactiva">
-                    </iframe>
-
-                {% elif leccion.url_video %}
-                    <iframe src="{{ leccion.url_video }}" 
-                            class="w-100 h-100 border-0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowfullscreen="true"
-                            mozallowfullscreen="true"
-                            webkitallowfullscreen="true"
-                            title="Reproductor de Video">
-                    </iframe>
-
+            <!-- Info strip -->
+            <div class="lesson-strip">
+                <div>
+                    <div class="lesson-label">Clase {{ leccion.orden }} · {{ curso.titulo }}</div>
+                    <div class="lesson-name">{{ leccion.titulo }}</div>
+                </div>
+                {% if ya_completada %}
+                <div class="btn-done-badge"><i class="bi bi-check-circle-fill"></i> Completada</div>
                 {% else %}
-                    <div class="d-flex flex-column justify-content-center align-items-center h-100 text-muted bg-light">
-                        <i class="bi bi-journal-x" style="font-size: 5rem; opacity: 0.2;"></i>
-                        <h4 class="mt-3 fw-bold">Material no disponible</h4>
-                        <p class="small text-secondary">El administrador no ha subido recursos multimedia para esta sesión.</p>
-                    </div>
+                <form method="POST" action="{% url 'completar_leccion' leccion.id %}" id="completeForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-complete" id="btnComplete" disabled>
+                        <i class="bi bi-check-circle-fill"></i> Marcar como completado
+                    </button>
+                </form>
                 {% endif %}
-
             </div>
-        </div>
 
-        <div class="col-lg-3 h-100 bg-white border-start d-flex flex-column" style="overflow-y: auto;">
-            <div class="p-4 bg-light border-bottom">
-                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-list-nested text-primary me-2"></i>Contenido del Curso</h6>
+            <!-- Tabs (solo si hay múltiples tipos) -->
+            {% if has_tabs %}
+            <div class="content-tabs">
+                {% if 'video' in tipos_contenido %}
+                <button class="ctab {% if first_tab == 'video' %}active{% endif %}" onclick="switchTab('video', this)">
+                    <i class="bi bi-play-circle-fill"></i> Video
+                </button>
+                {% endif %}
+                {% if 'pdf' in tipos_contenido %}
+                <button class="ctab {% if first_tab == 'pdf' %}active{% endif %}" onclick="switchTab('pdf', this)">
+                    <i class="bi bi-file-earmark-pdf-fill"></i> PDF / Documento
+                </button>
+                {% endif %}
+                {% if 'ppt' in tipos_contenido %}
+                <button class="ctab {% if first_tab == 'ppt' %}active{% endif %}" onclick="switchTab('ppt', this)">
+                    <i class="bi bi-easel2-fill"></i> Presentación
+                </button>
+                {% endif %}
             </div>
-            
-            <div class="list-group list-group-flush flex-grow-1">
-                {% for item in curso.lecciones.all|dictsort:"orden" %}
-                    <a href="{% url 'ver_leccion' item.id %}" 
-                       class="list-group-item list-group-item-action py-3 px-4 border-bottom {% if item.id == leccion.id %}bg-primary-subtle border-start border-5 border-primary{% endif %}">
-                        
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                {% if item.archivo_pdf %}
-                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-4 me-3"></i>
-                                {% elif item.url_video %}
-                                    <i class="bi bi-youtube text-danger fs-4 me-3"></i>
-                                {% else %}
-                                    <i class="bi bi-easel2-fill text-info fs-4 me-3"></i>
-                                {% endif %}
-                                
-                                <div>
-                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Clase {{ item.orden }}</small>
-                                    <span class="fw-bold {% if item.id == leccion.id %}text-primary{% else %}text-dark{% endif %}" style="font-size: 0.9rem;">
-                                        {{ item.titulo }}
-                                    </span>
-                                </div>
+            {% endif %}
+
+            <!-- ─── PANEL VIDEO ─── -->
+            {% if 'video' in tipos_contenido %}
+            <div class="cpanel {% if first_tab == 'video' or not has_tabs %}active{% endif %}" id="cpanel-video">
+                <div class="video-wrapper" id="videoWrapper">
+                    {% with url=leccion.url_video %}
+                    {% if 'youtube.com' in url or 'youtu.be' in url %}
+                        <!-- YouTube embed -->
+                        <iframe src="{{ url }}&enablejsapi=1"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                            allowfullscreen></iframe>
+
+                    {% elif 'vimeo.com' in url %}
+                        <!-- Vimeo embed -->
+                        <iframe src="{{ url }}"
+                            allow="autoplay; fullscreen; picture-in-picture"
+                            allowfullscreen></iframe>
+
+                    {% else %}
+                        <!-- Firebase Storage / URL directa → player HTML5 profesional -->
+                        <video id="mainVideo" preload="metadata"
+                               ontimeupdate="onVidProgress(this)"
+                               onended="onVidEnded()"
+                               onclick="togglePlay()">
+                            <source src="{{ url }}" type="video/mp4">
+                            <source src="{{ url }}" type="video/webm">
+                            Tu navegador no soporta la reproducción de video.
+                        </video>
+                        <div class="vid-overlay" id="vidOverlay">
+                            <button class="vid-btn" onclick="togglePlay()" id="playBtn" title="Reproducir/Pausar">
+                                <i class="bi bi-play-fill" id="playIcon"></i>
+                            </button>
+                            <div class="vid-progress" id="vidBar" onclick="seekVid(event)">
+                                <div class="vid-progress-fill" id="vidFill" style="width:0%"></div>
                             </div>
+                            <span class="vid-time" id="vidTime">0:00 / 0:00</span>
+                            <button class="vid-btn" onclick="toggleMute()" title="Silenciar/Activar sonido">
+                                <i class="bi bi-volume-up" id="muteIcon"></i>
+                            </button>
+                            <button class="vid-btn" onclick="document.getElementById('mainVideo').requestFullscreen()" title="Pantalla completa">
+                                <i class="bi bi-fullscreen"></i>
+                            </button>
                         </div>
-                    </a>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                {% if leccion.descripcion %}
+                <div style="background:var(--dark-card); padding:0.6rem 1.5rem; border-top:1px solid rgba(255,255,255,0.06); flex-shrink:0;">
+                    <p style="color:rgba(255,255,255,0.55); font-size:0.8rem; margin:0;">{{ leccion.descripcion }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- ─── PANEL PDF (pdf.js) ─── -->
+            {% if 'pdf' in tipos_contenido %}
+            <div class="cpanel {% if first_tab == 'pdf' or not has_tabs and not leccion.url_video %}active{% endif %}" id="cpanel-pdf">
+                <div class="pdf-panel">
+                    <!-- Loading state -->
+                    <div class="pdf-loading" id="pdfLoading">
+                        <div class="spinner-border text-light" style="width:2.5rem; height:2.5rem;" role="status"></div>
+                        <span>Cargando documento PDF...</span>
+                    </div>
+                    <!-- Canvas scroll area -->
+                    <div class="pdf-scroll" id="pdfScroll" style="display:none;"></div>
+                    <!-- Controls bar -->
+                    <div class="pdf-ctrls" id="pdfCtrls" style="display:none;">
+                        <button class="pdf-btn" onclick="pdfPrev()" id="btnPrev" disabled>
+                            <i class="bi bi-chevron-left"></i> Anterior
+                        </button>
+                        <span class="pdf-info" id="pdfInfo">Pág. 1 de 1</span>
+                        <button class="pdf-btn" onclick="pdfNext()" id="btnNext">
+                            Siguiente <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <div style="width:1px; background:rgba(255,255,255,0.1); height:18px; flex-shrink:0;"></div>
+                        <button class="pdf-btn" onclick="pdfZoom(-0.2)"><i class="bi bi-zoom-out"></i></button>
+                        <span class="pdf-info" id="pdfZoom">100%</span>
+                        <button class="pdf-btn" onclick="pdfZoom(+0.2)"><i class="bi bi-zoom-in"></i></button>
+                        <div style="width:1px; background:rgba(255,255,255,0.1); height:18px; flex-shrink:0;"></div>
+                        <button class="pdf-btn" onclick="document.getElementById('pdfScroll').requestFullscreen()">
+                            <i class="bi bi-fullscreen"></i> Pantalla completa
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ─── PANEL PRESENTACION (PPT / Canva / Slides / Genially) ─── -->
+            {% if 'ppt' in tipos_contenido %}
+            <div class="cpanel {% if first_tab == 'ppt' or tipos_contenido|length == 1 %}active{% endif %}" id="cpanel-ppt">
+                <div class="ppt-panel">
+                    <div class="ppt-toolbar">
+                        {% with u=leccion.url_presentacion_canva %}
+                        {% if 'canva.com' in u %}
+                            <span class="ppt-badge" style="background:#6366f1;color:white;">Canva</span>
+                        {% elif 'docs.google.com' in u %}
+                            <span class="ppt-badge" style="background:#4285f4;color:white;">Google Slides</span>
+                        {% elif 'officeapps.live.com' in u or '.pptx' in u %}
+                            <span class="ppt-badge" style="background:#d24726;color:white;">PowerPoint</span>
+                        {% elif 'genial.ly' in u %}
+                            <span class="ppt-badge" style="background:#f59e0b;color:#111;">Genially</span>
+                        {% elif 'prezi.com' in u %}
+                            <span class="ppt-badge" style="background:#2563eb;color:white;">Prezi</span>
+                        {% else %}
+                            <span class="ppt-badge" style="background:#6b7280;color:white;">Presentacion</span>
+                        {% endif %}
+                        {% endwith %}
+                        <span style="color:rgba(255,255,255,0.4); font-size:0.74rem; flex:1;">
+                            Navega con las flechas → ← o los controles de la presentacion
+                        </span>
+                        <button class="pdf-btn" onclick="document.getElementById('pptFrame').requestFullscreen()">
+                            <i class="bi bi-fullscreen"></i> Pantalla completa
+                        </button>
+                    </div>
+                    <iframe id="pptFrame"
+                            src="{{ leccion.url_presentacion_canva }}"
+                            allow="fullscreen; autoplay; encrypted-media"
+                            allowfullscreen
+                            mozallowfullscreen
+                            webkitallowfullscreen></iframe>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Sin contenido -->
+            {% if not tipos_contenido %}
+            <div class="cpanel active" id="cpanel-empty">
+                <div class="empty-state">
+                    <i class="bi bi-journal-x" style="font-size:4rem;"></i>
+                    <h5>Sin material multimedia</h5>
+                    <p style="font-size:0.85rem; text-align:center; max-width:300px;">
+                        El capacitador aun no ha subido recursos para esta clase.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- NOTAS -->
+            <button class="notes-toggle" onclick="toggleNotes()">
+                <i class="bi bi-pencil-square"></i> Mis notas de esta clase
+                <i class="bi bi-chevron-up" id="notesArrow" style="margin-left:auto; transform:rotate(180deg); transition:transform .3s;"></i>
+            </button>
+            <div class="notes-zone" id="notesZone">
+                <textarea class="notes-textarea" id="notesTxt"
+                    placeholder="Escribe tus apuntes aqui... Se guardan automaticamente en este dispositivo."
+                    oninput="saveNotes()"></textarea>
+            </div>
+
+        </div>
+        <!-- end viewer -->
+
+        <!-- ═══ SIDEBAR ═══ -->
+        <div class="lv-sidebar">
+            <div class="sb-header">
+                <div class="sb-title">{{ curso.titulo }}</div>
+                <div class="sb-bar">
+                    <div class="sb-bar-fill" style="width:{{ pct_progreso }}%;"></div>
+                </div>
+                <div class="sb-pct">{{ completadas_ids|length }} de {{ lecciones|length }} completadas · {{ pct_progreso }}%</div>
+            </div>
+
+            <div class="sb-lessons">
+                {% for item in lecciones %}
+                <a href="{% url 'ver_leccion' item.id %}"
+                   class="lesson-item {% if item.id == leccion.id %}current{% elif item.id in completadas_ids %}done{% endif %}">
+
+                    <div class="lesson-num">
+                        {% if item.id in completadas_ids %}
+                            <i class="bi bi-check-lg"></i>
+                        {% else %}
+                            {{ item.orden }}
+                        {% endif %}
+                    </div>
+
+                    <div class="lesson-info">
+                        <span class="lesson-item-title">{{ item.titulo }}</span>
+                        <div class="lesson-badges">
+                            {% if item.url_video %}
+                                {% with u=item.url_video %}
+                                {% if 'youtube' in u or 'youtu.be' in u %}
+                                    <span class="lbadge lbadge-video"><i class="bi bi-youtube"></i> YouTube</span>
+                                {% elif 'vimeo' in u %}
+                                    <span class="lbadge lbadge-video"><i class="bi bi-camera-video"></i> Vimeo</span>
+                                {% else %}
+                                    <span class="lbadge lbadge-video"><i class="bi bi-play-circle"></i> Video</span>
+                                {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if item.archivo_pdf %}
+                                <span class="lbadge lbadge-pdf"><i class="bi bi-file-pdf"></i> PDF</span>
+                            {% endif %}
+                            {% if item.url_presentacion_canva %}
+                                {% with u=item.url_presentacion_canva %}
+                                {% if 'google' in u %}
+                                    <span class="lbadge lbadge-ppt">Slides</span>
+                                {% elif 'canva' in u %}
+                                    <span class="lbadge lbadge-ppt">Canva</span>
+                                {% elif 'pptx' in u or 'officeapps' in u %}
+                                    <span class="lbadge lbadge-ppt">PPT</span>
+                                {% else %}
+                                    <span class="lbadge lbadge-ppt">PPT</span>
+                                {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if item.id in completadas_ids %}
+                                <span class="lbadge lbadge-done">Completada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
                 {% endfor %}
             </div>
-            
-            <div class="p-4 border-top bg-light mt-auto">
-                <h6 class="fw-bold text-dark small mb-3">Evaluación de Conocimiento</h6>
-                <a href="{% url 'detalle_curso' curso.id %}" class="btn btn-outline-dark w-100 fw-bold shadow-sm">
-                    <i class="bi bi-ui-checks me-2"></i> Ir al Examen Final
+
+            <div class="sb-exam">
+                <a href="{% url 'detalle_curso' curso.id %}" class="btn-exam">
+                    <i class="bi bi-ui-checks"></i> Ir al Examen Final
                 </a>
             </div>
-
         </div>
+
     </div>
 </div>
+{% endwith %}
+
+<script>
+/* ================================================================
+   PANEL TABS
+   ================================================================ */
+function switchTab(id, btn) {
+    document.querySelectorAll('.cpanel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('cpanel-' + id);
+    if (panel) panel.classList.add('active');
+    if (btn)  btn.classList.add('active');
+    if (id === 'pdf' && !window.pdfLoaded) initPdf();
+}
+
+/* ================================================================
+   COMPLETION
+   ================================================================ */
+{% if not ya_completada %}
+let didInteract = false;
+function enableComplete() {
+    if (didInteract) return;
+    didInteract = true;
+    const btn = document.getElementById('btnComplete');
+    if (btn) btn.disabled = false;
+}
+// Iframes: habilitar tras 12 segundos
+setTimeout(enableComplete, 12000);
+{% else %}
+function enableComplete() {}
+{% endif %}
+
+/* ================================================================
+   VIDEO HTML5
+   ================================================================ */
+const vid = document.getElementById('mainVideo');
+
+function onVidProgress(v) {
+    if (!v.duration) return;
+    const pct = v.currentTime / v.duration;
+    const fill = document.getElementById('vidFill');
+    const time = document.getElementById('vidTime');
+    if (fill) fill.style.width = (pct * 100) + '%';
+    if (time) time.textContent = fmt(v.currentTime) + ' / ' + fmt(v.duration);
+    if (pct >= 0.5) enableComplete();
+}
+
+function onVidEnded() {
+    const icon = document.getElementById('playIcon');
+    if (icon) icon.className = 'bi bi-arrow-clockwise';
+    enableComplete();
+}
+
+function togglePlay() {
+    if (!vid) return;
+    const icon = document.getElementById('playIcon');
+    if (vid.paused) {
+        vid.play();
+        if (icon) icon.className = 'bi bi-pause-fill';
+    } else {
+        vid.pause();
+        if (icon) icon.className = 'bi bi-play-fill';
+    }
+}
+
+function toggleMute() {
+    if (!vid) return;
+    vid.muted = !vid.muted;
+    const icon = document.getElementById('muteIcon');
+    if (icon) icon.className = vid.muted ? 'bi bi-volume-mute' : 'bi bi-volume-up';
+}
+
+function seekVid(e) {
+    if (!vid) return;
+    const bar  = document.getElementById('vidBar');
+    const pct  = (e.clientX - bar.getBoundingClientRect().left) / bar.clientWidth;
+    vid.currentTime = Math.max(0, pct) * (vid.duration || 0);
+}
+
+function fmt(s) {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+/* ================================================================
+   PDF.JS VIEWER
+   ================================================================ */
+{% if 'pdf' in tipos_contenido %}
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let pdfDoc   = null;
+let pdfPage  = 1;
+let pdfScale = 1.3;
+let pdfViewed = new Set();
+window.pdfLoaded = false;
+
+const PDF_URL = '{% url "ver_leccion_pdf" leccion.id %}';
+
+// Si el PDF es el primer panel o el único, cargar inmediatamente
+document.addEventListener('DOMContentLoaded', function() {
+    {% if tipos_contenido.0 == 'pdf' or tipos_contenido|length == 1 and 'pdf' in tipos_contenido %}
+    initPdf();
+    {% endif %}
+});
+
+async function initPdf() {
+    if (window.pdfLoaded) return;
+    window.pdfLoaded = true;
+
+    const loading = document.getElementById('pdfLoading');
+    const scroll  = document.getElementById('pdfScroll');
+    const ctrls   = document.getElementById('pdfCtrls');
+
+    try {
+        pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise;
+        loading.style.display = 'none';
+        scroll.style.display  = 'flex';
+        ctrls.style.display   = 'flex';
+
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            await renderPdfPage(i, scroll);
+        }
+        updatePdfUI();
+        trackPdfScroll(scroll);
+
+    } catch (err) {
+        loading.innerHTML =
+            '<i class="bi bi-exclamation-triangle" style="font-size:2rem; color:#f87171;"></i>' +
+            '<span>No se pudo cargar el PDF.</span>';
+        console.error(err);
+    }
+}
+
+async function renderPdfPage(num, container) {
+    const page = await pdfDoc.getPage(num);
+    const vp   = page.getViewport({ scale: pdfScale });
+    const canvas = document.createElement('canvas');
+    canvas.className    = 'pdf-page-canvas';
+    canvas.id           = 'pdfPg' + num;
+    canvas.dataset.page = num;
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+    container.appendChild(canvas);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+}
+
+function updatePdfUI() {
+    if (!pdfDoc) return;
+    document.getElementById('pdfInfo').textContent = 'Pag. ' + pdfPage + ' de ' + pdfDoc.numPages;
+    document.getElementById('btnPrev').disabled = pdfPage <= 1;
+    document.getElementById('btnNext').disabled = pdfPage >= pdfDoc.numPages;
+    document.getElementById('pdfZoom').textContent = Math.round(pdfScale * 100) + '%';
+    pdfViewed.add(pdfPage);
+    if (pdfViewed.size / pdfDoc.numPages >= 0.5) enableComplete();
+}
+
+function pdfPrev() {
+    if (pdfPage <= 1) return;
+    pdfPage--;
+    const el = document.getElementById('pdfPg' + pdfPage);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    updatePdfUI();
+}
+
+function pdfNext() {
+    if (!pdfDoc || pdfPage >= pdfDoc.numPages) return;
+    pdfPage++;
+    const el = document.getElementById('pdfPg' + pdfPage);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    updatePdfUI();
+}
+
+async function pdfZoom(delta) {
+    pdfScale = Math.min(Math.max(pdfScale + delta, 0.4), 3.5);
+    const scroll = document.getElementById('pdfScroll');
+    scroll.innerHTML = '';
+    for (let i = 1; i <= pdfDoc.numPages; i++) await renderPdfPage(i, scroll);
+    updatePdfUI();
+}
+
+function trackPdfScroll(scrollEl) {
+    scrollEl.addEventListener('scroll', () => {
+        const mid = scrollEl.scrollTop + scrollEl.clientHeight / 2;
+        scrollEl.querySelectorAll('.pdf-page-canvas').forEach(c => {
+            const dist = Math.abs(c.offsetTop + c.clientHeight / 2 - mid);
+            if (dist < c.clientHeight / 2) {
+                const p = parseInt(c.dataset.page);
+                if (pdfPage !== p) { pdfPage = p; updatePdfUI(); }
+            }
+        });
+    }, { passive: true });
+}
+{% endif %}
+
+/* ================================================================
+   PPT: habilitar complete tras 15s
+   ================================================================ */
+{% if 'ppt' in tipos_contenido %}
+setTimeout(enableComplete, 15000);
+{% endif %}
+
+/* ================================================================
+   NOTES (localStorage)
+   ================================================================ */
+const NOTES_KEY = 'lms_notes_{{ leccion.id }}';
+(function loadNotes() {
+    const el = document.getElementById('notesTxt');
+    if (el) el.value = localStorage.getItem(NOTES_KEY) || '';
+})();
+
+function saveNotes() {
+    const el = document.getElementById('notesTxt');
+    if (el) localStorage.setItem(NOTES_KEY, el.value);
+}
+
+function toggleNotes() {
+    const zone  = document.getElementById('notesZone');
+    const arrow = document.getElementById('notesArrow');
+    zone.classList.toggle('open');
+    arrow.style.transform = zone.classList.contains('open') ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+</script>
+
 {% endblock %}
