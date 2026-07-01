@@ -7,66 +7,167 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 <style>
+    .editor-container {
+        display: flex;
+        gap: 1.5rem;
+        min-height: calc(100vh - 200px);
+    }
+
     .variables-sidebar {
         background-color: #f8f9fa;
         border-radius: 1rem;
         padding: 1.5rem;
-        height: 100%;
+        flex: 0 0 320px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+
+    .var-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .var-group-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #6c757d;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid #dee2e6;
+    }
+
     .var-btn {
         text-align: left;
         margin-bottom: 0.5rem;
-        font-family: monospace;
-        font-size: 0.9rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
     }
+
+    .var-btn:hover {
+        background-color: #e7f1ff;
+        border-color: #0d6efd;
+        color: #0d6efd;
+    }
+
+    .editor-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
     .note-editor {
         border-radius: 1rem;
         overflow: hidden;
         border: 1px solid #dee2e6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .note-toolbar {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0.75rem;
+    }
+
+    .editor-controls {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .stage-indicator {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .breadcrumb-editor {
+        margin-bottom: 1.5rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid px-4">
+    <!-- Stage Indicator -->
+    <div class="breadcrumb-editor">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'gestor_plantillas' %}">Gestor de Plantillas</a></li>
+                <li class="breadcrumb-item active">Stage 3: Editor - {{ plantilla.nombre }}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
         <div>
-            <h2 class="fw-bold text-primary mb-1"><i class="bi bi-pencil-square me-2"></i> Editor de Plantilla</h2>
-            <p class="text-secondary mb-0">Estás editando: <strong>{{ plantilla.nombre }}</strong></p>
+            <h2 class="fw-bold mb-1"><i class="bi bi-pencil-square me-2"></i> Editor de Plantilla</h2>
+            <p class="text-muted mb-0">{{ plantilla.nombre }}</p>
+            {% if plantilla.categoria %}
+            <span class="badge bg-info text-dark rounded-pill mt-2">{{ plantilla.categoria.nombre }}</span>
+            {% endif %}
         </div>
-        <div>
-            <a href="{% url 'gestor_plantillas' %}" class="btn btn-light fw-bold rounded-pill shadow-sm me-2">Cancelar</a>
-            <button type="button" class="btn btn-success fw-bold rounded-pill shadow-sm" onclick="$('#editorForm').submit();">
-                <i class="bi bi-save me-2"></i> Guardar Plantilla
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'gestor_plantillas' %}" class="btn btn-outline-secondary fw-bold rounded-pill">
+                <i class="bi bi-arrow-left me-2"></i> Cancelar
+            </a>
+            <button type="button" class="btn btn-success fw-bold rounded-pill" onclick="$('#editorForm').submit();">
+                <i class="bi bi-check-circle me-2"></i> Guardar Plantilla
             </button>
         </div>
     </div>
 
-    <div class="row h-100">
+    <!-- Editor Controls -->
+    <div class="editor-controls">
+        <div class="stage-indicator">
+            <i class="bi bi-info-circle me-1"></i> Haz clic en variables del panel izquierdo para insertarlas automáticamente
+        </div>
+    </div>
+
+    <!-- Main Editor Layout -->
+    <div class="editor-container">
         <!-- Sidebar de Variables -->
-        <div class="col-lg-3 mb-4 mb-lg-0">
-            <div class="variables-sidebar shadow-sm border">
-                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-tags-fill text-primary me-2"></i> Variables Disponibles</h6>
-                <p class="small text-muted mb-4">Haz clic en una variable para insertarla en el documento.</p>
-                
-                <div class="d-flex flex-column">
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{nombre_colaborador}')">{nombre_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{nombres}')">{nombres}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{apellidos}')">{apellidos}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{dni_colaborador}')">{dni_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{correo}')">{correo}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{cargo_colaborador}')">{cargo_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{area_colaborador}')">{area_colaborador}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{sueldo_base}')">{sueldo_base}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{fecha_ingreso}')">{fecha_ingreso}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{fecha_actual}')">{fecha_actual}</button>
-                    <button type="button" class="btn btn-outline-secondary var-btn" onclick="insertarVariable('{empresa}')">{empresa}</button>
-                </div>
+        <div class="variables-sidebar">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-tags-fill text-primary me-2"></i> Variables</h6>
+            <p class="small text-muted mb-3">Haz clic en una para insertarla.</p>
+
+            <!-- Datos Personales -->
+            <div class="var-group">
+                <div class="var-group-title">Datos Personales</div>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{nombre_colaborador}')">{nombre_colaborador}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{nombres}')">{nombres}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{apellidos}')">{apellidos}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{dni_colaborador}')">{dni_colaborador}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{correo}')">{correo}</button>
+            </div>
+
+            <!-- Datos Laborales -->
+            <div class="var-group">
+                <div class="var-group-title">Datos Laborales</div>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{cargo_colaborador}')">{cargo_colaborador}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{area_colaborador}')">{area_colaborador}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{sueldo_base}')">{sueldo_base}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{fecha_ingreso}')">{fecha_ingreso}</button>
+            </div>
+
+            <!-- Datos Corporativos -->
+            <div class="var-group">
+                <div class="var-group-title">Corporativos</div>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{fecha_actual}')">{fecha_actual}</button>
+                <button type="button" class="btn btn-outline-secondary var-btn w-100" onclick="insertarVariable('{empresa}')">{empresa}</button>
             </div>
         </div>
 
         <!-- Editor Summernote -->
-        <div class="col-lg-9">
+        <div class="editor-main">
             <form id="editorForm" method="POST">
                 {% csrf_token %}
                 <textarea id="summernote" name="contenido_html">{{ plantilla.contenido_html|safe }}</textarea>
@@ -78,24 +179,34 @@
 <script>
     $(document).ready(function() {
         $('#summernote').summernote({
-            placeholder: 'Escribe el contenido del documento aquí...',
+            placeholder: 'Escribe el contenido del documento aquí. Usa las variables del panel izquierdo para insertar datos dinámicos...',
             tabsize: 2,
-            height: 600,
+            height: 650,
+            minHeight: 400,
+            maxHeight: null,
             toolbar: [
                 ['style', ['style']],
-                ['font', ['bold', 'underline', 'clear', 'italic']],
+                ['font', ['bold', 'underline', 'italic', 'clear']],
                 ['fontname', ['fontname']],
+                ['fontsize', ['fontsize']],
                 ['color', ['color']],
-                ['para', ['ul', 'ol', 'paragraph']],
+                ['para', ['ul', 'ol', 'paragraph', 'height']],
                 ['table', ['table']],
-                ['insert', ['link', 'picture']],
-                ['view', ['fullscreen', 'codeview', 'help']]
-            ]
+                ['insert', ['link', 'picture', 'hr']],
+                ['view', ['fullscreen', 'codeview']],
+            ],
+            prettifyHtml: true,
+            callbacks: {
+                onInit: function() {
+                    console.log('Summernote initialized');
+                }
+            }
         });
     });
 
     function insertarVariable(variable) {
         $('#summernote').summernote('editor.insertText', variable);
+        $('#summernote').focus();
     }
 </script>
 {% endblock %}
