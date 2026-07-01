@@ -451,11 +451,12 @@ main.flex-grow-1 {
         </div>
 
         <!-- CANVAS: Summernote full-height -->
-        <div class="ed-canvas">
-            <form id="editorForm" method="POST" style="display:flex; flex-direction:column; height:100%;">
+        <div class="ed-canvas d-flex flex-column" style="flex: 1; overflow: hidden; background: #e8eaed;">
+            <form id="editorForm" method="POST" style="display:flex; flex-direction:column; flex:1; height:100%; overflow:hidden;">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="guardar_plantilla">
                 <textarea id="summernote" name="contenido_html" style="display:none;">{{ plantilla.contenido_html|safe }}</textarea>
-                <!-- Summernote se montará aquí ocupando todo el espacio -->
+                <!-- Summernote se montará de forma segura aquí dentro -->
             </form>
 
             <!-- Footer de estado -->
@@ -581,17 +582,6 @@ $(document).ready(function () {
         ],
         callbacks: {
             onInit: function () {
-                // Forzar que note-editing-area ocupe el espacio restante
-                const frame = document.querySelector('.note-editor.note-frame');
-                if (frame) {
-                    frame.style.cssText = 'flex:1; display:flex; flex-direction:column; border:none; border-radius:0; height:100%;';
-                    const editArea = frame.querySelector('.note-editing-area');
-                    if (editArea) editArea.style.cssText = 'flex:1; overflow-y:auto; background:#e8eaed;';
-                }
-                // Insertar Summernote dentro del form que está en .ed-canvas
-                const $frame = $('.note-editor.note-frame');
-                $frame.insertBefore($('#editorForm'));
-                $('#editorForm').hide();
                 updateCounts();
             },
             onDrop: function (e) {
@@ -615,24 +605,14 @@ $(document).ready(function () {
             }
         }
     });
-
-    // Wrap en el canvas
-    // Summernote se instancia en el body; lo movemos al .ed-canvas
-    const canvas = document.querySelector('.ed-canvas');
-    const footer = document.querySelector('.ed-footer');
-    const noteFrame = document.querySelector('.note-editor.note-frame');
-    if (noteFrame && canvas && footer) {
-        canvas.insertBefore(noteFrame, footer);
-        noteFrame.style.flex = '1';
-        noteFrame.style.display = 'flex';
-        noteFrame.style.flexDirection = 'column';
-        noteFrame.style.overflow = 'hidden';
-    }
 });
 
 /* ====================================================
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
+// Ya no se mueve el editor manualmente, se queda seguro dentro de su formulario original
+// para evitar que Summernote pierda la referencia y genere duplicados fantasma.
+
 // El rastreo del cursor se delega 100% a la API nativa de Summernote.
 
 // RASTREO MANUAL A PRUEBA DE FALLOS: 
