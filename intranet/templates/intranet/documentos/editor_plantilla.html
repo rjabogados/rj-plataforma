@@ -668,9 +668,11 @@ function marcarCambio() {
     setAutosaveBadge('saving', 'Guardando...');
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
-        const html = $('#summernote').summernote('code');
-        localStorage.setItem(AUTOSAVE_KEY, html);
-        setAutosaveBadge('saved', 'Guardado localmente');
+        const editable = document.querySelector('.note-editable');
+        if (editable) {
+            localStorage.setItem(AUTOSAVE_KEY, editable.innerHTML);
+            setAutosaveBadge('saved', 'Guardado localmente');
+        }
     }, 2000);
 }
 
@@ -717,7 +719,9 @@ window.addEventListener('beforeunload', e => {
    WORD & CHAR COUNT
    ==================================================== */
 function updateCounts() {
-    const html = $('#summernote').summernote('code');
+    const editable = document.querySelector('.note-editable');
+    if (!editable) return;
+    const html = editable.innerHTML;
     const text = $('<div>').html(html).text().trim();
     const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
     document.getElementById('wordCount').textContent = words;
