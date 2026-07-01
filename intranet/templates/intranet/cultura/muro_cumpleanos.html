@@ -32,9 +32,9 @@
                         hoy|date:"F"|title }}</h5>
                 </div>
                 <div class="card-body">
-                    {% if cumpleaÃ±eros %}
+                    {% if cumpleaneros %}
                     <div class="d-flex flex-column gap-3">
-                        {% for c in cumpleaÃ±eros %}
+                        {% for c in cumpleaneros %}
                         <div class="d-flex align-items-center p-3 bg-white rounded-3 shadow-sm border border-light position-relative"
                             style="{% if c.fecha_nacimiento.day == hoy.day %}border: 2px solid #ff6b6b !important;{% endif %}">
                             {% if c.fecha_nacimiento.day == hoy.day %}
@@ -171,7 +171,7 @@
 {% endblock %}
 
 {% block modals %}
-{% for c in cumpleaÃ±eros %}
+{% for c in cumpleaneros %}
 {% if c.permitir_mensajes_cumpleanos %}
 <!-- Modal para Enviar FelicitaciÃ³n -->
 <div class="modal fade" id="modalFelicitacion-{{ c.id }}" tabindex="-1">

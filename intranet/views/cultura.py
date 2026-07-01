@@ -11,7 +11,7 @@ def muro_celebraciones(request):
     hoy = date.today()
     # Cumpleañeros del mes (o semana)
     # Por simplicidad, filtramos por mes de nacimiento
-    cumpleañeros = Colaborador.objects.filter(
+    cumpleaneros = Colaborador.objects.filter(
         fecha_nacimiento__month=hoy.month,
         user__is_active=True
     ).order_by('fecha_nacimiento__day')
@@ -45,7 +45,7 @@ def muro_celebraciones(request):
             es_su_cumple = True
 
     context = {
-        'cumpleañeros': cumpleañeros,
+        'cumpleaneros': cumpleaneros,
         'notas': notas_publicas,
         'hoy': hoy,
         'es_su_cumple': es_su_cumple
