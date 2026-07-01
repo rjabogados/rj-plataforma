@@ -190,6 +190,7 @@ main.flex-grow-1 {
 .var-group-items { display: flex; flex-direction: column; gap: 0.4rem; }
 .var-group-items.collapsed { display: none; }
 
+.var-chip * { pointer-events: none; }
 .var-chip {
     display: flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
     padding: 0.5rem 0.75rem; cursor: pointer; transition: all .2s; font-size: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -622,57 +623,29 @@ $(document).ready(function () {
 /* ====================================================
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
-// Rastreador infalible del cursor
-let mySavedRange = null;
-document.addEventListener('selectionchange', () => {
-    const sel = window.getSelection();
-    if (sel.rangeCount > 0) {
-        const r = sel.getRangeAt(0);
-        const editable = document.querySelector('.note-editable');
-        if (editable && editable.contains(r.commonAncestorContainer)) {
-            mySavedRange = r.cloneRange();
-        }
-    }
-});
+// El rastreo del cursor ahora es 100% nativo al evitar el focus loss real mediante CSS
 
 function insertarVariable(variable) {
     const editable = document.querySelector('.note-editable');
     if (!editable) return;
     
-    let targetRange = null;
-    let valid = false;
+    // Obtener la posición actual y real. Nunca se pierde gracias a pointer-events: none.
+    const sel = window.getSelection();
     
-    // Validar rigurosamente que el rango guardado siga vivo en el documento
-    if (mySavedRange && document.body.contains(mySavedRange.commonAncestorContainer)) {
-        targetRange = mySavedRange.cloneRange();
-        valid = true;
-    }
-    
-    if (!valid) {
-        // Fallback ultra-seguro: Si el cursor murió (por importación DOCX),
-        // creamos un párrafo nuevo limpio al final. 
-        // Evita inyectar en tablas/listas que rompen el DOM y "parten" la página.
+    // Si la selección está vacía o fuera del editor (ej. página recién cargada)
+    if (sel.rangeCount === 0 || !editable.contains(sel.getRangeAt(0).commonAncestorContainer)) {
         const newP = document.createElement('p');
         editable.appendChild(newP);
-        targetRange = document.createRange();
-        targetRange.selectNodeContents(newP);
-        targetRange.collapse(true);
+        const range = document.createRange();
+        range.selectNodeContents(newP);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
     }
     
-    // Preparamos el cursor del navegador
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(targetRange);
-
-    // Usamos el estándar execCommand con estilos en línea para máxima compatibilidad
-    // sin contenteditable="false" y sin etiquetas raras.
+    // Insertar nativamente como HTML, el navegador lo unirá correctamente
     const html = `<span class="var-highlight" style="background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-weight:600; color:#92400e;">${variable}</span>&nbsp;`;
     document.execCommand('insertHTML', false, html);
-    
-    // Guardamos la nueva posición real
-    if (sel.rangeCount > 0) {
-        mySavedRange = sel.getRangeAt(0).cloneRange();
-    }
 
     $('#summernote').summernote('triggerEvent', 'change');
     showToast('Variable insertada', `${variable} agregada al documento`, 'info');
