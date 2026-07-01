@@ -582,6 +582,18 @@ $(document).ready(function () {
         ],
         callbacks: {
             onInit: function () {
+                // Asegurar que el editor ocupe todo el espacio del formulario
+                const frame = document.querySelector('.note-editor.note-frame');
+                if (frame) {
+                    frame.style.flex = '1';
+                    frame.style.display = 'flex';
+                    frame.style.flexDirection = 'column';
+                }
+                const editArea = document.querySelector('.note-editing-area');
+                if (editArea) {
+                    editArea.style.flex = '1';
+                    editArea.style.overflowY = 'auto';
+                }
                 updateCounts();
             },
             onDrop: function (e) {
@@ -878,7 +890,7 @@ async function handleFileUpload(file) {
                 console.warn('Mammoth warnings:', result.messages);
             }
         } catch (err) {
-            showToast('Error al importar', 'No se pudo convertir el archivo Word.', 'error');
+            showToast('Error técnico al importar', `No se pudo procesar: ${err.message}`, 'error', 8000);
             console.error(err);
         } finally {
             hideProgress();
