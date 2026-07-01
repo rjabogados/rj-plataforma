@@ -2533,7 +2533,7 @@ def dashboard_resultados(request):
 @solo_directivos
 def crear_curso_avanzado(request, curso_id=None):
     from intranet.models.rrhh_core import Negocio, Colaborador
-    from intranet.models.lms import CursoInduccion, LeccionCurso, EvaluacionLMS
+    from intranet.models.lms import CursoInduccion, LeccionCurso
     
     curso = None
     if curso_id:
