@@ -1481,13 +1481,19 @@ def crear_encuesta_view(request):
 def resultados_encuesta(request, pk):
     encuesta = get_object_or_404(Encuesta.objects.prefetch_related('preguntas__opciones'), id=pk)
     preguntas = list(encuesta.preguntas.all())
-    respuestas_qs = RespuestaEncuesta.objects.filter(pregunta__encuesta=encuesta).select_related('colaborador__user', 'pregunta', 'valor_opcion')
+    respuestas_qs = RespuestaEncuesta.objects.filter(pregunta__encuesta=encuesta).select_related('colaborador__user', 'pregunta', 'valor_opcion').order_by('-fecha_respuesta')
 
     colaboradores_respondieron = Colaborador.objects.filter(
         respuestaencuesta__pregunta__encuesta=encuesta
     ).select_related('user').distinct().order_by('user__last_name', 'user__first_name')
     total_respuestas = respuestas_qs.count()
     total_respondientes = colaboradores_respondieron.count()
+
+    modo = (request.GET.get('modo') or 'colectivo').strip().lower()
+    if modo not in ['colectivo', 'individual']:
+        modo = 'colectivo'
+    if encuesta.es_anonima and modo == 'individual':
+        modo = 'colectivo'
 
     resumen = []
     for pregunta in preguntas:
@@ -1508,12 +1514,64 @@ def resultados_encuesta(request, pk):
             data['opciones'] = list(conteos)
         resumen.append(data)
 
+    colaborador_seleccionado = None
+    respuestas_individuales = []
+    total_respuestas_individual = 0
+    ultima_respuesta_individual = None
+
+    if not encuesta.es_anonima and total_respondientes > 0:
+        colaborador_id = request.GET.get('colaborador')
+        if colaborador_id:
+            colaborador_seleccionado = colaboradores_respondieron.filter(id=colaborador_id).first()
+        if not colaborador_seleccionado:
+            colaborador_seleccionado = colaboradores_respondieron.first()
+
+        if colaborador_seleccionado:
+            respuestas_por_pregunta = {}
+            respuestas_colab = respuestas_qs.filter(colaborador=colaborador_seleccionado)
+            for respuesta in respuestas_colab:
+                if respuesta.pregunta_id not in respuestas_por_pregunta:
+                    respuestas_por_pregunta[respuesta.pregunta_id] = respuesta
+
+            for pregunta in preguntas:
+                respuesta = respuestas_por_pregunta.get(pregunta.id)
+                valor = '-'
+                fecha = None
+                if respuesta:
+                    if respuesta.valor_texto not in (None, ''):
+                        valor = respuesta.valor_texto
+                    elif respuesta.valor_si_no is not None:
+                        valor = 'Si' if respuesta.valor_si_no else 'No'
+                    elif respuesta.valor_opcion_id:
+                        valor = respuesta.valor_opcion.texto
+                    elif respuesta.valor_numero is not None:
+                        valor = str(respuesta.valor_numero)
+                    elif respuesta.valor_fecha:
+                        valor = respuesta.valor_fecha.strftime('%d/%m/%Y')
+                    fecha = respuesta.fecha_respuesta
+                    total_respuestas_individual += 1
+
+                respuestas_individuales.append({
+                    'pregunta': pregunta,
+                    'valor': valor,
+                    'fecha': fecha,
+                    'respondida': bool(respuesta),
+                })
+
+            if respuestas_colab.exists():
+                ultima_respuesta_individual = respuestas_colab.order_by('-fecha_respuesta').first().fecha_respuesta
+
     return render(request, 'intranet/comunicacion/resultados_encuesta.html', {
         'encuesta': encuesta,
         'resumen': resumen,
         'colaboradores_respondieron': [] if encuesta.es_anonima else colaboradores_respondieron,
         'respondientes_totales': total_respondientes,
         'total_respuestas': total_respuestas,
+        'modo': modo,
+        'colaborador_seleccionado': colaborador_seleccionado,
+        'respuestas_individuales': respuestas_individuales,
+        'total_respuestas_individual': total_respuestas_individual,
+        'ultima_respuesta_individual': ultima_respuesta_individual,
     })
 @login_required(login_url='login')
 @solo_directivos
