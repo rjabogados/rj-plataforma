@@ -391,7 +391,7 @@ def colaboradores(request):
     })
 
 def generar_contrasena_segura():
-    """Genera una contraseÃ±a aleatoria de 12 caracteres"""
+    """Genera una contraseña aleatoria de 12 caracteres"""
     alphabet = string.ascii_letters + string.digits + string.punctuation
     # Evitar caracteres problemÃ¡ticos
     alphabet = alphabet.replace("'", "").replace('"', "").replace('\\', "")
@@ -1559,11 +1559,11 @@ def mensajeria(request):
         recibidos = recibidos.filter(Q(remitente__user__first_name__icontains=query) | Q(remitente__user__last_name__icontains=query) | Q(asunto__icontains=query))
         enviados = enviados.filter(Q(destinatario__user__first_name__icontains=query) | Q(destinatario__user__last_name__icontains=query) | Q(asunto__icontains=query))
 
-    compaÃ±eros = Colaborador.objects.exclude(id=perfil.id).select_related('user').order_by('user__last_name', 'user__first_name')
+    compañeros = Colaborador.objects.exclude(id=perfil.id).select_related('user').order_by('user__last_name', 'user__first_name')
     return render(request, 'intranet/comunicacion/mensajeria.html', {
         'recibidos': recibidos,
         'enviados': enviados,
-        'compaÃ±eros': compaÃ±eros,
+        'compañeros': compañeros,
         'query': query,
     })
 @login_required(login_url='login')
