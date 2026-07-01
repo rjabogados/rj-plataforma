@@ -152,8 +152,9 @@ def portada_curso_valida(portada):
 
 
 def subcarteras_catalogo():
+    fijas = ['Delfos', 'Impaga', 'Particulares/Pyme', 'Mora Temprana', 'Especiales', 'Castigada', 'Judicial']
     valores = Colaborador.objects.exclude(subcartera__isnull=True).exclude(subcartera__exact='').values_list('subcartera', flat=True)
-    unicos = {}
+    unicos = {v.casefold(): v for v in fijas}
     for valor in valores:
         limpio = ' '.join(str(valor).split())
         if not limpio:
