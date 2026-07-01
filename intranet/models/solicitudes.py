@@ -13,7 +13,7 @@ class SolicitudBase(models.Model):
         ('ELIMINADO_POR_USUARIO', 'Eliminado por Autor')
     ]
     
-    estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE_N1', db_index=True)
+    estado = models.CharField(max_length=30, choices=ESTADOS, default='PENDIENTE_N1', db_index=True)
     
     # Flujo de aprobación (Auditoría)
     aprobado_por_n1 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_n1')
