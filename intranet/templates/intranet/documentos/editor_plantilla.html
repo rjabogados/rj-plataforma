@@ -879,8 +879,10 @@ async function handleFileUpload(file) {
             );
             showProgress('Cargando en editor...', 95);
             const currentHtml = $('#summernote').summernote('code');
-            const separator   = currentHtml.replace(/<[^>]*>/g,'').trim() ? '<hr/>' : '';
-            $('#summernote').summernote('code', separator + result.value);
+            // Si ya hay texto, añadimos un par de saltos de línea en lugar de un <hr/> que rompe visualmente la página
+            const separator = currentHtml.replace(/<[^>]*>/g,'').trim() ? '<br><br>' : '';
+            // Añadir al final preservando el texto anterior
+            $('#summernote').summernote('code', currentHtml + separator + result.value);
             showToast('Word importado', `"${file.name}" cargado correctamente.`, 'success');
             if (result.messages.length) {
                 console.warn('Mammoth warnings:', result.messages);
@@ -898,9 +900,9 @@ async function handleFileUpload(file) {
         const reader = new FileReader();
         reader.onload = e => {
             const html = '<p>' + e.target.result.replace(/\r?\n\r?\n/g, '</p><p>').replace(/\r?\n/g, '<br>') + '</p>';
-            const current = $('#summernote').summernote('code');
-            const sep = current.replace(/<[^>]*>/g,'').trim() ? '<hr/>' : '';
-            $('#summernote').summernote('code', sep + html);
+            const currentHtml = $('#summernote').summernote('code');
+            const separator = currentHtml.replace(/<[^>]*>/g,'').trim() ? '<br><br>' : '';
+            $('#summernote').summernote('code', currentHtml + separator + html);
             showToast('TXT importado', `"${file.name}" cargado.`, 'success');
             hideProgress();
             fileInput.value = '';
