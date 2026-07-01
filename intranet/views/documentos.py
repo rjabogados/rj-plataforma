@@ -18,12 +18,49 @@ def gestor_plantillas(request):
     """Biblioteca digital de plantillas HTML."""
     if request.method == 'POST':
         action = request.POST.get('action')
-        if action == 'crear':
-            nombre = request.POST.get('nombre')
+
+        if action == 'crear_categoria':
+            nombre_categoria = (request.POST.get('nombre_categoria') or '').strip()
+            requiere_firma = request.POST.get('requiere_firma') == 'on'
+            if not nombre_categoria:
+                messages.error(request, 'Debes indicar un nombre para la categoria.')
+                return redirect('gestor_plantillas')
+
+            categoria, creada = CategoriaDocumento.objects.get_or_create(
+                nombre=nombre_categoria,
+                defaults={'requiere_firma': requiere_firma},
+            )
+            if creada:
+                messages.success(request, f"Categoria '{nombre_categoria}' creada correctamente.")
+            else:
+                categoria.requiere_firma = requiere_firma
+                categoria.save(update_fields=['requiere_firma'])
+                messages.info(request, f"La categoria '{nombre_categoria}' ya existia y se actualizo su configuracion.")
+            return redirect('gestor_plantillas')
+
+        if action == 'eliminar_categoria':
             categoria_id = request.POST.get('categoria_id')
+            categoria = CategoriaDocumento.objects.filter(id=categoria_id).first()
+            if not categoria:
+                messages.error(request, 'Categoria no encontrada.')
+                return redirect('gestor_plantillas')
+            nombre_categoria = categoria.nombre
+            categoria.delete()
+            messages.success(request, f"Categoria '{nombre_categoria}' eliminada.")
+            return redirect('gestor_plantillas')
+
+        if action == 'crear':
+            nombre = (request.POST.get('nombre') or '').strip()
+            categoria_id = request.POST.get('categoria_id')
+            nueva_categoria = (request.POST.get('nueva_categoria') or '').strip()
+
+            categoria = None
+            if nueva_categoria:
+                categoria, _ = CategoriaDocumento.objects.get_or_create(nombre=nueva_categoria)
+            elif categoria_id:
+                categoria = CategoriaDocumento.objects.filter(id=categoria_id).first()
             
             if nombre:
-                categoria = CategoriaDocumento.objects.filter(id=categoria_id).first()
                 nueva_plantilla = PlantillaDocumento.objects.create(
                     nombre=nombre, 
                     categoria=categoria, 
@@ -31,10 +68,15 @@ def gestor_plantillas(request):
                     contenido_html="<p>Escribe tu documento aquí...</p>"
                 )
                 return redirect('editor_plantilla', plantilla_id=nueva_plantilla.id)
+            messages.error(request, 'Debes indicar el nombre del documento para crear la plantilla.')
+            return redirect('gestor_plantillas')
                 
-    plantillas = PlantillaDocumento.objects.all().order_by('-fecha_modificacion')
-    categorias = CategoriaDocumento.objects.all()
-    return render(request, 'intranet/documentos/gestor_plantillas.html', {'plantillas': plantillas, 'categorias': categorias})
+    plantillas = PlantillaDocumento.objects.select_related('categoria', 'creado_por').all().order_by('-fecha_modificacion')
+    categorias = CategoriaDocumento.objects.all().order_by('nombre')
+    return render(request, 'intranet/documentos/gestor_plantillas.html', {
+        'plantillas': plantillas,
+        'categorias': categorias,
+    })
 
 @login_required(login_url='login')
 @solo_directivos
