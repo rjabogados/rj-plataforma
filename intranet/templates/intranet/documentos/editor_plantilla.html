@@ -596,13 +596,6 @@ $(document).ready(function () {
             onChange: function () {
                 updateCounts();
                 marcarCambio();
-                saveNativeRange();
-            },
-            onKeyup: function () {
-                saveNativeRange();
-            },
-            onMouseup: function () {
-                saveNativeRange();
             },
             onImageUpload: function (files) {
                 const reader = new FileReader();
@@ -629,9 +622,9 @@ $(document).ready(function () {
 /* ====================================================
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
+// Rastreador infalible del cursor
 let mySavedRange = null;
-
-function saveNativeRange() {
+document.addEventListener('selectionchange', () => {
     const sel = window.getSelection();
     if (sel.rangeCount > 0) {
         const r = sel.getRangeAt(0);
@@ -640,7 +633,7 @@ function saveNativeRange() {
             mySavedRange = r.cloneRange();
         }
     }
-}
+});
 
 function insertarVariable(variable) {
     const editable = document.querySelector('.note-editable');
@@ -648,43 +641,22 @@ function insertarVariable(variable) {
     
     editable.focus();
     const sel = window.getSelection();
+    sel.removeAllRanges();
 
-    // Refrescar el rango si el cursor ya estaba dentro justo antes del clic
-    if (sel.rangeCount > 0) {
-        const currentRange = sel.getRangeAt(0);
-        if (editable.contains(currentRange.commonAncestorContainer)) {
-            mySavedRange = currentRange.cloneRange();
-        }
-    }
-
-    let range;
     if (mySavedRange) {
-        range = mySavedRange.cloneRange();
+        sel.addRange(mySavedRange);
     } else {
-        range = document.createRange();
+        const range = document.createRange();
         range.selectNodeContents(editable);
         range.collapse(false);
+        sel.addRange(range);
     }
 
-    // NUNCA usar contenteditable="false", es lo que rompe el DOM en Chromium
-    const span = document.createElement('span');
-    span.className = 'var-highlight';
-    span.textContent = variable;
-    const space = document.createTextNode('\u00A0'); // Espacio real
-
-    range.deleteContents();
-    range.insertNode(space);
-    range.insertNode(span);
+    // InsertHTML puro, sin propiedades bloqueantes que rompan el documento
+    const html = `<span class="var-highlight">${variable}</span>&nbsp;`;
+    document.execCommand('insertHTML', false, html);
     
-    range.setStartAfter(space);
-    range.collapse(true);
-    
-    sel.removeAllRanges();
-    sel.addRange(range);
-    
-    saveNativeRange();
     $('#summernote').summernote('triggerEvent', 'change');
-    
     showToast('Variable insertada', `${variable} agregada en el documento`, 'info');
 }
 
