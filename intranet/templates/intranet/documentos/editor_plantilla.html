@@ -380,23 +380,23 @@ main.flex-grow-1 {
                         <span class="toggle-arrow">▾</span>
                     </div>
                     <div class="var-group-items">
-                        <div class="var-chip" onclick="insertarVariable('{nombre_colaborador}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{nombre_colaborador}')">
                             <span class="chip-code">{nombre_colaborador}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{nombres}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{nombres}')">
                             <span class="chip-code">{nombres}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{apellidos}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{apellidos}')">
                             <span class="chip-code">{apellidos}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{dni_colaborador}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{dni_colaborador}')">
                             <span class="chip-code">{dni_colaborador}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{correo}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{correo}')">
                             <span class="chip-code">{correo}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
@@ -410,19 +410,19 @@ main.flex-grow-1 {
                         <span class="toggle-arrow">▾</span>
                     </div>
                     <div class="var-group-items">
-                        <div class="var-chip" onclick="insertarVariable('{cargo_colaborador}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{cargo_colaborador}')">
                             <span class="chip-code">{cargo_colaborador}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{area_colaborador}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{area_colaborador}')">
                             <span class="chip-code">{area_colaborador}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{sueldo_base}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{sueldo_base}')">
                             <span class="chip-code">{sueldo_base}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{fecha_ingreso}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{fecha_ingreso}')">
                             <span class="chip-code">{fecha_ingreso}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
@@ -436,11 +436,11 @@ main.flex-grow-1 {
                         <span class="toggle-arrow">▾</span>
                     </div>
                     <div class="var-group-items">
-                        <div class="var-chip" onclick="insertarVariable('{empresa}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{empresa}')">
                             <span class="chip-code">{empresa}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
-                        <div class="var-chip" onclick="insertarVariable('{fecha_actual}')">
+                        <div class="var-chip" onmousedown="event.preventDefault();" onclick="insertarVariable('{fecha_actual}')">
                             <span class="chip-code">{fecha_actual}</span>
                             <span class="chip-insert">+ Insertar</span>
                         </div>
@@ -596,6 +596,13 @@ $(document).ready(function () {
             onChange: function () {
                 updateCounts();
                 marcarCambio();
+                $('#summernote').summernote('saveRange');
+            },
+            onKeyup: function () {
+                $('#summernote').summernote('saveRange');
+            },
+            onMouseup: function () {
+                $('#summernote').summernote('saveRange');
             },
             onImageUpload: function (files) {
                 const reader = new FileReader();
@@ -623,17 +630,16 @@ $(document).ready(function () {
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
 function insertarVariable(variable) {
+    // Restaurar el cursor exactamente donde el usuario lo dejó
+    $('#summernote').summernote('restoreRange');
     $('#summernote').summernote('focus');
-    const node = document.createElement('span');
-    node.className = 'var-highlight';
-    node.contentEditable = 'false';
-    node.textContent = variable;
     
-    // Añadimos un espacio invisible después para poder seguir escribiendo fluidamente
-    const space = document.createTextNode('\u200B'); 
+    // Insertar usando pasteHTML que es mucho más seguro para el DOM
+    const html = `<span class="var-highlight" contenteditable="false">${variable}</span>&#8203;`;
+    $('#summernote').summernote('pasteHTML', html);
     
-    $('#summernote').summernote('insertNode', node);
-    $('#summernote').summernote('insertNode', space);
+    // Guardar la nueva posición del cursor
+    $('#summernote').summernote('saveRange');
     
     showToast('Variable insertada', `${variable} agregada en el documento`, 'info');
 }
