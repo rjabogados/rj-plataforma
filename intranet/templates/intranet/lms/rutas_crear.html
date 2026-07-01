@@ -4,14 +4,27 @@
 {% block content %}
 <div class="container-fluid py-4" style="max-width: 1200px;">
     <div class="d-flex align-items-center mb-4 gap-3">
+        {% if modo_onboarding %}
+        <a href="{% url 'onboarding_admin' %}" class="btn btn-light rounded-circle shadow-sm" style="width:45px; height:45px; display:flex; align-items:center; justify-content:center;">
+            <i class="bi bi-arrow-left fs-5"></i>
+        </a>
+        {% else %}
         <a href="{% url 'gestor_lms' %}" class="btn btn-light rounded-circle shadow-sm" style="width:45px; height:45px; display:flex; align-items:center; justify-content:center;">
             <i class="bi bi-arrow-left fs-5"></i>
         </a>
+        {% endif %}
         <div>
+            {% if modo_onboarding %}
+            <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #183D74 0%, #D60C3B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Diseñador de Rutas de Inducción
+            </h2>
+            <p class="text-secondary mb-0">Crea planes de aprendizaje para el Onboarding en 2 pasos.</p>
+            {% else %}
             <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                 Diseñador de Rutas de Inducción
             </h2>
             <p class="text-secondary mb-0">Crea planes de aprendizaje (Learning Paths) en 2 sencillos pasos.</p>
+            {% endif %}
         </div>
     </div>
 
@@ -50,7 +63,7 @@
                     <hr class="opacity-25 mb-4">
                     <h6 class="fw-bold mb-3"><i class="bi bi-person-bounding-box text-primary me-2"></i>¿Para quién es esta ruta?</h6>
                     <div class="alert alert-info border-0 bg-info bg-opacity-10 small py-2 px-3 mb-4">
-                        <i class="bi bi-info-circle-fill me-1"></i> El sistema filtrará inteligentemente los cursos disponibles según el rol que elijas aquí.
+                        <i class="bi bi-info-circle-fill me-1"></i> El sistema filtrará inteligentemente los módulos disponibles según el rol que elijas aquí.
                     </div>
 
                     <div class="row g-4">
@@ -72,6 +85,17 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% if modo_onboarding %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Cartera / Campaña Objetivo (Opcional)</label>
+                            <select class="form-select form-select-lg bg-light border-0" name="cartera_objetivo">
+                                <option value="">-- Todas las Carteras --</option>
+                                {% for n in negocios %}
+                                    <option value="{{ n.id }}">{{ n.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import traceback
+﻿import traceback
 import csv
 import openpyxl
 import uuid
@@ -81,9 +81,9 @@ def _notificar_respuesta_encuesta(encuesta, perfil):
         return
 
     if encuesta.es_anonima:
-        detalle = f'Se registró una respuesta anónima en "{encuesta.titulo}".'
+        detalle = f'Se registrÃ³ una respuesta anÃ³nima en "{encuesta.titulo}".'
     else:
-        detalle = f'{perfil.user.get_full_name() or perfil.user.username} respondió "{encuesta.titulo}".'
+        detalle = f'{perfil.user.get_full_name() or perfil.user.username} respondiÃ³ "{encuesta.titulo}".'
 
     for usuario in _usuarios_notificacion_encuestas():
         Notificacion.objects.create(
@@ -147,7 +147,7 @@ def portada_curso_valida(portada):
     if extension not in PORTADA_CURSO_EXT_PERMITIDAS:
         return False, 'La miniatura debe ser JPG, PNG o WEBP.'
     if portada.size > MAX_PORTADA_CURSO_SIZE:
-        return False, 'La miniatura supera el máximo permitido (2 MB).'
+        return False, 'La miniatura supera el mÃ¡ximo permitido (2 MB).'
     return True, ''
 
 
@@ -310,10 +310,10 @@ def crear_comunicado_desde_request(request):
     adjunto = request.FILES.get('adjunto')
 
     if not titulo or not mensaje:
-        messages.error(request, 'El título y el mensaje son obligatorios.')
+        messages.error(request, 'El tÃ­tulo y el mensaje son obligatorios.')
         return False
     if not adjunto_comunicacion_valido(adjunto):
-        messages.error(request, 'El adjunto no es válido. Usa archivos permitidos de hasta 15 MB.')
+        messages.error(request, 'El adjunto no es vÃ¡lido. Usa archivos permitidos de hasta 15 MB.')
         return False
 
     Comunicado.objects.create(titulo=titulo[:200], mensaje=mensaje, adjunto=adjunto, activo=True)
@@ -321,7 +321,7 @@ def crear_comunicado_desde_request(request):
     return True
 
 # ==========================================
-# DIRECTORIO DE PERSONAL E IMPORTACIÓN EXCEL
+# DIRECTORIO DE PERSONAL E IMPORTACIÃ“N EXCEL
 # ==========================================
 @login_required(login_url='login')
 @solo_directivos
@@ -391,9 +391,9 @@ def colaboradores(request):
     })
 
 def generar_contrasena_segura():
-    """Genera una contraseña aleatoria de 12 caracteres"""
+    """Genera una contraseÃ±a aleatoria de 12 caracteres"""
     alphabet = string.ascii_letters + string.digits + string.punctuation
-    # Evitar caracteres problemáticos
+    # Evitar caracteres problemÃ¡ticos
     alphabet = alphabet.replace("'", "").replace('"', "").replace('\\', "")
     contrasena = ''.join(secrets.choice(alphabet) for i in range(12))
     return contrasena
@@ -452,7 +452,7 @@ def editar_colaborador(request, pk):
                     }
                 )
             else:
-                messages.warning(request, 'No se activó Onboarding porque el colaborador no tiene DNI/documento registrado.')
+                messages.warning(request, 'No se activÃ³ Onboarding porque el colaborador no tiene DNI/documento registrado.')
         else:
             CandidatoOnboarding.objects.filter(colaborador=colab).delete()
 
@@ -501,7 +501,7 @@ def procesar_mapeo_personal(request):
 
     ruta_archivo = request.session.get('ruta_excel_tmp')
     if not ruta_archivo or not default_storage.exists(ruta_archivo):
-        messages.error(request, 'El archivo de personal expiró. Sube el Excel nuevamente.')
+        messages.error(request, 'El archivo de personal expirÃ³. Sube el Excel nuevamente.')
         return redirect('colaboradores')
 
     try:
@@ -595,7 +595,7 @@ def procesar_mapeo_personal(request):
             f'Base personal procesada. Creados: {creados}, actualizados: {actualizados}, omitidos: {omitidos}.'
         )
     except Exception:
-        messages.error(request, 'Ocurrió un error al procesar la base de personal. Verifica el mapeo de columnas.')
+        messages.error(request, 'OcurriÃ³ un error al procesar la base de personal. Verifica el mapeo de columnas.')
 
     return redirect('colaboradores')
 
@@ -605,7 +605,7 @@ def procesar_mapeo_balotario(request):
         try:
             ruta_archivo = request.session.get('ruta_excel_balotario')
             if not ruta_archivo or not default_storage.exists(ruta_archivo):
-                messages.error(request, "El archivo expiró. Vuelve a subirlo.")
+                messages.error(request, "El archivo expirÃ³. Vuelve a subirlo.")
                 return redirect('gestor_lms')
 
             idx_pregunta = int(request.POST.get('prop_pregunta', -1))
@@ -652,12 +652,12 @@ def procesar_mapeo_balotario(request):
             return redirect('previsualizar_balotario')
         except Exception as e:
             error_texto = traceback.format_exc()
-            return HttpResponse(f"<div style='padding:20px; font-family: monospace; background:#ffe6e6; color:red; border:2px solid red;'><h2>¡EL ERROR FUE ATRAPADO!</h2><pre>{error_texto}</pre></div>", status=200)
+            return HttpResponse(f"<div style='padding:20px; font-family: monospace; background:#ffe6e6; color:red; border:2px solid red;'><h2>Â¡EL ERROR FUE ATRAPADO!</h2><pre>{error_texto}</pre></div>", status=200)
     return redirect('gestor_lms')
 
 
 # ==========================================
-# ONBOARDING CORPORATIVO (INDUCCIÓN)
+# ONBOARDING CORPORATIVO (INDUCCIÃ“N)
 # ==========================================
 @login_required(login_url='login')
 def induccion(request): return redirect('mi_induccion')
@@ -680,7 +680,7 @@ def onboarding_admin(request):
         if 'crear_ruta_induccion' in request.POST:
             nombre_ruta = (request.POST.get('nombre_ruta') or '').strip()
             if not nombre_ruta:
-                messages.error(request, 'La ruta de inducción necesita un nombre.')
+                messages.error(request, 'La ruta de inducciÃ³n necesita un nombre.')
                 return redirect('onboarding_admin')
 
             RutaInduccion.objects.create(
@@ -692,7 +692,7 @@ def onboarding_admin(request):
                 area_objetivo=Area.objects.filter(id=request.POST.get('area_objetivo')).first() if request.POST.get('area_objetivo') else None,
                 activa=True,
             )
-            messages.success(request, 'Ruta de inducción creada correctamente.')
+            messages.success(request, 'Ruta de inducciÃ³n creada correctamente.')
             return redirect('onboarding_admin')
 
         if 'agregar_modulo_ruta' in request.POST:
@@ -710,15 +710,15 @@ def onboarding_admin(request):
             prereq_id = request.POST.get('prerequisito_item')
             item.prerequisito = RutaInduccionModulo.objects.filter(id=prereq_id, ruta=ruta).first() if prereq_id else None
             item.save(update_fields=['prerequisito'])
-            messages.success(request, 'Módulo agregado/actualizado en la ruta de inducción.')
+            messages.success(request, 'MÃ³dulo agregado/actualizado en la ruta de inducciÃ³n.')
             return redirect('onboarding_admin')
 
-        # 1. CREAR MÓDULO DE INDUCCIÓN
+        # 1. CREAR MÃ“DULO DE INDUCCIÃ“N
         if 'crear_modulo' in request.POST:
             titulo = request.POST.get('titulo')
             descripcion = request.POST.get('descripcion')
             
-            # --- Smart Targeting (Segmentación) ---
+            # --- Smart Targeting (SegmentaciÃ³n) ---
             publico_general = request.POST.get('publico_general') == 'on'
             rol_permitido = request.POST.get('rol_permitido') or None
             area_permitida_id = request.POST.get('area_permitida')
@@ -744,9 +744,9 @@ def onboarding_admin(request):
                 version=version_val,
                 estado_publicacion=request.POST.get('estado_publicacion') or 'PUBLICADO',
             )
-            messages.success(request, f"Módulo de Inducción '{titulo}' creado exitosamente.")
+            messages.success(request, f"MÃ³dulo de InducciÃ³n '{titulo}' creado exitosamente.")
             
-        # 2. AGREGAR LECCIÓN (SOPORTE CANVA / PPT)
+        # 2. AGREGAR LECCIÃ“N (SOPORTE CANVA / PPT)
         elif 'crear_leccion' in request.POST:
             curso_id = request.POST.get('curso_id')
             curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='INDUCCION')
@@ -762,19 +762,19 @@ def onboarding_admin(request):
                 archivo_pdf=request.FILES.get('archivo_pdf'),
                 orden=request.POST.get('orden', 1)
             )
-            messages.success(request, "¡Material interactivo agregado correctamente a la inducción!")
+            messages.success(request, "Â¡Material interactivo agregado correctamente a la inducciÃ³n!")
 
-        # 3. CREAR PRUEBA RÁPIDA (EXAMEN)
+        # 3. CREAR PRUEBA RÃPIDA (EXAMEN)
         elif 'crear_evaluacion' in request.POST:
             curso_id = request.POST.get('curso_id')
             curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='INDUCCION')
             
             if hasattr(curso, 'evaluacion'):
-                messages.error(request, "Este módulo ya tiene una prueba configurada.")
+                messages.error(request, "Este mÃ³dulo ya tiene una prueba configurada.")
             else:
                 EvaluacionCurso.objects.create(
                     curso=curso,
-                    titulo=request.POST.get('titulo', 'Prueba Rápida de Inducción'),
+                    titulo=request.POST.get('titulo', 'Prueba RÃ¡pida de InducciÃ³n'),
                     puntaje_maximo=request.POST.get('puntaje_maximo', 20),
                     puntaje_aprobatorio=request.POST.get('puntaje_aprobatorio', 14),
                     preguntas_a_mostrar=request.POST.get('preguntas_a_mostrar', 5),
@@ -783,7 +783,7 @@ def onboarding_admin(request):
                     puntos_premio=10,
                     intentos_maximos=int(request.POST.get('intentos_maximos') or 0),
                 )
-                messages.success(request, "¡Prueba rápida creada! Ya puedes subir tu balotario en formato Excel.")
+                messages.success(request, "Â¡Prueba rÃ¡pida creada! Ya puedes subir tu balotario en formato Excel.")
                 
         # 4. REGISTRAR CANDIDATO NUEVO
         elif 'registrar_candidato' in request.POST:
@@ -792,17 +792,17 @@ def onboarding_admin(request):
             dni_val = request.POST.get('dni')
             telefono_val = request.POST.get('telefono', '')
             puesto_val = request.POST.get('puesto_esperado', 'ASESOR')
-            negocio_id = request.POST.get('campaña_destino')
+            negocio_id = request.POST.get('campaÃ±a_destino')
             
             if CandidatoOnboarding.objects.filter(dni=dni_val).exists():
                 messages.error(request, f"El DNI {dni_val} ya se encuentra registrado.")
             else:
-                CandidatoOnboarding.objects.create(nombres=nombres_val, apellidos=apellidos_val, dni=dni_val, telefono=telefono_val, puesto_esperado=puesto_val, campaña_destino_id=negocio_id if negocio_id else None)
+                CandidatoOnboarding.objects.create(nombres=nombres_val, apellidos=apellidos_val, dni=dni_val, telefono=telefono_val, puesto_esperado=puesto_val, campaÃ±a_destino_id=negocio_id if negocio_id else None)
                 messages.success(request, "Postulante registrado correctamente.")
         return redirect('onboarding_admin')
 
     # --- DATOS PARA EL DASHBOARD DE RRHH ---
-    onboardings_activos = CandidatoOnboarding.objects.all().select_related('colaborador__user', 'campaña_destino')
+    onboardings_activos = CandidatoOnboarding.objects.all().select_related('colaborador__user', 'campaÃ±a_destino')
     lista_candidatos_progreso = []
     for item in onboardings_activos:
         if item.colaborador:
@@ -816,7 +816,7 @@ def onboarding_admin(request):
             ratio = "Expediente"
         lista_candidatos_progreso.append({'onboarding': item, 'porcentaje': porcentaje, 'ratio': ratio})
 
-    # Extraemos SOLO los de inducción (y sus clases/exámenes precargados)
+    # Extraemos SOLO los de inducciÃ³n (y sus clases/exÃ¡menes precargados)
     cursos_biblioteca = CursoInduccion.objects.filter(activo=True, tipo='INDUCCION').select_related('evaluacion').prefetch_related('lecciones').order_by('-fecha_creacion')
     rutas_induccion = RutaInduccion.objects.filter(activa=True).prefetch_related('items__modulo', 'items__prerequisito').order_by('nombre')
     negocios = Negocio.objects.all()
@@ -855,7 +855,7 @@ def editar_curso_induccion(request, curso_id):
         curso.prerequisito_curso = CursoInduccion.objects.filter(id=prerequisito_id, tipo='INDUCCION').exclude(id=curso.id).first() if prerequisito_id else None
         
         curso.save()
-        messages.success(request, f"¡Módulo '{curso.titulo}' actualizado!")
+        messages.success(request, f"Â¡MÃ³dulo '{curso.titulo}' actualizado!")
     return redirect('onboarding_admin')
 
 @login_required(login_url='login')
@@ -865,7 +865,7 @@ def eliminar_curso_induccion(request, curso_id):
     curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='INDUCCION')
     titulo = curso.titulo
     curso.delete()
-    messages.success(request, f"El módulo '{titulo}' ha sido eliminado.")
+    messages.success(request, f"El mÃ³dulo '{titulo}' ha sido eliminado.")
     return redirect('onboarding_admin')
 
 @login_required(login_url='login')
@@ -888,7 +888,7 @@ def asignar_modulos_induccion(request, colab_id):
             if not matricula.fecha_limite:
                 matricula.fecha_limite = date.today() + timedelta(days=7 * orden)
                 matricula.save(update_fields=['fecha_limite'])
-        messages.success(request, f"Malla formativa de Inducción actualizada para {colaborador.user.first_name}.")
+        messages.success(request, f"Malla formativa de InducciÃ³n actualizada para {colaborador.user.first_name}.")
         return redirect('onboarding_admin')
         
     cursos_actuales = MatriculaCurso.objects.filter(colaborador=colaborador).values_list('curso_id', flat=True)
@@ -954,7 +954,7 @@ def mi_induccion(request):
         matricula_actualizar.estado = 'COMPLETADO'
         matricula_actualizar.fecha_finalizacion = timezone.now()
         matricula_actualizar.save()
-        messages.success(request, f"¡Módulo '{matricula_actualizar.curso.titulo}' completado con éxito!")
+        messages.success(request, f"Â¡MÃ³dulo '{matricula_actualizar.curso.titulo}' completado con Ã©xito!")
         return redirect('mi_induccion')
 
     total_modulos = len(mis_modulos)
@@ -981,10 +981,10 @@ def actualizar_expediente(request, candidato_id):
         correo = (request.POST.get('correo') or '').strip().lower() or None
         telefono = (request.POST.get('telefono') or '').strip() or None
         puesto_esperado = request.POST.get('puesto_esperado') or candidato.puesto_esperado
-        campaña_destino_id = request.POST.get('campaña_destino') or None
+        campaÃ±a_destino_id = request.POST.get('campaÃ±a_destino') or None
 
         if dni_input and len(dni_input) != 8:
-            messages.error(request, 'El DNI debe tener exactamente 8 dígitos.')
+            messages.error(request, 'El DNI debe tener exactamente 8 dÃ­gitos.')
             return redirect('onboarding_admin')
 
         candidato.nombres = nombres or candidato.nombres
@@ -993,7 +993,7 @@ def actualizar_expediente(request, candidato_id):
         candidato.correo = correo
         candidato.telefono = telefono
         candidato.puesto_esperado = puesto_esperado
-        candidato.campaña_destino_id = campaña_destino_id
+        candidato.campaÃ±a_destino_id = campaÃ±a_destino_id
         candidato.doc_cv = request.POST.get('doc_cv') == 'on'
         candidato.doc_dni = request.POST.get('doc_dni') == 'on'
         candidato.doc_antecedentes = request.POST.get('doc_antecedentes') == 'on'
@@ -1009,7 +1009,7 @@ def actualizar_expediente(request, candidato_id):
             if candidato.dni:
                 candidato.colaborador.dni = candidato.dni
             candidato.colaborador.rol = candidato.puesto_esperado
-            candidato.colaborador.negocio = candidato.campaña_destino
+            candidato.colaborador.negocio = candidato.campaÃ±a_destino
             candidato.colaborador.save(update_fields=['dni', 'rol', 'negocio'])
 
         messages.success(request, f"Expediente de {candidato.nombres} actualizado.")
@@ -1021,7 +1021,7 @@ def pasar_a_planilla(request, candidato_id):
     candidato = get_object_or_404(CandidatoOnboarding, id=candidato_id)
     dni_limpio = ''.join(ch for ch in str(candidato.dni or '') if ch.isdigit())
     if len(dni_limpio) != 8:
-        messages.error(request, 'El candidato no puede pasar a planilla sin un DNI válido de 8 dígitos.')
+        messages.error(request, 'El candidato no puede pasar a planilla sin un DNI vÃ¡lido de 8 dÃ­gitos.')
         return redirect('onboarding_admin')
 
     if candidato.porcentaje_expediente() < 100:
@@ -1042,7 +1042,7 @@ def pasar_a_planilla(request, candidato_id):
                 candidato.colaborador = nuevo_colaborador
                 candidato.estado = 'COMPLETADO'
                 candidato.save()
-                messages.success(request, f"¡{candidato.nombres} ingresó a planilla!")
+                messages.success(request, f"Â¡{candidato.nombres} ingresÃ³ a planilla!")
     except Exception:
         messages.error(request, "Error al procesar el alta. Verifique el DNI.")
     return redirect('onboarding_admin')
@@ -1101,10 +1101,10 @@ def sincronizar_taxonomia(request):
     import sys
     from intranet.models.rrhh_core import Negocio, Area, Cargo
     
-    # EJECUTAR EL CÓDIGO DE POBLACIÓN DIRECTAMENTE AQUÍ
+    # EJECUTAR EL CÃ“DIGO DE POBLACIÃ“N DIRECTAMENTE AQUÃ
     negocios_data = [
         "BAN BIF - Vigente y Dracma", "BAN BIF - Preventiva", "BAN BIF - Temprana", "BAN BIF - Castigo",
-        "BBVA TARDÍAS - ExtraJudicial", "BBVA TARDÍAS - Judicial", "BBVA TARDÍAS - Castigo",
+        "BBVA TARDÃAS - ExtraJudicial", "BBVA TARDÃAS - Judicial", "BBVA TARDÃAS - Castigo",
         "BBVA CONTINENTAL - CHALLENGER", "BBVA CONTINENTAL - Consumer",
         "BBVA TEMPRANAS - Particulares Vencida", "BBVA TEMPRANAS - Convenios", "BBVA TEMPRANAS - Castigo",
         "CAMPO - Campo", "CAMPO BBVA - Campo",
@@ -1119,31 +1119,31 @@ def sincronizar_taxonomia(request):
         negocios_ids.append(n.id)
         
     areas_cargos_data = {
-        "BANCOS - Sin área específica": ["SUPERVISOR ESAN", "Supervisor(a) de Gestión"],
+        "BANCOS - Sin Ã¡rea especÃ­fica": ["SUPERVISOR ESAN", "Supervisor(a) de GestiÃ³n"],
         "BANCOS - BAN BIF": ["Coordinador(a) Junior"],
-        "BANCOS - BBVA CASTIGO / BVVA CASTIGO": ["Coordinador(a) Junior", "Coordinador(a) de Gestión", "Supervisora de Gestion (BBVA Castigo)"],
-        "BANCOS - BBVA Convenios/Delfos": ["Supervisor(a) de Gestión"],
+        "BANCOS - BBVA CASTIGO / BVVA CASTIGO": ["Coordinador(a) Junior", "Coordinador(a) de GestiÃ³n", "Supervisora de Gestion (BBVA Castigo)"],
+        "BANCOS - BBVA Convenios/Delfos": ["Supervisor(a) de GestiÃ³n"],
         "BANCOS - BBVA ExtraJudicial": ["Supervisor de Gestion"],
         "BANCOS - BBVA JUDICIAL": ["Coordinador(a) Junior"],
-        "BANCOS - BBVA Particulares Vencida": ["Coordinador(a) de Gestión", "Supervisor(a) de Gestión", "Supervisora (BBVA Prev. - Particulares . Vcda. Tard)"],
-        "BANCOS - COMPARTAMOS BANCO / RJ .COMPARTAMOS": ["Coordinador(a) de Gestión"],
+        "BANCOS - BBVA Particulares Vencida": ["Coordinador(a) de GestiÃ³n", "Supervisor(a) de GestiÃ³n", "Supervisora (BBVA Prev. - Particulares . Vcda. Tard)"],
+        "BANCOS - COMPARTAMOS BANCO / RJ .COMPARTAMOS": ["Coordinador(a) de GestiÃ³n"],
         "BANCOS - Efectiva - IBK BPE": ["Supervisora de Gestion"],
         "BANCOS - FINANCIERA EFECTIVA": ["Supervisora (EFECTIVA - XPERTO - CASTIGO)"],
         "BANCOS - Pymes Vencida": ["JEFE DE GESTION (MAF - Vda Pymes)"],
         "BANCOS - Tempranas": ["SUBGERENCIA COMERCIAL"],
         "CAMPO - Campo": ["Coordinador(a) de Campo", "Supervisor de Gestion de Campo - SENIOR"],
-        "RJ ADMINISTRATIVO - Administración General": ["Jefe de Administración", "Administrativo", "Asistente Administrativo", "Gerente General"],
-        "RJ ADMINISTRATIVO - Área Back Office": ["Back Office", "Supervisor(a) BACK OFFICE", "Digitadora"],
-        "RJ ADMINISTRATIVO - Área de Calidad y Formación": ["Jefe de Calidad y RR. HH.", "Coordinador(a) de Calidad y Formacion", "Coordinador(a) de Calidad", "Supervisor(a) de Calidad", "Asistente de Calidad y Formacion", "Asistente de Calidad"],
-        "RJ ADMINISTRATIVO - Área de Contabilidad y Finanzas": ["Contador", "Coordinador (a) de Contabilidad", "Asistente de Contabilidad", "Asistente Contable"],
-        "RJ ADMINISTRATIVO - Área Legal": ["Asesor Legal"],
-        "RJ ADMINISTRATIVO - Área de Mantenimiento y Logística": ["Asistente de Logística / Asistente de Logistica"],
-        "RJ ADMINISTRATIVO - Área de Recursos Humanos": ["Supervisora de RRHH", "Coordinador(a) de RRHH", "Asistente de RRHH", "Médico Ocupacional", "Coordinador de Capacitación"],
-        "RJ ADMINISTRATIVO - Área de Seguridad": ["Jefe de Seguridad", "Coordinador de Seguridad"],
-        "RJ ADMINISTRATIVO - Área de Tecnologías de la Información (Sistemas)": ["Supervisor Informático", "Supervisor TI", "Coordinador(a) de Sistemas", "Asistente de Sistemas", "Asistente (Monitoreo Of. San Isidro - LIMA)", "Asistente Soporte Técnico"],
-        "RJ ADMINISTRATIVO - Central Telefónica": ["Central Telefónica"],
+        "RJ ADMINISTRATIVO - AdministraciÃ³n General": ["Jefe de AdministraciÃ³n", "Administrativo", "Asistente Administrativo", "Gerente General"],
+        "RJ ADMINISTRATIVO - Ãrea Back Office": ["Back Office", "Supervisor(a) BACK OFFICE", "Digitadora"],
+        "RJ ADMINISTRATIVO - Ãrea de Calidad y FormaciÃ³n": ["Jefe de Calidad y RR. HH.", "Coordinador(a) de Calidad y Formacion", "Coordinador(a) de Calidad", "Supervisor(a) de Calidad", "Asistente de Calidad y Formacion", "Asistente de Calidad"],
+        "RJ ADMINISTRATIVO - Ãrea de Contabilidad y Finanzas": ["Contador", "Coordinador (a) de Contabilidad", "Asistente de Contabilidad", "Asistente Contable"],
+        "RJ ADMINISTRATIVO - Ãrea Legal": ["Asesor Legal"],
+        "RJ ADMINISTRATIVO - Ãrea de Mantenimiento y LogÃ­stica": ["Asistente de LogÃ­stica / Asistente de Logistica"],
+        "RJ ADMINISTRATIVO - Ãrea de Recursos Humanos": ["Supervisora de RRHH", "Coordinador(a) de RRHH", "Asistente de RRHH", "MÃ©dico Ocupacional", "Coordinador de CapacitaciÃ³n"],
+        "RJ ADMINISTRATIVO - Ãrea de Seguridad": ["Jefe de Seguridad", "Coordinador de Seguridad"],
+        "RJ ADMINISTRATIVO - Ãrea de TecnologÃ­as de la InformaciÃ³n (Sistemas)": ["Supervisor InformÃ¡tico", "Supervisor TI", "Coordinador(a) de Sistemas", "Asistente de Sistemas", "Asistente (Monitoreo Of. San Isidro - LIMA)", "Asistente Soporte TÃ©cnico"],
+        "RJ ADMINISTRATIVO - Central TelefÃ³nica": ["Central TelefÃ³nica"],
         "RJ ADMINISTRATIVO - Marketing": ["Asistente de Marketing"],
-        "RJ ADMINISTRATIVO - Mandos Medios / Operativos": ["Jefe de Productividad", "Coordinador Zonal", "Supervisor(a) Zonal", "Supervisor Junior de Gestion", "Supervisor(a) de Gestión", "Asistente de Gestión"]
+        "RJ ADMINISTRATIVO - Mandos Medios / Operativos": ["Jefe de Productividad", "Coordinador Zonal", "Supervisor(a) Zonal", "Supervisor Junior de Gestion", "Supervisor(a) de GestiÃ³n", "Asistente de GestiÃ³n"]
     }
     
     areas_activas_ids = []
@@ -1161,11 +1161,11 @@ def sincronizar_taxonomia(request):
             cargo.save()
             cargos_activos_ids.append(cargo.id)
             
-    # Ocultar áreas no listadas
+    # Ocultar Ã¡reas no listadas
     Area.objects.exclude(id__in=areas_activas_ids).update(activa=False)
     Cargo.objects.exclude(id__in=cargos_activos_ids).update(activa=False)
     
-    messages.success(request, "¡Taxonomía sincronizada correctamente! Se han creado y ordenado todas las áreas, cargos y negocios (carteras).")
+    messages.success(request, "Â¡TaxonomÃ­a sincronizada correctamente! Se han creado y ordenado todas las Ã¡reas, cargos y negocios (carteras).")
     return redirect('inicio')
 
 # ==========================================
@@ -1204,14 +1204,14 @@ def encuestas_personal(request):
 
             elif pregunta.tipo == 'CERRADA':
                 if pregunta.obligatoria and valor not in ['SI', 'NO']:
-                    errores.append(f'La pregunta "{pregunta.texto}" requiere respuesta Sí/No.')
+                    errores.append(f'La pregunta "{pregunta.texto}" requiere respuesta SÃ­/No.')
                 payload.append({'pregunta': pregunta, 'valor_si_no': True if valor == 'SI' else False if valor == 'NO' else None})
                 respuestas_previas[pregunta.id] = valor
 
             elif pregunta.tipo == 'OPCION_UNICA':
                 opcion_obj = pregunta.opciones.filter(id=valor).first() if valor else None
                 if pregunta.obligatoria and not opcion_obj:
-                    errores.append(f'La pregunta "{pregunta.texto}" requiere seleccionar una opción.')
+                    errores.append(f'La pregunta "{pregunta.texto}" requiere seleccionar una opciÃ³n.')
                 payload.append({'pregunta': pregunta, 'valor_opcion': opcion_obj})
                 respuestas_previas[pregunta.id] = opcion_obj.texto if opcion_obj else ''
 
@@ -1232,7 +1232,7 @@ def encuestas_personal(request):
                     except ValueError:
                         fecha_valor = None
                 if pregunta.obligatoria and not fecha_valor:
-                    errores.append(f'La pregunta "{pregunta.texto}" requiere una fecha válida.')
+                    errores.append(f'La pregunta "{pregunta.texto}" requiere una fecha vÃ¡lida.')
                 payload.append({'pregunta': pregunta, 'valor_fecha': fecha_valor})
                 respuestas_previas[pregunta.id] = fecha_valor.isoformat() if fecha_valor else ''
 
@@ -1256,7 +1256,7 @@ def encuestas_personal(request):
 
         _notificar_respuesta_encuesta(encuesta, perfil)
 
-        messages.success(request, 'Formulario enviado correctamente. Tus datos se asociaron automáticamente a tu usuario.')
+        messages.success(request, 'Formulario enviado correctamente. Tus datos se asociaron automÃ¡ticamente a tu usuario.')
         return redirect('encuestas_personal')
 
     encuestas = Encuesta.objects.filter(activa=True).select_related('area_permitida', 'cargo_permitido', 'cartera_vinculada').prefetch_related('preguntas').order_by('-fecha_creacion')
@@ -1424,7 +1424,7 @@ def crear_encuesta_view(request):
             except Exception as e:
                 pass # Manejo simple de error
 
-        messages.success(request, f"¡Encuesta '{titulo}' creada exitosamente!")
+        messages.success(request, f"Â¡Encuesta '{titulo}' creada exitosamente!")
         return redirect('encuestas_admin')
 
     return render(request, 'intranet/admin/encuestas_crear.html', {
@@ -1485,7 +1485,7 @@ def exportar_encuesta(request, pk):
 
     for respuesta in respuestas:
         if encuesta.es_anonima:
-            respondiente = 'Anónimo'
+            respondiente = 'AnÃ³nimo'
             usuario = ''
         else:
             respondiente = respuesta.colaborador.user.get_full_name() if respuesta.colaborador and respuesta.colaborador.user else ''
@@ -1495,7 +1495,7 @@ def exportar_encuesta(request, pk):
         if respuesta.valor_texto not in (None, ''):
             valor = respuesta.valor_texto
         elif respuesta.valor_si_no is not None:
-            valor = 'Sí' if respuesta.valor_si_no else 'No'
+            valor = 'SÃ­' if respuesta.valor_si_no else 'No'
         elif respuesta.valor_opcion_id:
             valor = respuesta.valor_opcion.texto
         elif respuesta.valor_numero is not None:
@@ -1530,12 +1530,12 @@ def mensajeria(request):
             messages.error(request, 'Completa destinatarios, asunto y mensaje.')
             return redirect('mensajeria')
         if not adjunto_comunicacion_valido(adjunto):
-            messages.error(request, 'El adjunto no es válido. Usa archivos permitidos de hasta 15 MB.')
+            messages.error(request, 'El adjunto no es vÃ¡lido. Usa archivos permitidos de hasta 15 MB.')
             return redirect('mensajeria')
 
         destinatarios = Colaborador.objects.filter(id__in=destinatarios_ids).exclude(id=perfil.id).select_related('user')
         if not destinatarios.exists():
-            messages.error(request, 'Selecciona al menos un destinatario válido.')
+            messages.error(request, 'Selecciona al menos un destinatario vÃ¡lido.')
             return redirect('mensajeria')
 
         adjunto_bytes = adjunto.read() if adjunto else None
@@ -1559,11 +1559,11 @@ def mensajeria(request):
         recibidos = recibidos.filter(Q(remitente__user__first_name__icontains=query) | Q(remitente__user__last_name__icontains=query) | Q(asunto__icontains=query))
         enviados = enviados.filter(Q(destinatario__user__first_name__icontains=query) | Q(destinatario__user__last_name__icontains=query) | Q(asunto__icontains=query))
 
-    compañeros = Colaborador.objects.exclude(id=perfil.id).select_related('user').order_by('user__last_name', 'user__first_name')
+    compaÃ±eros = Colaborador.objects.exclude(id=perfil.id).select_related('user').order_by('user__last_name', 'user__first_name')
     return render(request, 'intranet/comunicacion/mensajeria.html', {
         'recibidos': recibidos,
         'enviados': enviados,
-        'compañeros': compañeros,
+        'compaÃ±eros': compaÃ±eros,
         'query': query,
     })
 @login_required(login_url='login')
@@ -1643,7 +1643,7 @@ def beneficios(request): return render(request, 'intranet/dashboard/beneficios.h
 
 
 # ==========================================
-# ACADEMIA LMS: GESTOR Y EXÁMENES
+# ACADEMIA LMS: GESTOR Y EXÃMENES
 # ==========================================
 @login_required(login_url='login')
 @solo_directivos
@@ -1735,7 +1735,7 @@ def gestor_lms(request):
                 version=int(request.POST.get('version') or 1),
                 estado_publicacion=request.POST.get('estado_publicacion') or 'PUBLICADO',
             )
-            messages.success(request, f"¡Curso '{titulo}' creado exitosamente en la Academia LMS!")
+            messages.success(request, f"Â¡Curso '{titulo}' creado exitosamente en la Academia LMS!")
             return redirect('gestor_lms')
 
         elif 'crear_leccion' in request.POST:
@@ -1757,7 +1757,7 @@ def gestor_lms(request):
                 archivo_pdf=archivo_pdf,
                 orden=orden
             )
-            messages.success(request, f"¡Clase '{titulo}' agregada correctamente al curso!")
+            messages.success(request, f"Â¡Clase '{titulo}' agregada correctamente al curso!")
             return redirect('gestor_lms')
 
         elif 'crear_evaluacion' in request.POST:
@@ -1769,7 +1769,7 @@ def gestor_lms(request):
             p_mostrar = request.POST.get('preguntas_a_mostrar', 10)
             aleatorio = request.POST.get('orden_aleatorio') == 'on'
             
-            # Nuevos campos de gamificación
+            # Nuevos campos de gamificaciÃ³n
             tiempo_limite = request.POST.get('tiempo_limite_minutos', 0)
             puntos_premio = request.POST.get('puntos_premio', 50)
             intentos_maximos = request.POST.get('intentos_maximos') or 0
@@ -1780,7 +1780,7 @@ def gestor_lms(request):
             curso = get_object_or_404(CursoInduccion, id=curso_id)
 
             if hasattr(curso, 'evaluacion'):
-                messages.error(request, f"El curso '{curso.titulo}' ya tiene una evaluación configurada.")
+                messages.error(request, f"El curso '{curso.titulo}' ya tiene una evaluaciÃ³n configurada.")
             else:
                 EvaluacionCurso.objects.create(
                     curso=curso, titulo=titulo, instrucciones=instrucciones,
@@ -1792,10 +1792,10 @@ def gestor_lms(request):
                     permitir_revision_respuestas=permitir_revision_respuestas,
                     retroalimentacion_final=retroalimentacion_final,
                 )
-                messages.success(request, "¡Examen creado! Ahora puedes subir el balotario de preguntas.")
+                messages.success(request, "Â¡Examen creado! Ahora puedes subir el balotario de preguntas.")
             return redirect('gestor_lms')
 
-    # Traemos las categorías y cursos segmentados
+    # Traemos las categorÃ­as y cursos segmentados
     categoria_filtro = request.GET.get('categoria', '')
     categorias = list(CategoriaModuloLMS.objects.filter(activa=True).order_by('nombre'))
     categorias_base = [c[0] for c in CursoInduccion.CATEGORIAS_LMS]
@@ -1863,7 +1863,7 @@ def editar_curso_lms(request, curso_id):
         curso.modulo_padre = CursoInduccion.objects.filter(id=modulo_padre_id, tipo='ACADEMIA').exclude(id=curso.id).first() if modulo_padre_id else None
         
         curso.save()
-        messages.success(request, f"¡Curso '{curso.titulo}' actualizado correctamente!")
+        messages.success(request, f"Â¡Curso '{curso.titulo}' actualizado correctamente!")
         
     return redirect('gestor_lms')
 
@@ -1896,7 +1896,7 @@ def duplicar_version_curso(request, curso_id):
         estado_publicacion='BORRADOR',
         activo=True,
     )
-    messages.success(request, f'Se creó la versión {nueva_version.version} en borrador para {curso.titulo}.')
+    messages.success(request, f'Se creÃ³ la versiÃ³n {nueva_version.version} en borrador para {curso.titulo}.')
     return redirect('gestor_lms')
 
 @login_required(login_url='login')
@@ -1904,7 +1904,7 @@ def duplicar_version_curso(request, curso_id):
 def eliminar_curso_lms(request, curso_id):
     curso = get_object_or_404(CursoInduccion, id=curso_id)
     titulo = curso.titulo
-    # Al eliminar el curso, Django borrará automáticamente sus clases, exámenes y progreso (Cascade)
+    # Al eliminar el curso, Django borrarÃ¡ automÃ¡ticamente sus clases, exÃ¡menes y progreso (Cascade)
     curso.delete()
     messages.success(request, f"El curso '{titulo}' y todo su contenido ha sido eliminado.")
     return redirect('gestor_lms')
@@ -2001,7 +2001,7 @@ def importar_excel_balotario(request, evaluacion_id):
             request.session.modified = True
             return render(request, 'intranet/lms/mapear_balotario.html', {'cabeceras': cabeceras_excel, 'evaluacion': evaluacion})
         except Exception as e:
-            messages.error(request, f"Ocurrió un error leyendo el Excel: {str(e)}")
+            messages.error(request, f"OcurriÃ³ un error leyendo el Excel: {str(e)}")
             return redirect('gestor_lms')
     return render(request, 'intranet/lms/subir_excel.html', {'evaluacion': evaluacion})
 
@@ -2013,7 +2013,7 @@ def previsualizar_y_guardar_balotario(request):
         eval_id = request.session.get('evaluacion_id_temporal')
 
         if not preguntas or not eval_id:
-            messages.warning(request, "No hay ningún balotario pendiente en memoria.")
+            messages.warning(request, "No hay ningÃºn balotario pendiente en memoria.")
             return redirect('gestor_lms')
 
         evaluacion = get_object_or_404(EvaluacionCurso, id=eval_id)
@@ -2021,7 +2021,7 @@ def previsualizar_y_guardar_balotario(request):
         if request.method == 'POST':
             with transaction.atomic():
                 
-                # --- LIMPIEZA ANTI-DUPLICADOS (Borrador automático) ---
+                # --- LIMPIEZA ANTI-DUPLICADOS (Borrador automÃ¡tico) ---
                 evaluacion.preguntas_balotario.all().delete()
                 # ------------------------------------------------------
 
@@ -2035,7 +2035,7 @@ def previsualizar_y_guardar_balotario(request):
                 for idx in ids_llegados:
                     enunciado_texto = request.POST.get(f'enunciado_{idx}')
                     
-                    # Evitamos guardar preguntas que lleguen vacías
+                    # Evitamos guardar preguntas que lleguen vacÃ­as
                     if not enunciado_texto or not enunciado_texto.strip():
                         continue
 
@@ -2046,17 +2046,17 @@ def previsualizar_y_guardar_balotario(request):
                     )
 
                     opcion_correcta_id = request.POST.get(f'correcta_{idx}')
-                    textos_agregados = set()  # <--- FILTRO MÁGICO: Evita duplicar textos en la misma pregunta
+                    textos_agregados = set()  # <--- FILTRO MÃGICO: Evita duplicar textos en la misma pregunta
                     
                     for i in range(1, 5):
                         txt_alt = request.POST.get(f'alt{i}_{idx}')
                         
-                        # Si la caja estaba vacía (ej: V o F de solo 2 opciones), la ignoramos por completo
+                        # Si la caja estaba vacÃ­a (ej: V o F de solo 2 opciones), la ignoramos por completo
                         if txt_alt and txt_alt.strip():
                             texto_limpio = txt_alt.strip()
                             texto_lower = texto_limpio.lower()
                             
-                            # Si no hemos guardado esta opción antes, la agregamos
+                            # Si no hemos guardado esta opciÃ³n antes, la agregamos
                             if texto_lower not in textos_agregados:
                                 es_correcta = (str(i) == str(opcion_correcta_id))
                                 OpcionRespuesta.objects.create(pregunta=nueva_pregunta, texto=texto_limpio, es_correcta=es_correcta)
@@ -2065,13 +2065,13 @@ def previsualizar_y_guardar_balotario(request):
             del request.session['balotario_temporal']
             del request.session['evaluacion_id_temporal']
 
-            messages.success(request, "¡Balotario mapeado e inyectado con éxito!")
+            messages.success(request, "Â¡Balotario mapeado e inyectado con Ã©xito!")
             return redirect('gestor_lms')
 
         return render(request, 'intranet/lms/previsualizar_balotario.html', {'preguntas': preguntas, 'evaluacion': evaluacion})
 
     except Exception as e:
-        messages.error(request, "Ocurrió un error procesando el balotario. Contacte a soporte.")
+        messages.error(request, "OcurriÃ³ un error procesando el balotario. Contacte a soporte.")
         return redirect('gestor_lms')
 
 @login_required(login_url='login')
@@ -2080,7 +2080,7 @@ def rendir_evaluacion(request, matricula_id):
     matricula = get_object_or_404(MatriculaCurso, id=matricula_id, colaborador=perfil)
     
     if not hasattr(matricula.curso, 'evaluacion'):
-        messages.error(request, "Este curso aún no tiene un examen configurado.")
+        messages.error(request, "Este curso aÃºn no tiene un examen configurado.")
         return redirect('academia')
         
     evaluacion = matricula.curso.evaluacion
@@ -2126,15 +2126,15 @@ def rendir_evaluacion(request, matricula_id):
             matricula.fecha_finalizacion = timezone.now()
             matricula.intentos_realizados = (matricula.intentos_realizados or 0) + 1
             
-            # --- EVALUACIÓN DE APROBACIÓN Y ASIGNACIÓN DE PUNTOS ---
+            # --- EVALUACIÃ“N DE APROBACIÃ“N Y ASIGNACIÃ“N DE PUNTOS ---
             if nota_final >= float(evaluacion.puntaje_aprobatorio):
                 matricula.estado = 'COMPLETADO'
                 if evaluacion.mostrar_resultado_inmediato:
-                    messages.success(request, f"¡Felicidades! Has aprobado el examen con {nota_final} puntos.")
+                    messages.success(request, f"Â¡Felicidades! Has aprobado el examen con {nota_final} puntos.")
                 else:
                     messages.success(request, "Examen enviado correctamente. Tu resultado sera revisado por el equipo de formacion.")
                 
-                # ¡MAGIA DE GAMIFICACIÓN! Sumamos los puntos del examen al perfil del usuario
+                # Â¡MAGIA DE GAMIFICACIÃ“N! Sumamos los puntos del examen al perfil del usuario
                 perfil.puntos_lms = getattr(perfil, 'puntos_lms', 0) + evaluacion.puntos_premio
                 perfil.save()
                 matricula.certificado_codigo = generar_codigo_certificado(matricula)
@@ -2209,7 +2209,7 @@ def resultados_evaluacion(request, evaluacion_id):
     aprobados = matriculas.filter(estado='COMPLETADO').count()
     reprobados = matriculas.filter(estado='REPROBADO').count()
 
-   # Preparamos los datos matemáticos para los gráficos circulares
+   # Preparamos los datos matemÃ¡ticos para los grÃ¡ficos circulares
     graficos = []
     for pregunta in evaluacion.preguntas_balotario.filter(activa=True):
         opciones = pregunta.alternativas.all()
@@ -2284,7 +2284,7 @@ def exportar_resultados_lms(request, evaluacion_id):
             m.fecha_finalizacion.strftime('%Y-%m-%d %H:%M') if m.fecha_finalizacion else ''
         ]
         
-        # Buscamos qué marcó exactamente en cada pregunta
+        # Buscamos quÃ© marcÃ³ exactamente en cada pregunta
         for p in preguntas:
             resp = RespuestaColaborador.objects.filter(matricula=m, pregunta=p).first()
             if resp and resp.opciones_marcadas.exists():
@@ -2348,7 +2348,7 @@ def detalle_curso(request, curso_id):
     # Extraemos todas las lecciones ordenadas
     lecciones = curso.lecciones.all().order_by('orden')
     
-    # Revisamos cuáles lecciones ya aprobó este asesor
+    # Revisamos cuÃ¡les lecciones ya aprobÃ³ este asesor
     lecciones_completadas = ProgresoLeccion.objects.filter(
         colaborador=perfil, completada=True
     ).values_list('leccion_id', flat=True)
@@ -2388,12 +2388,12 @@ def ver_leccion(request, leccion_id):
     perfil = getattr(request.user, 'perfil', None)
     leccion = get_object_or_404(LeccionCurso, id=leccion_id)
     
-    # VALIDACIÓN IDOR
+    # VALIDACIÃ“N IDOR
     if not usuario_es_directivo(request.user):
         if not perfil or not MatriculaCurso.objects.filter(colaborador=perfil, curso=leccion.curso).exists():
-            raise Http404("Lección no disponible")
+            raise Http404("LecciÃ³n no disponible")
             
-    # Verificamos si ya la había marcado como completada antes
+    # Verificamos si ya la habÃ­a marcado como completada antes
     ya_completada = ProgresoLeccion.objects.filter(colaborador=perfil, leccion=leccion, completada=True).exists()
     
     return render(request, 'intranet/lms/ver_leccion.html', {
@@ -2442,7 +2442,7 @@ def completar_leccion(request, leccion_id):
     perfil = getattr(request.user, 'perfil', None)
     leccion = get_object_or_404(LeccionCurso, id=leccion_id)
     
-    # VALIDACIÓN IDOR
+    # VALIDACIÃ“N IDOR
     if not perfil or not MatriculaCurso.objects.filter(colaborador=perfil, curso=leccion.curso).exists():
         raise Http404("No autorizado")
         
@@ -2453,7 +2453,7 @@ def completar_leccion(request, leccion_id):
         defaults={'completada': True}
     )
     
-    messages.success(request, f"¡Excelente! Has completado la clase: '{leccion.titulo}'")
+    messages.success(request, f"Â¡Excelente! Has completado la clase: '{leccion.titulo}'")
     return redirect('detalle_curso', curso_id=leccion.curso.id)
 
 # ==========================================
@@ -2462,11 +2462,11 @@ def completar_leccion(request, leccion_id):
 @login_required(login_url='login')
 @solo_directivos
 def dashboard_resultados(request):
-    # 1. Métricas generales de la plataforma
+    # 1. MÃ©tricas generales de la plataforma
     total_cursos = CursoInduccion.objects.count()
     total_examenes = EvaluacionCurso.objects.count()
     
-    # 2. Métricas de los usuarios (MatriculaCurso guarda las notas y estados)
+    # 2. MÃ©tricas de los usuarios (MatriculaCurso guarda las notas y estados)
     evaluaciones_rendidas = MatriculaCurso.objects.filter(estado__in=['COMPLETADO', 'REPROBADO'])
     total_rendidas = evaluaciones_rendidas.count()
     
@@ -2572,7 +2572,7 @@ def crear_curso_avanzado(request, curso_id=None):
             return redirect(f"/intranet/lms/editar-curso/{curso.id}/?step=2")
 
         elif paso == '3':
-            # Guardar evaluación
+            # Guardar evaluaciÃ³n
             if curso:
                 titulo_eval = request.POST.get('titulo')
                 instrucciones = request.POST.get('instrucciones', '')
@@ -2613,7 +2613,7 @@ def crear_curso_avanzado(request, curso_id=None):
             if curso:
                 curso.estado_publicacion = 'PUBLICADO'
                 curso.save()
-                messages.success(request, f"¡Curso '{curso.titulo}' publicado exitosamente!")
+                messages.success(request, f"Â¡Curso '{curso.titulo}' publicado exitosamente!")
                 return redirect('dashboard_resultados')
 
     context = {
@@ -2625,7 +2625,7 @@ def crear_curso_avanzado(request, curso_id=None):
     }
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        pass # Podríamos devolver JSON parciales aquí si lo deseamos
+        pass # PodrÃ­amos devolver JSON parciales aquÃ­ si lo deseamos
 
     return render(request, 'intranet/lms/crear_curso_stepper.html', context)
 
@@ -2725,7 +2725,7 @@ def crear_curso_induccion(request, curso_id=None):
             return redirect(f"/intranet/induccion/modulo/editar/{curso.id}/?step=2")
 
         elif paso == '3':
-            # Guardar evaluación
+            # Guardar evaluaciÃ³n
             if curso:
                 titulo_eval = request.POST.get('titulo')
                 instrucciones = request.POST.get('instrucciones', '')
@@ -2765,7 +2765,7 @@ def crear_curso_induccion(request, curso_id=None):
             if curso:
                 curso.estado_publicacion = 'PUBLICADO'
                 curso.save()
-                messages.success(request, f"¡Módulo de Inducción '{curso.titulo}' publicado exitosamente!")
+                messages.success(request, f"Â¡MÃ³dulo de InducciÃ³n '{curso.titulo}' publicado exitosamente!")
                 return redirect('onboarding_admin')
 
     return render(request, 'intranet/lms/crear_curso_stepper.html', {
@@ -2811,7 +2811,7 @@ def crear_ruta_induccion_view(request):
             except Exception as e:
                 pass
         
-        messages.success(request, f"¡Ruta '{nombre}' creada exitosamente!")
+        messages.success(request, f"Â¡Ruta '{nombre}' creada exitosamente!")
         return redirect('gestor_lms')
 
     # Pasar cursos al frontend para el buscador JS
@@ -2863,7 +2863,7 @@ def eliminar_encuesta(request, pk):
     return redirect('encuestas_admin')
 
 # ==========================================
-# GESTIÓN DETALLADA LMS (CURRÍCULUM Y CATEGORÍAS)
+# GESTIÃ“N DETALLADA LMS (CURRÃCULUM Y CATEGORÃAS)
 # ==========================================
 @login_required(login_url='login')
 @solo_directivos
@@ -2875,7 +2875,7 @@ def editar_categoria_lms(request, pk):
         categoria.icono = request.POST.get('icono_categoria')
         categoria.color = request.POST.get('color_categoria')
         categoria.save()
-        messages.success(request, f"Categoría '{categoria.nombre}' actualizada.")
+        messages.success(request, f"CategorÃ­a '{categoria.nombre}' actualizada.")
     return redirect('gestor_lms')
 
 @login_required(login_url='login')
@@ -2884,7 +2884,7 @@ def eliminar_categoria_lms(request, pk):
     categoria = get_object_or_404(CategoriaModuloLMS, id=pk)
     nombre = categoria.nombre
     categoria.delete()
-    messages.success(request, f"Categoría '{nombre}' eliminada correctamente.")
+    messages.success(request, f"CategorÃ­a '{nombre}' eliminada correctamente.")
     return redirect('gestor_lms')
 
 @login_required(login_url='login')
@@ -2904,12 +2904,12 @@ def curso_curriculum(request, pk):
                 archivo_pdf=request.FILES.get('archivo_pdf'),
                 orden=request.POST.get('orden', 1)
             )
-            messages.success(request, f"¡Clase agregada correctamente al curso!")
+            messages.success(request, f"Â¡Clase agregada correctamente al curso!")
             return redirect('curso_curriculum', pk=curso.id)
             
         elif 'crear_evaluacion' in request.POST:
             if hasattr(curso, 'evaluacion'):
-                messages.error(request, "Este curso ya tiene una evaluación.")
+                messages.error(request, "Este curso ya tiene una evaluaciÃ³n.")
             else:
                 EvaluacionCurso.objects.create(
                     curso=curso,
@@ -2926,7 +2926,7 @@ def curso_curriculum(request, pk):
                     permitir_revision_respuestas=request.POST.get('permitir_revision_respuestas') == 'on',
                     retroalimentacion_final=request.POST.get('retroalimentacion_final', '').strip(),
                 )
-                messages.success(request, "¡Examen creado correctamente!")
+                messages.success(request, "Â¡Examen creado correctamente!")
             return redirect('curso_curriculum', pk=curso.id)
 
     return render(request, 'intranet/lms/curso_curriculum.html', {
@@ -2949,7 +2949,7 @@ def editar_leccion_lms(request, pk):
         if request.FILES.get('archivo_pdf'):
             leccion.archivo_pdf = request.FILES.get('archivo_pdf')
         leccion.save()
-        messages.success(request, f"Lección '{leccion.titulo}' actualizada.")
+        messages.success(request, f"LecciÃ³n '{leccion.titulo}' actualizada.")
     return redirect('curso_curriculum', pk=curso_id)
 
 @login_required(login_url='login')
@@ -2959,7 +2959,7 @@ def eliminar_leccion_lms(request, pk):
     curso_id = leccion.curso.id
     titulo = leccion.titulo
     leccion.delete()
-    messages.success(request, f"Lección '{titulo}' eliminada.")
+    messages.success(request, f"LecciÃ³n '{titulo}' eliminada.")
     return redirect('curso_curriculum', pk=curso_id)
 
 @login_required(login_url='login')
@@ -2968,5 +2968,5 @@ def eliminar_evaluacion_lms(request, pk):
     evaluacion = get_object_or_404(EvaluacionCurso, id=pk)
     curso_id = evaluacion.curso.id
     evaluacion.delete()
-    messages.success(request, "Evaluación eliminada correctamente.")
+    messages.success(request, "EvaluaciÃ³n eliminada correctamente.")
     return redirect('curso_curriculum', pk=curso_id)

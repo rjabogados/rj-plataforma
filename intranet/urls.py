@@ -47,6 +47,7 @@ urlpatterns = [
     path('admin-onboarding/actualizar/<int:candidato_id>/', views.actualizar_expediente, name='actualizar_expediente'),
     path('admin-onboarding/contratar/<int:candidato_id>/', views.pasar_a_planilla, name='pasar_a_planilla'),
     path('admin-onboarding/asignar/<int:colab_id>/', views.asignar_modulos_induccion, name='asignar_modulos_induccion'),
+    path('admin-onboarding/crear-ruta/', lms.crear_ruta_induccion_view, name='crear_ruta_onboarding'),
     path('mi-induccion/', views.mi_induccion, name='mi_induccion'),
     path('onboarding/', views.induccion, name='induccion'),
     path('onboarding-admin/', views.induccion_admin, name='induccion_admin'),
@@ -101,7 +102,6 @@ urlpatterns = [
     path('lms/api/curso/<int:curso_id>/lecciones/', lms.api_gestionar_lecciones, name='api_gestionar_lecciones'),
     path('induccion/modulo/crear/', lms.crear_curso_induccion, name='crear_curso_induccion'),
     path('induccion/modulo/editar/<int:curso_id>/', lms.crear_curso_induccion, name='editar_curso_induccion'),
-    path('induccion/rutas/crear/', lms.crear_ruta_induccion_view, name='crear_ruta_induccion'),
 
     # ==========================================
     # BÓVEDA DIGITAL Y DOCUMENTOS
