@@ -2,6 +2,7 @@ import unicodedata
 from functools import wraps
 from django.shortcuts import redirect
 from django.contrib.auth.models import User
+from django.contrib import messages
 
 # --- CONTROL DE PERMISOS (RBAC) ---
 def requiere_rol(roles_permitidos):
@@ -13,7 +14,8 @@ def requiere_rol(roles_permitidos):
             perfil = getattr(request.user, 'perfil', None)
             if perfil and perfil.rol in roles_permitidos:
                 return view_func(request, *args, **kwargs)
-            return redirect('inicio')
+            messages.info(request, 'Este modulo no esta habilitado para tu perfil actual. Te mostramos el menu inicial.')
+            return redirect('menu_inicial')
         return _wrapped_view
     return decorator
 

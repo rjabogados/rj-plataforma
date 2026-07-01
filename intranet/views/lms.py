@@ -933,7 +933,7 @@ def mi_induccion(request):
         colaborador = request.user.perfil
     except:
         messages.error(request, "Tu usuario no tiene un perfil de trabajador asociado.")
-        return redirect('inicio')
+        return redirect('menu_inicial')
 
     cursos_disponibles = CursoInduccion.objects.filter(
         Q(publico_general=True) | 
@@ -1561,7 +1561,8 @@ def exportar_encuesta(request, pk):
 def mensajeria(request):
     perfil = getattr(request.user, 'perfil', None)
     if not perfil:
-        return redirect('inicio')
+        messages.info(request, 'Debes tener perfil de colaborador para usar mensajeria. Te mostramos el menu inicial.')
+        return redirect('menu_inicial')
 
     if request.method == 'POST' and request.POST.get('enviar_mensaje'):
         destinatarios_ids = request.POST.getlist('destinatarios')
@@ -1613,7 +1614,8 @@ def mensajeria(request):
 def leer_mensaje(request, pk):
     perfil = getattr(request.user, 'perfil', None)
     if not perfil:
-        return redirect('inicio')
+        messages.info(request, 'Debes tener perfil de colaborador para ver mensajes. Te mostramos el menu inicial.')
+        return redirect('menu_inicial')
 
     mensaje = get_object_or_404(MensajeInterno.objects.select_related('remitente__user', 'destinatario__user'), id=pk)
     if not es_participante_mensaje(mensaje, perfil):
@@ -1960,7 +1962,7 @@ def academia(request):
         colaborador = request.user.perfil
     except:
         messages.error(request, "Tu usuario no tiene un perfil de trabajador asociado.")
-        return redirect('inicio')
+        return redirect('menu_inicial')
 
     cursos_disponibles = CursoInduccion.objects.filter(
         Q(publico_general=True) | 

@@ -1,0 +1,64 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    <div class="page-hero mb-4">
+        <div class="card-body p-4 p-md-5 d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="fw-bold mb-1">Menu inicial</h2>
+                <p class="mb-0 opacity-75 fs-6">Selecciona un modulo para continuar. Este panel aparece cuando una opcion no aplica a tu perfil actual.</p>
+            </div>
+            <div class="d-none d-md-block opacity-50">
+                <i class="bi bi-grid-1x2-fill display-5"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div class="d-flex align-items-center mb-3">
+            <span class="icon-chip info me-2"><i class="bi bi-lightning-charge-fill"></i></span>
+            <h5 class="fw-bold mb-0 text-dark">Accesos disponibles</h5>
+        </div>
+        <div class="row g-3">
+            {% for item in accesos_base %}
+            <div class="col-md-6 col-xl-4">
+                <a href="{% url item.url %}" class="text-decoration-none">
+                    <div class="card card-buk panel-shell-soft h-100 card-hover-effect">
+                        <div class="card-body p-4 d-flex align-items-center">
+                            <i class="bi {{ item.icono }} fs-2 text-{{ item.color }} me-3 opacity-75"></i>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1">{{ item.titulo }}</h6>
+                                <span class="small text-muted">{{ item.descripcion }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if accesos_gestion %}
+    <div class="mb-4">
+        <div class="d-flex align-items-center mb-3">
+            <span class="icon-chip warning me-2"><i class="bi bi-shield-lock-fill"></i></span>
+            <h5 class="fw-bold mb-0 text-dark">Gestion administrativa</h5>
+        </div>
+        <div class="row g-3">
+            {% for item in accesos_gestion %}
+            <div class="col-md-6 col-xl-3">
+                <a href="{% url item.url %}" class="text-decoration-none">
+                    <div class="card card-buk panel-shell-soft h-100 card-hover-effect">
+                        <div class="card-body p-4 text-center">
+                            <i class="bi {{ item.icono }} fs-2 text-{{ item.color }} d-block mb-2"></i>
+                            <h6 class="fw-bold text-dark mb-1">{{ item.titulo }}</h6>
+                            <span class="small text-muted">{{ item.descripcion }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

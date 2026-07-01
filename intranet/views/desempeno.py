@@ -68,7 +68,8 @@ def dashboard_desempeno(request):
 def mis_evaluaciones(request):
     perfil = getattr(request.user, 'perfil', None)
     if not perfil:
-        return redirect('inicio')
+        messages.info(request, 'No se encontro un perfil asociado. Te mostramos el menu inicial.')
+        return redirect('menu_inicial')
         
     evaluaciones = EvaluacionDesempeno.objects.filter(colaborador=perfil).order_by('-periodo__fecha_inicio')
     
@@ -80,7 +81,8 @@ def mis_evaluaciones(request):
 def evaluar_equipo(request):
     perfil = getattr(request.user, 'perfil', None)
     if not perfil:
-        return redirect('inicio')
+        messages.info(request, 'No se encontro un perfil asociado. Te mostramos el menu inicial.')
+        return redirect('menu_inicial')
         
     evaluaciones = EvaluacionDesempeno.objects.filter(evaluador=perfil).order_by('-periodo__fecha_inicio')
     
@@ -99,7 +101,7 @@ def form_evaluacion(request, eval_id):
     
     if not (es_evaluador or es_evaluado or es_rrhh):
         messages.error(request, "No tienes permiso para ver esta evaluación.")
-        return redirect('inicio')
+        return redirect('menu_inicial')
         
     if request.method == 'POST':
         # Guardar autoevaluacion

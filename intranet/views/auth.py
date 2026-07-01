@@ -193,6 +193,35 @@ def guardar_atajos(request):
             return redirect('inicio')
     return redirect('inicio')
 
+
+@login_required(login_url='login')
+def menu_inicial(request):
+    perfil = getattr(request.user, 'perfil', None)
+
+    accesos_base = [
+        {'url': 'perfil', 'titulo': 'Mi Perfil', 'descripcion': 'Actualiza tus datos y seguridad.', 'icono': 'bi-person-gear', 'color': 'primary'},
+        {'url': 'notificaciones', 'titulo': 'Notificaciones', 'descripcion': 'Revisa alertas y avisos.', 'icono': 'bi-bell-fill', 'color': 'danger'},
+        {'url': 'documentos_personal', 'titulo': 'Mi Boveda', 'descripcion': 'Firma y consulta documentos personales.', 'icono': 'bi-folder-check', 'color': 'success'},
+        {'url': 'centro_ayuda', 'titulo': 'Centro de Ayuda', 'descripcion': 'Crea tickets o solicitudes.', 'icono': 'bi-headset', 'color': 'info'},
+        {'url': 'calendario', 'titulo': 'Calendario', 'descripcion': 'Eventos y agenda corporativa.', 'icono': 'bi-calendar3', 'color': 'warning'},
+        {'url': 'comunicados', 'titulo': 'Comunicados', 'descripcion': 'Novedades y anuncios internos.', 'icono': 'bi-megaphone-fill', 'color': 'secondary'},
+    ]
+
+    accesos_gestion = []
+    if request.user.is_superuser or (perfil and perfil.puede_ver_gestion):
+        accesos_gestion = [
+            {'url': 'colaboradores', 'titulo': 'Directorio de Personal', 'descripcion': 'Gestion de fichas y altas.', 'icono': 'bi-people-fill', 'color': 'info'},
+            {'url': 'asistencia', 'titulo': 'Asistencia', 'descripcion': 'Control de marcas y huellero.', 'icono': 'bi-fingerprint', 'color': 'warning'},
+            {'url': 'vacaciones_admin', 'titulo': 'Vacaciones Admin', 'descripcion': 'Aprobaciones del equipo.', 'icono': 'bi-airplane-engines-fill', 'color': 'primary'},
+            {'url': 'gestor_lms', 'titulo': 'Gestor LMS', 'descripcion': 'Cursos, lecciones y evaluaciones.', 'icono': 'bi-mortarboard-fill', 'color': 'dark'},
+        ]
+
+    return render(request, 'intranet/dashboard/menu_inicial.html', {
+        'perfil': perfil,
+        'accesos_base': accesos_base,
+        'accesos_gestion': accesos_gestion,
+    })
+
 @login_required(login_url='login')
 @solo_directivos
 def dashboard(request):
