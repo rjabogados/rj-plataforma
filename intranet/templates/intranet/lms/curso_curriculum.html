@@ -88,60 +88,7 @@
                                 </div>
                             </div>
 
-                            <!-- Modal Editar Lección -->
-                            <div class="modal fade" id="modalEditarLeccion{{ leccion.id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow-lg rounded-4">
-                                        <div class="modal-header bg-primary text-white rounded-top-4">
-                                            <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Editar Clase</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form method="POST" action="{% url 'editar_leccion_lms' leccion.id %}" enctype="multipart/form-data">
-                                            {% csrf_token %}
-                                            <div class="modal-body p-4 lms-input-soft">
-                                                <div class="row g-3">
-                                                    <div class="col-md-9">
-                                                        <label class="form-label fw-semibold text-secondary">Título de la Clase</label>
-                                                        <input type="text" class="form-control" name="titulo" value="{{ leccion.titulo }}" required>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <label class="form-label fw-semibold text-secondary">Orden (N°)</label>
-                                                        <input type="number" class="form-control" name="orden" value="{{ leccion.orden }}" required>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3 mt-3">
-                                                    <label class="form-label fw-semibold text-secondary">Breve Descripción</label>
-                                                    <textarea class="form-control" name="descripcion" rows="2">{{ leccion.descripcion|default:"" }}</textarea>
-                                                </div>
-                                                <div class="py-3 border-top mb-3 mt-4">
-                                                    <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-paperclip"></i> Enlaces Multimedia</h6>
-                                                    <div class="row g-3">
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-semibold text-danger"><i class="bi bi-youtube"></i> Enlace de Video</label>
-                                                            <input type="url" class="form-control" name="url_video" value="{{ leccion.url_video|default:'' }}">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> Actualizar PDF</label>
-                                                            <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-semibold text-success"><i class="bi bi-controller"></i> URL Simulador</label>
-                                                            <input type="url" class="form-control" name="url_simulador" value="{{ leccion.url_simulador|default:'' }}">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-semibold text-dark"><i class="bi bi-box-seam"></i> URL SCORM</label>
-                                                            <input type="url" class="form-control" name="paquete_scorm_url" value="{{ leccion.paquete_scorm_url|default:'' }}">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer bg-light rounded-bottom-4">
-                                                <button type="submit" class="btn btn-primary btn-pill fw-semibold">Guardar Cambios</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+
 
                             {% endfor %}
                         </div>
@@ -270,6 +217,64 @@
         </div>
     </div>
 </div>
+
+<!-- Modals outside container -->
+{% for leccion in lecciones %}
+<!-- Modal Editar Lección -->
+<div class="modal fade" id="modalEditarLeccion{{ leccion.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Editar Clase</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'editar_leccion_lms' leccion.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="row g-3">
+                        <div class="col-md-9">
+                            <label class="form-label fw-semibold text-secondary">Título de la Clase</label>
+                            <input type="text" class="form-control" name="titulo" value="{{ leccion.titulo }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold text-secondary">Orden (N°)</label>
+                            <input type="number" class="form-control" name="orden" value="{{ leccion.orden }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label fw-semibold text-secondary">Breve Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="2">{{ leccion.descripcion|default:"" }}</textarea>
+                    </div>
+                    <div class="py-3 border-top mb-3 mt-4">
+                        <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-paperclip"></i> Enlaces Multimedia</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-danger"><i class="bi bi-youtube"></i> Enlace de Video</label>
+                                <input type="url" class="form-control" name="url_video" value="{{ leccion.url_video|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-primary"><i class="bi bi-file-earmark-pdf-fill"></i> Actualizar PDF</label>
+                                <input type="file" class="form-control" name="archivo_pdf" accept=".pdf">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-success"><i class="bi bi-controller"></i> URL Simulador</label>
+                                <input type="url" class="form-control" name="url_simulador" value="{{ leccion.url_simulador|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark"><i class="bi bi-box-seam"></i> URL SCORM</label>
+                                <input type="url" class="form-control" name="paquete_scorm_url" value="{{ leccion.paquete_scorm_url|default:'' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-primary btn-pill fw-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
 <!-- Modal Crear Clase Nueva -->
 <div class="modal fade" id="modalCrearLeccion" tabindex="-1" aria-hidden="true">

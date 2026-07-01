@@ -143,61 +143,7 @@
                             </div>
                         </div>
 
-                        <!-- Modal Config Básica -->
-                        <div class="modal fade" id="modalEditarCurso{{ curso.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-lg modal-dialog-centered">
-                                <div class="modal-content border-0 shadow-lg rounded-4">
-                                    <div class="modal-header bg-secondary text-white rounded-top-4">
-                                        <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2"></i> Configuración Básica</h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form method="POST" action="{% url 'editar_curso_lms' curso.id %}">
-                                        {% csrf_token %}
-                                        <div class="modal-body p-4 lms-input-soft">
-                                            <div class="row g-3">
-                                                <div class="col-md-12">
-                                                    <label class="form-label fw-semibold text-secondary">Título del Curso</label>
-                                                    <input type="text" class="form-control" name="titulo" value="{{ curso.titulo }}" required>
-                                                </div>
-                                                <div class="col-md-12">
-                                                    <label class="form-label fw-semibold text-secondary">Descripción</label>
-                                                    <textarea class="form-control" name="descripcion" rows="2">{{ curso.descripcion }}</textarea>
-                                                </div>
-                                                <div class="col-md-12">
-                                                    <div class="form-check form-switch bg-white p-3 rounded-4 border border-1 border-light">
-                                                        <input class="form-check-input ms-0 me-3" type="checkbox" name="publico_general" id="checkPublico{{ curso.id }}" {% if curso.publico_general %}checked{% endif %} onchange="toggleFiltros('{{ curso.id }}')">
-                                                        <label class="form-check-label fw-semibold text-secondary" for="checkPublico{{ curso.id }}">Visible para toda la empresa</label>
-                                                    </div>
-                                                </div>
-                                                <div class="row g-3 mt-1" id="filtrosSegmentacion{{ curso.id }}" style="{% if curso.publico_general %}display: none;{% else %}display: flex;{% endif %}">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-semibold text-secondary">Categoría</label>
-                                                        <select class="form-select" name="categoria_lms">
-                                                            <option value="">-- Sin categoria --</option>
-                                                            {% for categoria in categorias %}
-                                                                <option value="{{ categoria.id }}" {% if curso.categoria_lms_id == categoria.id %}selected{% endif %}>{{ categoria.nombre }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-semibold text-secondary">Filtrar por Área</label>
-                                                        <select class="form-select" name="area_permitida">
-                                                            <option value="">-- Todas las Áreas --</option>
-                                                            {% for area in areas %}
-                                                                <option value="{{ area.id }}" {% if curso.area_permitida_id == area.id %}selected{% endif %}>{{ area.nombre }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer bg-light rounded-bottom-4">
-                                            <button type="submit" class="btn btn-secondary btn-pill fw-semibold">Guardar Cambios</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
+
 
                     </div>
                     {% endfor %}
@@ -243,43 +189,7 @@
                                 </td>
                             </tr>
                             
-                            <!-- Modal Editar Categoría -->
-                            <div class="modal fade" id="modalEditarCategoria{{ cat.id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow-lg rounded-4">
-                                        <div class="modal-header bg-dark text-white rounded-top-4">
-                                            <h5 class="modal-title fw-bold"><i class="bi bi-tags-fill me-2"></i>Editar Categoria</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form method="POST" action="{% url 'editar_categoria_lms' cat.id %}">
-                                            {% csrf_token %}
-                                            <div class="modal-body p-4 lms-input-soft">
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold text-secondary">Nombre</label>
-                                                    <input type="text" class="form-control" name="nombre_categoria" value="{{ cat.nombre }}" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold text-secondary">Descripcion corta</label>
-                                                    <input type="text" class="form-control" name="descripcion_categoria" value="{{ cat.descripcion }}">
-                                                </div>
-                                                <div class="row g-3">
-                                                    <div class="col-8">
-                                                        <label class="form-label fw-semibold text-secondary">Icono Bootstrap</label>
-                                                        <input type="text" class="form-control" name="icono_categoria" value="{{ cat.icono }}">
-                                                    </div>
-                                                    <div class="col-4">
-                                                        <label class="form-label fw-semibold text-secondary">Color</label>
-                                                        <input type="color" class="form-control form-control-color w-100" name="color_categoria" value="{{ cat.color }}">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer bg-light rounded-bottom-4">
-                                                <button type="submit" class="btn btn-dark btn-pill fw-semibold">Guardar Cambios</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+
                             {% empty %}
                             <tr><td colspan="4" class="text-center text-muted p-4">No hay categorías configuradas.</td></tr>
                             {% endfor %}
@@ -323,6 +233,105 @@
 
     </div>
 </div>
+
+<!-- Modals generated outside containers to prevent backdrop issues -->
+{% for curso in cursos %}
+<!-- Modal Config Básica -->
+<div class="modal fade" id="modalEditarCurso{{ curso.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-secondary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2"></i> Configuración Básica</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'editar_curso_lms' curso.id %}">
+                {% csrf_token %}
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-secondary">Título del Curso</label>
+                            <input type="text" class="form-control" name="titulo" value="{{ curso.titulo }}" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-secondary">Descripción</label>
+                            <textarea class="form-control" name="descripcion" rows="2">{{ curso.descripcion }}</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check form-switch bg-white p-3 rounded-4 border border-1 border-light">
+                                <input class="form-check-input ms-0 me-3" type="checkbox" name="publico_general" id="checkPublico{{ curso.id }}" {% if curso.publico_general %}checked{% endif %} onchange="toggleFiltros('{{ curso.id }}')">
+                                <label class="form-check-label fw-semibold text-secondary" for="checkPublico{{ curso.id }}">Visible para toda la empresa</label>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1" id="filtrosSegmentacion{{ curso.id }}" style="{% if curso.publico_general %}display: none;{% else %}display: flex;{% endif %}">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Categoría</label>
+                                <select class="form-select" name="categoria_lms">
+                                    <option value="">-- Sin categoria --</option>
+                                    {% for categoria in categorias %}
+                                        <option value="{{ categoria.id }}" {% if curso.categoria_lms_id == categoria.id %}selected{% endif %}>{{ categoria.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary">Filtrar por Área</label>
+                                <select class="form-select" name="area_permitida">
+                                    <option value="">-- Todas las Áreas --</option>
+                                    {% for area in areas %}
+                                        <option value="{{ area.id }}" {% if curso.area_permitida_id == area.id %}selected{% endif %}>{{ area.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-secondary btn-pill fw-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% for cat in categorias %}
+<!-- Modal Editar Categoría -->
+<div class="modal fade" id="modalEditarCategoria{{ cat.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-tags-fill me-2"></i>Editar Categoria</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'editar_categoria_lms' cat.id %}">
+                {% csrf_token %}
+                <div class="modal-body p-4 lms-input-soft">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Nombre</label>
+                        <input type="text" class="form-control" name="nombre_categoria" value="{{ cat.nombre }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Descripcion corta</label>
+                        <input type="text" class="form-control" name="descripcion_categoria" value="{{ cat.descripcion }}">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold text-secondary">Icono Bootstrap</label>
+                            <input type="text" class="form-control" name="icono_categoria" value="{{ cat.icono }}">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold text-secondary">Color</label>
+                            <input type="color" class="form-control form-control-color w-100" name="color_categoria" value="{{ cat.color }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="submit" class="btn btn-dark btn-pill fw-semibold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
 <!-- Modal Crear Categoría -->
 <div class="modal fade" id="modalCrearCategoria" tabindex="-1" aria-hidden="true">
