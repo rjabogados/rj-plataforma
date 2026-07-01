@@ -6,15 +6,38 @@ from intranet.models.comunicacion import FelicitacionCumpleaños, Reconocimiento
 from datetime import date
 from django.db.models import Count
 
+MESES_ES = {
+    1: 'Enero',
+    2: 'Febrero',
+    3: 'Marzo',
+    4: 'Abril',
+    5: 'Mayo',
+    6: 'Junio',
+    7: 'Julio',
+    8: 'Agosto',
+    9: 'Setiembre',
+    10: 'Octubre',
+    11: 'Noviembre',
+    12: 'Diciembre',
+}
+
 @login_required(login_url='login')
 def muro_celebraciones(request):
     hoy = date.today()
     # Cumpleañeros del mes (o semana)
     # Por simplicidad, filtramos por mes de nacimiento
-    cumpleaneros = Colaborador.objects.filter(
+    cumpleaneros = list(Colaborador.objects.filter(
         fecha_nacimiento__month=hoy.month,
         user__is_active=True
-    ).order_by('fecha_nacimiento__day')
+    ).order_by('fecha_nacimiento__day'))
+
+    for persona in cumpleaneros:
+        persona.es_hoy = bool(
+            persona.fecha_nacimiento
+            and persona.fecha_nacimiento.day == hoy.day
+            and persona.fecha_nacimiento.month == hoy.month
+        )
+        persona.mes_es = MESES_ES.get(persona.fecha_nacimiento.month, '') if persona.fecha_nacimiento else ''
 
     # Filtrar notas para el cumpleañero actual
     notas_publicas = FelicitacionCumpleaños.objects.filter(privado=False).order_by('-fecha_envio')[:50]
@@ -48,7 +71,8 @@ def muro_celebraciones(request):
         'cumpleaneros': cumpleaneros,
         'notas': notas_publicas,
         'hoy': hoy,
-        'es_su_cumple': es_su_cumple
+        'es_su_cumple': es_su_cumple,
+        'mes_actual_es': MESES_ES.get(hoy.month, ''),
     }
     return render(request, 'intranet/cultura/muro_cumpleanos.html', context)
 

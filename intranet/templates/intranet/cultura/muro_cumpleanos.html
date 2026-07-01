@@ -25,7 +25,7 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold text-danger mb-0">
-                            <i class="bi bi-gift-fill me-2"></i> Cumpleaneros de {{ hoy|date:"F"|title }}
+                            <i class="bi bi-gift-fill me-2"></i> Cumpleaneros de {{ mes_actual_es }}
                         </h5>
                         <span class="badge rounded-pill text-bg-light border">{{ cumpleaneros|length }} personas</span>
                     </div>
@@ -33,7 +33,7 @@
                     {% if cumpleaneros %}
                     <div class="d-flex flex-column gap-2">
                         {% for c in cumpleaneros %}
-                        <div class="cumple-persona d-flex align-items-center gap-3 {% if c.fecha_nacimiento.day == hoy.day %}is-today{% endif %}">
+                        <div class="cumple-persona d-flex align-items-center gap-3 {% if c.es_hoy %}is-today{% endif %}">
                             <div class="cumple-avatar d-flex align-items-center justify-content-center fw-bold">
                                 {% if c.foto_perfil %}
                                 <img src="{{ c.foto_perfil.url }}" alt="Foto" class="rounded-circle w-100 h-100 object-fit-cover">
@@ -45,11 +45,11 @@
                             <div class="flex-grow-1">
                                 <div class="fw-semibold text-dark">{{ c.user.first_name }} {{ c.user.last_name }}</div>
                                 <small class="text-muted">
-                                    <i class="bi bi-calendar2-event me-1"></i>{{ c.fecha_nacimiento|date:"d" }} de {{ c.fecha_nacimiento|date:"F"|title }}
+                                    <i class="bi bi-calendar2-event me-1"></i>{{ c.fecha_nacimiento|date:"d" }} de {{ c.mes_es }}
                                 </small>
                             </div>
 
-                            {% if c.fecha_nacimiento.day == hoy.day %}
+                            {% if c.es_hoy %}
                             <span class="badge rounded-pill text-bg-danger">HOY</span>
                             {% endif %}
 
