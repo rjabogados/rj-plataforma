@@ -1,9 +1,9 @@
-{% extends 'intranet/base.html' %}
+﻿{% extends 'intranet/base.html' %}
 {% block content %}
 <div class="container-fluid px-4">
     <div class="section-header">
         <h2><i class="bi bi-airplane-engines me-2"></i>Control de Vacaciones</h2>
-        <p class="text-muted mb-0">Aprueba, rechaza y comenta solicitudes de descanso con una bandeja más clara para RRHH.</p>
+        <p class="text-muted mb-0">Aprueba, rechaza y comenta solicitudes de descanso con una bandeja mÃ¡s clara para RRHH.</p>
     </div>
 
     <div class="card card-buk mb-4">
@@ -19,7 +19,7 @@
                         <input type="text" name="documento" class="form-control" value="{{ request.GET.documento|default:'' }}">
                     </div>
                     <div class="col-lg-2">
-                        <label class="form-label small fw-semibold text-muted">Área</label>
+                        <label class="form-label small fw-semibold text-muted">Ãrea</label>
                         <select class="form-select" name="area">
                             <option value="">Todas</option>
                             {% for area in areas %}<option value="{{ area.id }}" {% if request.GET.area == area.id|stringformat:'s' %}selected{% endif %}>{{ area.nombre }}</option>{% endfor %}
@@ -56,7 +56,7 @@
         <div class="card-body p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h5 class="fw-bold text-dark mb-1">Solicitudes activas</h5>
-                <p class="text-muted small mb-0">Gestiona cada caso con resolución y comentario registrado.</p>
+                <p class="text-muted small mb-0">Gestiona cada caso con resoluciÃ³n y comentario registrado.</p>
             </div>
             <span class="badge-soft">{{ solicitudes|length }} solicitud{{ solicitudes|length|pluralize }}</span>
         </div>
@@ -66,10 +66,10 @@
                         <tr>
                             <th class="ps-4">Colaborador</th>
                             <th>Fechas Solicitadas</th>
-                            <th>Días Totales</th>
+                            <th>DÃ­as Totales</th>
                             <th>Saldo Disp.</th>
                             <th>Estado Actual</th>
-                            <th class="text-center">Resolución de RRHH</th>
+                            <th class="text-center">ResoluciÃ³n de RRHH</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,7 +83,7 @@
                                 <span class="fw-bold">{{ s.fecha_inicio|date:"d/m/Y" }}</span> al <span class="fw-bold">{{ s.fecha_fin|date:"d/m/Y" }}</span>
                             </td>
                             <td>
-                                <span class="badge-soft">{{ s.dias_solicitados }} días</span>
+                                <span class="badge-soft">{{ s.dias_solicitados }} dÃ­as</span>
                             </td>
                             <td>
                                 {% if hasattr|default:"" %}
@@ -91,9 +91,9 @@
                                 {% endif %}
                                 {% if s.colaborador.saldo_vacaciones %}
                                     {% if s.colaborador.saldo_vacaciones.dias_disponibles < s.dias_solicitados and s.estado != 'APROBADO' %}
-                                        <span class="badge bg-danger rounded-pill">{{ s.colaborador.saldo_vacaciones.dias_disponibles|floatformat:0 }} días</span>
+                                        <span class="badge bg-danger rounded-pill">{{ s.colaborador.saldo_vacaciones.dias_disponibles|floatformat:0 }} dÃ­as</span>
                                     {% else %}
-                                        <span class="badge bg-info rounded-pill">{{ s.colaborador.saldo_vacaciones.dias_disponibles|floatformat:0 }} días</span>
+                                        <span class="badge bg-info rounded-pill">{{ s.colaborador.saldo_vacaciones.dias_disponibles|floatformat:0 }} dÃ­as</span>
                                     {% endif %}
                                 {% else %}
                                     <span class="text-muted small">No asig.</span>
@@ -131,7 +131,7 @@
                                     <div class="d-flex justify-content-between mt-1">
                                         <small class="text-muted fw-bold" style="font-size: 0.7rem;">
                                             {% if s.estado == 'PENDIENTE_N1' %}1/3 (Supervisor)
-                                            {% elif s.estado == 'PENDIENTE_N2' %}2/3 (Sede)
+                                            {% elif s.estado == 'PENDIENTE_N2' %}2/3 (Administrador)
                                             {% elif s.estado == 'PENDIENTE_N3' %}3/3 (RRHH)
                                             {% elif s.estado == 'APROBADO' %}Aprobado
                                             {% endif %}
@@ -157,13 +157,13 @@
                                         <span class="text-secondary fst-italic small">Cerrado por: 
                                             {% if s.aprobado_por_n3 %}{{ s.aprobado_por_n3.first_name }}{% else %}RRHH{% endif %}
                                         </span>
-                                        <form method="POST" action="{% url 'eliminar_vacaciones' s.id %}" onsubmit="return confirm('¿Eliminar esta solicitud?');">
+                                        <form method="POST" action="{% url 'eliminar_vacaciones' s.id %}" onsubmit="return confirm('Â¿Eliminar esta solicitud?');">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-light btn-pill text-danger"><i class="bi bi-trash"></i></button>
                                         </form>
                                     </div>
                                     {% if s.comentarios_rrhh %}
-                                        <small class="d-block text-muted mt-1 text-start">💬 "{{ s.comentarios_rrhh }}"</small>
+                                        <small class="d-block text-muted mt-1 text-start">ðŸ’¬ "{{ s.comentarios_rrhh }}"</small>
                                     {% endif %}
                                 {% endif %}
                             </td>

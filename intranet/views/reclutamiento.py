@@ -1,4 +1,4 @@
-import json
+﻿import json
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.db.models import Count, Q
@@ -46,8 +46,8 @@ def _serializar_historial_estado(candidato):
         historial.append({
             'id': item.id,
             'tipo': 'estado',
-            'titulo': f"{item.estado_anterior or 'Sin estado'} → {item.estado_nuevo or 'Sin estado'}",
-            'detalle': 'Actualización de estado del candidato',
+            'titulo': f"{item.estado_anterior or 'Sin estado'} â†’ {item.estado_nuevo or 'Sin estado'}",
+            'detalle': 'ActualizaciÃ³n de estado del candidato',
             'fecha': item.fecha_cambio.strftime('%d/%m/%Y %H:%M'),
         })
 
@@ -119,14 +119,14 @@ from intranet.views.utils import solo_directivos
 @login_required(login_url='login')
 @solo_directivos
 def lista_candidatos(request):
-    # Obtener todos los candidatos ordenados por los más recientes
+    # Obtener todos los candidatos ordenados por los mÃ¡s recientes
     candidatos = CandidatoReclutamiento.objects.all().order_by('-fecha_registro')
     
-    # Capturar parámetros de búsqueda y filtrado
+    # Capturar parÃ¡metros de bÃºsqueda y filtrado
     busqueda = request.GET.get('q', '').strip()
     sede_filtro = request.GET.get('sede', '').strip()
     
-    # Aplicar filtros dinámicos si existen
+    # Aplicar filtros dinÃ¡micos si existen
     if busqueda:
         candidatos = candidatos.filter(
             Q(nombre__icontains=busqueda) |
@@ -138,7 +138,7 @@ def lista_candidatos(request):
     if sede_filtro:
         candidatos = candidatos.filter(sede=sede_filtro)
         
-    # Obtener la lista de sedes únicas para el menú desplegable del buscador
+    # Obtener la lista de sedes Ãºnicas para el menÃº desplegable del buscador
     sedes_disponibles = CandidatoReclutamiento.objects.exclude(sede__isnull=True).exclude(sede='').values_list('sede', flat=True).distinct().order_by('sede')
 
     context = {
@@ -161,7 +161,7 @@ def actualizar_estado_ajax(request):
         candidato_id = data.get('id')
         nuevo_estado = data.get('estado')
         
-        # Validación de datos
+        # ValidaciÃ³n de datos
         if not candidato_id or not nuevo_estado:
             return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
         
@@ -177,9 +177,9 @@ def actualizar_estado_ajax(request):
     except CandidatoReclutamiento.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Candidato no encontrado'}, status=404)
     except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'JSON inválido'}, status=400)
+        return JsonResponse({'success': False, 'error': 'JSON invÃ¡lido'}, status=400)
     except Exception as e:
-        # ✅ No expongas detalles del error
+        # âœ… No expongas detalles del error
         return JsonResponse({'success': False, 'error': 'Error al procesar'}, status=500)
         
 @login_required(login_url='login')
@@ -194,7 +194,7 @@ def obtener_candidato_ajax(request, candidato_id):
         try:
             candidato_id = int(candidato_id)
         except (ValueError, TypeError):
-            return JsonResponse({'success': False, 'error': 'ID inválido'}, status=400)
+            return JsonResponse({'success': False, 'error': 'ID invÃ¡lido'}, status=400)
         
         candidato = CandidatoReclutamiento.objects.prefetch_related('historial_estados', 'contactos').get(id=candidato_id)
         
@@ -235,12 +235,12 @@ def actualizar_candidato_ajax(request):
         # Capturar estado anterior
         estado_viejo = candidato.estado_candidato
         
-        # Actualizar con validación
+        # Actualizar con validaciÃ³n
         candidato.nombre = _limpiar_texto(data.get('nombre', candidato.nombre)) or candidato.nombre
         
         doc_limpio = _limpiar_documento(data.get('documento', candidato.documento))
         if doc_limpio and (len(doc_limpio) < 8 or len(doc_limpio) > 12):
-            return JsonResponse({'success': False, 'error': 'DNI/CE debe tener entre 8 y 12 dígitos.'}, status=400)
+            return JsonResponse({'success': False, 'error': 'DNI/CE debe tener entre 8 y 12 dÃ­gitos.'}, status=400)
         candidato.documento = doc_limpio or candidato.documento
         
         candidato.telefono = _limpiar_telefono(data.get('telefono', candidato.telefono)) or candidato.telefono
@@ -299,7 +299,7 @@ def registrar_contacto_ajax(request):
             return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
 
         if tipo not in dict(RegistroContacto.TIPOS_CONTACTO):
-            return JsonResponse({'success': False, 'error': 'Tipo de contacto inválido'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Tipo de contacto invÃ¡lido'}, status=400)
 
         candidato = CandidatoReclutamiento.objects.get(id=candidato_id)
         RegistroContacto.objects.create(
@@ -311,7 +311,7 @@ def registrar_contacto_ajax(request):
 
         return JsonResponse({
             'success': True,
-            'mensaje': 'Comunicación registrada',
+            'mensaje': 'ComunicaciÃ³n registrada',
             'historial': _serializar_historial_estado(candidato),
         })
     except CandidatoReclutamiento.DoesNotExist:
@@ -381,13 +381,13 @@ def eliminar_historial_ajax(request):
 @login_required(login_url='login')
 @require_http_methods(["GET"])
 def metricas_dashboard_ajax(request):
-    """Devuelve los datos procesados para los gráficos del dashboard"""
+    """Devuelve los datos procesados para los grÃ¡ficos del dashboard"""
     if not usuario_puede_reclutamiento(request.user):
         return respuesta_no_autorizado()
 
     candidatos = CandidatoReclutamiento.objects.all()
 
-    # 1. Filtros de Período (Fechas)
+    # 1. Filtros de PerÃ­odo (Fechas)
     fecha_inicio = request.GET.get('inicio')
     fecha_fin = request.GET.get('fin')
 
@@ -401,11 +401,11 @@ def metricas_dashboard_ajax(request):
     agendados = candidatos.filter(estado_candidato='Entrevista agendada').count()
     no_aptos = candidatos.filter(estado_candidato__in=['No apto', 'No interesados']).count()
 
-    # 3. Agrupación de Datos para los Gráficos
-    # ¿Cuántos por Sede?
+    # 3. AgrupaciÃ³n de Datos para los GrÃ¡ficos
+    # Â¿CuÃ¡ntos por Sede?
     data_sede = list(candidatos.exclude(sede__isnull=True).exclude(sede='').values('sede').annotate(total=Count('id')).order_by('-total', 'sede'))
     
-    # ¿Cuántos por Estado del Embudo?
+    # Â¿CuÃ¡ntos por Estado del Embudo?
     data_estado = list(candidatos.values('estado_candidato').annotate(total=Count('id')).order_by('-total', 'estado_candidato'))
 
     return JsonResponse({
@@ -486,7 +486,7 @@ def procesar_mapeo_matriz(request):
 
     ruta_archivo = request.session.get('ruta_matriz_tmp')
     if not ruta_archivo or not default_storage.exists(ruta_archivo):
-        messages.error(request, 'El archivo expiró. Sube el Excel nuevamente.')
+        messages.error(request, 'El archivo expirÃ³. Sube el Excel nuevamente.')
         return redirect('lista_candidatos')
 
     try:
@@ -556,7 +556,7 @@ def procesar_mapeo_matriz(request):
                 )
                 creados += 1
 
-        messages.success(request, f'Importación completada: {creados} creados, {actualizados} actualizados, {omitidos} omitidos.')
+        messages.success(request, f'ImportaciÃ³n completada: {creados} creados, {actualizados} actualizados, {omitidos} omitidos.')
     except Exception as e:
         messages.error(request, f'Error al importar: {str(e)}')
     finally:
@@ -565,3 +565,4 @@ def procesar_mapeo_matriz(request):
         request.session.pop('ruta_matriz_tmp', None)
 
     return redirect('lista_candidatos')
+

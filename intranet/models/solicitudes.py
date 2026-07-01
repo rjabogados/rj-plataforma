@@ -6,7 +6,7 @@ from .rrhh_core import Colaborador
 class SolicitudBase(models.Model):
     ESTADOS = [
         ('PENDIENTE_N1', 'Pendiente (Supervisor)'),
-        ('PENDIENTE_N2', 'Pendiente (Sede)'),
+        ('PENDIENTE_N2', 'Pendiente (Administrador)'),
         ('PENDIENTE_N3', 'Pendiente (RRHH)'),
         ('APROBADO', 'Aprobado'),
         ('RECHAZADO', 'Rechazado'),

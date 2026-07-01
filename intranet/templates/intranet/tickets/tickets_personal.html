@@ -1,9 +1,9 @@
-{% extends 'intranet/base.html' %}
+﻿{% extends 'intranet/base.html' %}
 {% block content %}
 <div class="container-fluid px-4">
     <div class="section-header">
         <h2><i class="bi bi-ticket-detailed-fill me-2"></i>Tickets y Justificaciones</h2>
-        <p class="text-muted mb-0">Centraliza tardanzas, inasistencias y descansos médicos en una vista más clara y operativa.</p>
+        <p class="text-muted mb-0">Centraliza tardanzas, inasistencias y descansos mÃ©dicos en una vista mÃ¡s clara y operativa.</p>
     </div>
 
     <div class="row g-4 align-items-start">
@@ -12,7 +12,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-4">
                     <div>
                         <h5 class="fw-bold mb-1 text-dark">Nuevo ticket</h5>
-                        <p class="text-muted small mb-0">Envía tu solicitud con evidencia y seguimiento.</p>
+                        <p class="text-muted small mb-0">EnvÃ­a tu solicitud con evidencia y seguimiento.</p>
                     </div>
                     <span class="badge-soft"><i class="bi bi-shield-check me-1"></i> RRHH</span>
                 </div>
@@ -23,17 +23,17 @@
                         <select class="form-select" name="tipo" required>
                             <option value="TARDANZA">Justificar tardanza</option>
                             <option value="INASISTENCIA">Justificar falta</option>
-                            <option value="MEDICO">Descanso médico / salud</option>
+                            <option value="MEDICO">Descanso mÃ©dico / salud</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-secondary">Detalle</label>
-                        <textarea class="form-control" name="motivo" rows="5" placeholder="Explica brevemente tu situación y el contexto del ticket..." required></textarea>
+                        <textarea class="form-control" name="motivo" rows="5" placeholder="Explica brevemente tu situaciÃ³n y el contexto del ticket..." required></textarea>
                     </div>
                     <div class="mb-4">
                         <label class="form-label small fw-semibold text-secondary">Adjuntar evidencia</label>
                         <input type="file" class="form-control" name="adjunto" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
-                        <small class="text-muted d-block mt-2">Puedes subir receta médica, captura, constancia o voucher.</small>
+                        <small class="text-muted d-block mt-2">Puedes subir receta mÃ©dica, captura, constancia o voucher.</small>
                     </div>
                     <button type="submit" name="crear_ticket" class="btn btn-primary btn-pill w-100 fw-semibold py-2">Enviar a Recursos Humanos</button>
                 </form>
@@ -104,19 +104,19 @@
                                     </div>
                                     <small class="text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">
                                         {% if t.estado == 'PENDIENTE_N1' %}1/3 (Supervisor)
-                                        {% elif t.estado == 'PENDIENTE_N2' %}2/3 (Sede)
+                                        {% elif t.estado == 'PENDIENTE_N2' %}2/3 (Administrador)
                                         {% elif t.estado == 'PENDIENTE_N3' %}3/3 (RRHH)
                                         {% elif t.estado == 'APROBADO' %}Completado
                                         {% endif %}
                                     </small>
                                     {% if 'PENDIENTE' in t.estado %}
-                                    <span class="badge-status pending"><i class="bi bi-hourglass-split me-1"></i>En revisión</span>
+                                    <span class="badge-status pending"><i class="bi bi-hourglass-split me-1"></i>En revisiÃ³n</span>
                                     {% elif t.estado == 'APROBADO' %}
                                     <span class="badge-status approved"><i class="bi bi-check-circle-fill me-1"></i>Aprobado</span>
                                     {% endif %}
                                     {% endif %}
                                     {% if t.estado == 'PENDIENTE_N1' %}
-                                    <form method="POST" action="{% url 'eliminar_ticket' t.id %}" class="d-inline" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este ticket?');">
+                                    <form method="POST" action="{% url 'eliminar_ticket' t.id %}" class="d-inline" onsubmit="return confirm('Â¿EstÃ¡s seguro de que deseas eliminar este ticket?');">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-outline-danger btn-pill fw-bold ms-2">
                                             <i class="bi bi-trash-fill"></i> Anular
@@ -127,7 +127,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-5 text-muted">Aún no has generado ningún ticket de justificación.</td>
+                                <td colspan="5" class="text-center py-5 text-muted">AÃºn no has generado ningÃºn ticket de justificaciÃ³n.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
