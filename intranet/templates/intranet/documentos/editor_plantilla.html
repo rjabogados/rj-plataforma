@@ -596,13 +596,6 @@ $(document).ready(function () {
             onChange: function () {
                 updateCounts();
                 marcarCambio();
-                $('#summernote').summernote('saveRange');
-            },
-            onKeyup: function () {
-                $('#summernote').summernote('saveRange');
-            },
-            onMouseup: function () {
-                $('#summernote').summernote('saveRange');
             },
             onImageUpload: function (files) {
                 const reader = new FileReader();
@@ -630,16 +623,10 @@ $(document).ready(function () {
    INSERTAR VARIABLE → resaltada en amarillo
    ==================================================== */
 function insertarVariable(variable) {
-    // Restaurar el cursor exactamente donde el usuario lo dejó
-    $('#summernote').summernote('restoreRange');
-    $('#summernote').summernote('focus');
-    
-    // Insertar usando pasteHTML que es mucho más seguro para el DOM
+    // Insertar usando pasteHTML directo.
+    // El foco no se pierde porque los botones tienen onmousedown="event.preventDefault()"
     const html = `<span class="var-highlight" contenteditable="false">${variable}</span>&#8203;`;
     $('#summernote').summernote('pasteHTML', html);
-    
-    // Guardar la nueva posición del cursor
-    $('#summernote').summernote('saveRange');
     
     showToast('Variable insertada', `${variable} agregada en el documento`, 'info');
 }
