@@ -648,19 +648,39 @@ function insertarVariable(variable) {
     
     editable.focus();
     const sel = window.getSelection();
-    sel.removeAllRanges();
 
-    if (mySavedRange) {
-        sel.addRange(mySavedRange);
-    } else {
-        const range = document.createRange();
-        range.selectNodeContents(editable);
-        range.collapse(false);
-        sel.addRange(range);
+    // Refrescar el rango si el cursor ya estaba dentro justo antes del clic
+    if (sel.rangeCount > 0) {
+        const currentRange = sel.getRangeAt(0);
+        if (editable.contains(currentRange.commonAncestorContainer)) {
+            mySavedRange = currentRange.cloneRange();
+        }
     }
 
-    const html = `<span class="var-highlight" contenteditable="false">${variable}</span>&#8203;`;
-    document.execCommand('insertHTML', false, html);
+    let range;
+    if (mySavedRange) {
+        range = mySavedRange.cloneRange();
+    } else {
+        range = document.createRange();
+        range.selectNodeContents(editable);
+        range.collapse(false);
+    }
+
+    // NUNCA usar contenteditable="false", es lo que rompe el DOM en Chromium
+    const span = document.createElement('span');
+    span.className = 'var-highlight';
+    span.textContent = variable;
+    const space = document.createTextNode('\u00A0'); // Espacio real
+
+    range.deleteContents();
+    range.insertNode(space);
+    range.insertNode(span);
+    
+    range.setStartAfter(space);
+    range.collapse(true);
+    
+    sel.removeAllRanges();
+    sel.addRange(range);
     
     saveNativeRange();
     $('#summernote').summernote('triggerEvent', 'change');
