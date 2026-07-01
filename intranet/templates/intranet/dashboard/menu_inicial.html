@@ -1,64 +1,79 @@
 {% extends 'intranet/base.html' %}
 {% block content %}
-<div class="container-fluid" style="max-width: 1200px;">
+<div class="container-fluid" style="max-width: 1400px;">
     <div class="page-hero mb-4">
-        <div class="card-body p-4 p-md-5 d-flex align-items-center justify-content-between">
-            <div>
-                <h2 class="fw-bold mb-1">Menu inicial</h2>
-                <p class="mb-0 opacity-75 fs-6">Selecciona un modulo para continuar. Este panel aparece cuando una opcion no aplica a tu perfil actual.</p>
-            </div>
-            <div class="d-none d-md-block opacity-50">
-                <i class="bi bi-grid-1x2-fill display-5"></i>
-            </div>
+        <div class="card-body p-4 p-md-5">
+            <h2 class="fw-bold mb-1">Mapa funcional de modulos</h2>
+            <p class="mb-0 opacity-75 fs-6">Vista consolidada por dominio. Desde aqui puedes navegar por administracion, desarrollo y beneficios.</p>
         </div>
     </div>
 
-    <div class="mb-4">
-        <div class="d-flex align-items-center mb-3">
-            <span class="icon-chip info me-2"><i class="bi bi-lightning-charge-fill"></i></span>
-            <h5 class="fw-bold mb-0 text-dark">Accesos disponibles</h5>
-        </div>
-        <div class="row g-3">
-            {% for item in accesos_base %}
-            <div class="col-md-6 col-xl-4">
-                <a href="{% url item.url %}" class="text-decoration-none">
-                    <div class="card card-buk panel-shell-soft h-100 card-hover-effect">
-                        <div class="card-body p-4 d-flex align-items-center">
-                            <i class="bi {{ item.icono }} fs-2 text-{{ item.color }} me-3 opacity-75"></i>
-                            <div>
-                                <h6 class="fw-bold text-dark mb-1">{{ item.titulo }}</h6>
-                                <span class="small text-muted">{{ item.descripcion }}</span>
+    <div class="row g-3">
+        {% for columna in columnas_menu %}
+        <div class="col-lg-4">
+            <div class="rounded-4 p-3 mb-3 text-center menu-col-title">
+                <h4 class="fw-bold mb-0 text-primary">
+                    <i class="bi {{ columna.icono }} me-2"></i>{{ columna.titulo }}
+                </h4>
+            </div>
+
+            <div class="card border-0 rounded-4 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="accordion accordion-flush" id="accordionColumna{{ forloop.counter }}">
+                        {% for seccion in columna.items %}
+                        <div class="accordion-item border rounded-3 mb-2 overflow-hidden">
+                            <h2 class="accordion-header" id="heading{{ forloop.parentloop.counter }}{{ forloop.counter }}">
+                                <button class="accordion-button collapsed fw-semibold text-primary" type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#collapse{{ forloop.parentloop.counter }}{{ forloop.counter }}"
+                                    aria-expanded="false"
+                                    aria-controls="collapse{{ forloop.parentloop.counter }}{{ forloop.counter }}">
+                                    <i class="bi bi-arrow-right-circle-fill text-warning me-2"></i>{{ seccion.titulo }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ forloop.parentloop.counter }}{{ forloop.counter }}"
+                                class="accordion-collapse collapse"
+                                aria-labelledby="heading{{ forloop.parentloop.counter }}{{ forloop.counter }}"
+                                data-bs-parent="#accordionColumna{{ forloop.parentloop.counter }}">
+                                <div class="accordion-body bg-light-subtle">
+                                    {% if seccion.links %}
+                                    <div class="d-flex flex-column gap-2">
+                                        {% for link in seccion.links %}
+                                        <a href="{% url link.url %}" class="btn btn-sm btn-outline-primary text-start rounded-pill px-3">
+                                            <i class="bi bi-link-45deg me-1"></i>{{ link.titulo }}
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                    {% elif seccion.locked_text %}
+                                    <span class="badge bg-light text-secondary border">{{ seccion.locked_text }}</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-secondary border">Sin opciones disponibles</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                </a>
+                </div>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     </div>
-
-    {% if accesos_gestion %}
-    <div class="mb-4">
-        <div class="d-flex align-items-center mb-3">
-            <span class="icon-chip warning me-2"><i class="bi bi-shield-lock-fill"></i></span>
-            <h5 class="fw-bold mb-0 text-dark">Gestion administrativa</h5>
-        </div>
-        <div class="row g-3">
-            {% for item in accesos_gestion %}
-            <div class="col-md-6 col-xl-3">
-                <a href="{% url item.url %}" class="text-decoration-none">
-                    <div class="card card-buk panel-shell-soft h-100 card-hover-effect">
-                        <div class="card-body p-4 text-center">
-                            <i class="bi {{ item.icono }} fs-2 text-{{ item.color }} d-block mb-2"></i>
-                            <h6 class="fw-bold text-dark mb-1">{{ item.titulo }}</h6>
-                            <span class="small text-muted">{{ item.descripcion }}</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
 </div>
+
+<style>
+    .menu-col-title {
+        background: #c9d2eb;
+    }
+
+    .accordion-button {
+        background: #fff;
+        box-shadow: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+        color: #163f9f;
+        background: #eef3ff;
+    }
+</style>
 {% endblock %}

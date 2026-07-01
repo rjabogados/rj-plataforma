@@ -198,28 +198,150 @@ def guardar_atajos(request):
 def menu_inicial(request):
     perfil = getattr(request.user, 'perfil', None)
 
-    accesos_base = [
-        {'url': 'perfil', 'titulo': 'Mi Perfil', 'descripcion': 'Actualiza tus datos y seguridad.', 'icono': 'bi-person-gear', 'color': 'primary'},
-        {'url': 'notificaciones', 'titulo': 'Notificaciones', 'descripcion': 'Revisa alertas y avisos.', 'icono': 'bi-bell-fill', 'color': 'danger'},
-        {'url': 'documentos_personal', 'titulo': 'Mi Boveda', 'descripcion': 'Firma y consulta documentos personales.', 'icono': 'bi-folder-check', 'color': 'success'},
-        {'url': 'centro_ayuda', 'titulo': 'Centro de Ayuda', 'descripcion': 'Crea tickets o solicitudes.', 'icono': 'bi-headset', 'color': 'info'},
-        {'url': 'calendario', 'titulo': 'Calendario', 'descripcion': 'Eventos y agenda corporativa.', 'icono': 'bi-calendar3', 'color': 'warning'},
-        {'url': 'comunicados', 'titulo': 'Comunicados', 'descripcion': 'Novedades y anuncios internos.', 'icono': 'bi-megaphone-fill', 'color': 'secondary'},
-    ]
+    es_superuser = request.user.is_superuser
+    puede_gestion = bool(es_superuser or (perfil and perfil.puede_ver_gestion))
+    puede_supervisar = bool(es_superuser or (perfil and (perfil.es_supervisor or perfil.es_directivo)))
+    puede_rrhh = bool(es_superuser or (perfil and perfil.es_directivo))
 
-    accesos_gestion = []
-    if request.user.is_superuser or (perfil and perfil.puede_ver_gestion):
-        accesos_gestion = [
-            {'url': 'colaboradores', 'titulo': 'Directorio de Personal', 'descripcion': 'Gestion de fichas y altas.', 'icono': 'bi-people-fill', 'color': 'info'},
-            {'url': 'asistencia', 'titulo': 'Asistencia', 'descripcion': 'Control de marcas y huellero.', 'icono': 'bi-fingerprint', 'color': 'warning'},
-            {'url': 'vacaciones_admin', 'titulo': 'Vacaciones Admin', 'descripcion': 'Aprobaciones del equipo.', 'icono': 'bi-airplane-engines-fill', 'color': 'primary'},
-            {'url': 'gestor_lms', 'titulo': 'Gestor LMS', 'descripcion': 'Cursos, lecciones y evaluaciones.', 'icono': 'bi-mortarboard-fill', 'color': 'dark'},
-        ]
+    columnas_menu = [
+        {
+            'titulo': 'Administracion',
+            'icono': 'bi-clipboard2-data',
+            'items': [
+                {
+                    'titulo': 'Sistema de Planillas',
+                    'links': [
+                        {'titulo': 'Directorio y fichas', 'url': 'colaboradores'},
+                        {'titulo': 'Ficha 360 RRHH', 'url': 'perfil_admin'},
+                    ] if puede_gestion else [],
+                    'locked_text': 'Disponible para perfiles de gestion.'
+                },
+                {
+                    'titulo': 'Control de Asistencia',
+                    'links': [
+                        {'titulo': 'Panel de asistencia', 'url': 'asistencia'},
+                        {'titulo': 'Visor de marcas', 'url': 'visor_asistencia'},
+                    ] if puede_gestion else [],
+                    'locked_text': 'Disponible para perfiles de gestion.'
+                },
+                {
+                    'titulo': 'Firma Electronica y Gestion Documental',
+                    'links': [
+                        {'titulo': 'Despacho documental', 'url': 'documentos_admin'},
+                        {'titulo': 'Gestor de plantillas', 'url': 'gestor_plantillas'},
+                    ] if puede_gestion else [{'titulo': 'Mi boveda personal', 'url': 'documentos_personal'}],
+                    'locked_text': ''
+                },
+                {
+                    'titulo': 'Onboarding',
+                    'links': [
+                        {'titulo': 'Gestor onboarding', 'url': 'onboarding_admin'},
+                        {'titulo': 'Rutas de induccion', 'url': 'induccion_admin'},
+                    ] if puede_gestion else [{'titulo': 'Mi induccion', 'url': 'mi_induccion'}],
+                    'locked_text': ''
+                },
+                {
+                    'titulo': 'Canal de Denuncias',
+                    'links': [],
+                    'locked_text': 'Modulo proximo a implementar.'
+                },
+                {
+                    'titulo': 'Servicio al Colaborador',
+                    'links': [
+                        {'titulo': 'Centro de ayuda', 'url': 'centro_ayuda'},
+                        {'titulo': 'Tickets', 'url': 'tickets_admin' if puede_supervisar else 'tickets'},
+                        {'titulo': 'Vacaciones', 'url': 'vacaciones_admin' if puede_supervisar else 'vacaciones'},
+                    ],
+                    'locked_text': ''
+                },
+                {
+                    'titulo': 'Gestion de Activos',
+                    'links': [{'titulo': 'Panel de activos', 'url': 'activos'}],
+                    'locked_text': ''
+                },
+            ],
+        },
+        {
+            'titulo': 'Desarrollo Organizacional',
+            'icono': 'bi-rocket-takeoff',
+            'items': [
+                {
+                    'titulo': 'Seleccion',
+                    'links': [
+                        {'titulo': 'Lista de candidatos', 'url': 'lista_candidatos'},
+                        {'titulo': 'Dashboard reclutamiento', 'url': 'dashboard_reclutamiento'},
+                    ] if puede_rrhh else [],
+                    'locked_text': 'Disponible para RRHH/Administracion/Gerencia.'
+                },
+                {
+                    'titulo': 'Comunicacion y Reconocimiento',
+                    'links': [
+                        {'titulo': 'Comunicados', 'url': 'comunicados'},
+                        {'titulo': 'Muro Kudos', 'url': 'muro_kudos'},
+                        {'titulo': 'Cumpleanos', 'url': 'muro_celebraciones'},
+                    ],
+                    'locked_text': ''
+                },
+                {
+                    'titulo': 'Encuestas',
+                    'links': [
+                        {'titulo': 'Mis encuestas', 'url': 'encuestas_personal'},
+                        {'titulo': 'Gestor encuestas', 'url': 'encuestas_admin'},
+                    ] if puede_gestion else [{'titulo': 'Mis encuestas', 'url': 'encuestas_personal'}],
+                    'locked_text': ''
+                },
+                {
+                    'titulo': 'Gestion del Desempeno',
+                    'links': [
+                        {'titulo': 'Dashboard desempeno', 'url': 'dashboard_desempeno'},
+                        {'titulo': 'Evaluar equipo', 'url': 'evaluar_equipo'},
+                        {'titulo': 'Mis evaluaciones', 'url': 'mis_evaluaciones'},
+                    ],
+                    'locked_text': ''
+                },
+                {
+                    'titulo': 'Capacitaciones',
+                    'links': [
+                        {'titulo': 'Academia', 'url': 'academia'},
+                        {'titulo': 'Gestor LMS', 'url': 'gestor_lms'},
+                    ] if puede_gestion else [{'titulo': 'Academia', 'url': 'academia'}],
+                    'locked_text': ''
+                },
+            ],
+        },
+        {
+            'titulo': 'Beneficios',
+            'icono': 'bi-gem',
+            'items': [
+                {
+                    'titulo': 'Gestion de Beneficios',
+                    'links': [
+                        {'titulo': 'Beneficios RJ', 'url': 'beneficios'},
+                        {'titulo': 'Catalogo de premios', 'url': 'catalogo_premios'},
+                        {'titulo': 'Admin gamificacion', 'url': 'admin_gamificacion'},
+                    ] if puede_gestion else [
+                        {'titulo': 'Beneficios RJ', 'url': 'beneficios'},
+                        {'titulo': 'Catalogo de premios', 'url': 'catalogo_premios'},
+                    ],
+                    'locked_text': ''
+                },
+                {
+                    'titulo': 'Adelantos de Sueldo',
+                    'links': [],
+                    'locked_text': 'Modulo proximo a implementar.'
+                },
+                {
+                    'titulo': 'Pack de Descuentos',
+                    'links': [{'titulo': 'Ver beneficios disponibles', 'url': 'beneficios'}],
+                    'locked_text': ''
+                },
+            ],
+        },
+    ]
 
     return render(request, 'intranet/dashboard/menu_inicial.html', {
         'perfil': perfil,
-        'accesos_base': accesos_base,
-        'accesos_gestion': accesos_gestion,
+        'columnas_menu': columnas_menu,
     })
 
 @login_required(login_url='login')
