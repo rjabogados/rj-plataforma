@@ -6,6 +6,61 @@
         <p class="text-muted mb-0">Solicita tus días libres y revisa el estado de aprobación desde un espacio más ordenado.</p>
     </div>
 
+    <!-- Bolsa de Días -->
+    {% if saldo %}
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary bg-opacity-10 border-start border-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="p-3 bg-white rounded-circle me-3 shadow-sm text-primary">
+                            <i class="bi bi-calendar-check-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-secondary mb-0">Días Disponibles</h6>
+                            <h2 class="fw-bold text-dark mb-0">{{ saldo.dias_disponibles|floatformat:0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-info bg-opacity-10 border-start border-4 border-info">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="p-3 bg-white rounded-circle me-3 shadow-sm text-info">
+                            <i class="bi bi-airplane-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-secondary mb-0">Días Tomados</h6>
+                            <h2 class="fw-bold text-dark mb-0">{{ saldo.dias_tomados|floatformat:0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-light border-start border-4 border-secondary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="p-3 bg-white rounded-circle me-3 shadow-sm text-secondary">
+                            <i class="bi bi-wallet2 fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-secondary mb-0">Total Asignados</h6>
+                            <h2 class="fw-bold text-dark mb-0">{{ saldo.dias_asignados|add:saldo.dias_extra|floatformat:0 }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> RRHH aún no ha asignado tu saldo de vacaciones base. Puedes hacer solicitudes, pero podrían requerir revisión extra.
+    </div>
+    {% endif %}
+
     <div class="row g-4 align-items-start">
         <div class="col-xl-4">
             <div class="card card-module card-buk h-100">

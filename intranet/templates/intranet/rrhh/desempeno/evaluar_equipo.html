@@ -1,0 +1,84 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h2 class="mb-0 fw-bold text-dark"><i class="bi bi-people text-primary me-2"></i>Evaluar a mi Equipo</h2>
+        <p class="text-secondary mb-0">Gestión de las evaluaciones de desempeño de tu equipo a cargo.</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4 py-3">Colaborador</th>
+                            <th class="py-3">Periodo</th>
+                            <th class="py-3">Estado</th>
+                            <th class="py-3">Potencial</th>
+                            <th class="py-3 text-center">Nota Final</th>
+                            <th class="px-4 py-3 text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in evaluaciones %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-light text-primary fw-bold me-3">
+                                        {{ eval.colaborador.user.first_name|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ eval.colaborador.user.get_full_name }}</div>
+                                        <small class="text-muted">{{ eval.colaborador.cargo|default:"Sin cargo" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3 fw-bold">{{ eval.periodo.nombre }}</td>
+                            <td class="py-3">
+                                {% if eval.estado == 'PENDIENTE' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente Autoeval.</span>
+                                {% elif eval.estado == 'AUTOEVALUADO' %}
+                                    <span class="badge bg-info"><i class="bi bi-person-check me-1"></i>Listo para Evaluar</span>
+                                {% elif eval.estado == 'EVALUADO' %}
+                                    <span class="badge bg-success"><i class="bi bi-check-all me-1"></i>Completado</span>
+                                {% else %}
+                                    <span class="badge bg-secondary"><i class="bi bi-lock me-1"></i>Cerrado</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3">
+                                {{ eval.get_potencial_display|default:"-" }}
+                            </td>
+                            <td class="py-3 text-center">
+                                {% if eval.nota_final %}
+                                    <span class="fw-bold fs-5">{{ eval.nota_final }}%</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-end">
+                                <a href="{% url 'form_evaluacion' eval.id %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                    {% if eval.estado in 'PENDIENTE,AUTOEVALUADO' %}
+                                        Evaluar
+                                    {% else %}
+                                        Ver Detalles
+                                    {% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-secondary">
+                                <i class="bi bi-people fs-2 mb-2 d-block text-muted"></i>
+                                No tienes evaluaciones de equipo asignadas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

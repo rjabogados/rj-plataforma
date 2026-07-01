@@ -67,6 +67,7 @@
                             <th class="ps-4">Colaborador</th>
                             <th>Fechas Solicitadas</th>
                             <th>Días Totales</th>
+                            <th>Saldo Disp.</th>
                             <th>Estado Actual</th>
                             <th class="text-center">Resolución de RRHH</th>
                         </tr>
@@ -83,6 +84,20 @@
                             </td>
                             <td>
                                 <span class="badge-soft">{{ s.dias_solicitados }} días</span>
+                            </td>
+                            <td>
+                                {% if hasattr|default:"" %}
+                                    {# Django templates don't support hasattr, but we can do s.colaborador.saldo_vacaciones.dias_disponibles #}
+                                {% endif %}
+                                {% if s.colaborador.saldo_vacaciones %}
+                                    {% if s.colaborador.saldo_vacaciones.dias_disponibles < s.dias_solicitados and s.estado != 'APROBADO' %}
+                                        <span class="badge bg-danger rounded-pill">{{ s.colaborador.saldo_vacaciones.dias_disponibles|floatformat:0 }} días</span>
+                                    {% else %}
+                                        <span class="badge bg-info rounded-pill">{{ s.colaborador.saldo_vacaciones.dias_disponibles|floatformat:0 }} días</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small">No asig.</span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if 'PENDIENTE' in s.estado %}

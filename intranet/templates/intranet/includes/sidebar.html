@@ -14,10 +14,10 @@
     <ul class="nav flex-column mb-auto gap-1 w-100 core-navigation">
         
         <!-- ==============================
-             1. ESPACIO PERSONAL
+             1. MI ESPACIO
              ============================== -->
         <li class="nav-item mt-1 mb-1 menu-header-tag">
-            <span class="text-uppercase fw-bold px-3 text-secondary">Espacio Personal</span>
+            <span class="text-uppercase fw-bold px-3 text-secondary">Mi Espacio</span>
         </li>
         <li class="nav-item">
             <a href="{% url 'inicio' %}" class="nav-link">
@@ -26,148 +26,138 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuMiEspacio" role="button" aria-expanded="false">
-                <div><i class="bi bi-person-badge-fill menu-icon me-3"></i><span>Mis Accesos</span></div>
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuMiOficina" role="button" aria-expanded="false">
+                <div><i class="bi bi-person-badge-fill menu-icon me-3"></i><span>Mi Oficina</span></div>
                 <i class="bi bi-chevron-down arrow-icon"></i>
             </a>
-            <div class="collapse submenu" id="menuMiEspacio">
+            <div class="collapse submenu" id="menuMiOficina">
                 <ul class="nav flex-column gap-1 py-1">
                     <li><a href="{% url 'documentos_personal' %}" class="nav-link submenu-link"><i class="bi bi-folder-check me-2"></i> Bóveda Documental</a></li>
+                    <li><a href="{% url 'calendario' %}" class="nav-link submenu-link"><i class="bi bi-calendar3 me-2"></i> Calendario Laboral</a></li>
                     <li><a href="{% url 'mensajeria' %}" class="nav-link submenu-link"><i class="bi bi-chat-left-dots-fill me-2"></i> Bandeja de Mensajes</a></li>
                     <li><a href="{% url 'notificaciones' %}" class="nav-link submenu-link"><i class="bi bi-bell-fill me-2"></i> Alertas y Avisos</a></li>
-                    <li><a href="{% url 'calendario' %}" class="nav-link submenu-link"><i class="bi bi-calendar3 me-2"></i> Calendario Laboral</a></li>
-                </ul>
-            </div>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuCultura" role="button" aria-expanded="false">
-                <div><i class="bi bi-balloon-heart-fill menu-icon me-3"></i><span>Cultura & Beneficios</span></div>
-                <i class="bi bi-chevron-down arrow-icon"></i>
-            </a>
-            <div class="collapse submenu" id="menuCultura">
-                <ul class="nav flex-column gap-1 py-1">
-                    <li><a href="{% url 'muro_celebraciones' %}" class="nav-link submenu-link text-danger fw-bold"><i class="bi bi-gift-fill me-2"></i> Cumpleaños</a></li>
-                    <li><a href="{% url 'muro_kudos' %}" class="nav-link submenu-link text-warning fw-bold"><i class="bi bi-stars me-2"></i> Muro de Kudos</a></li>
-                    <li><a href="{% url 'beneficios' %}" class="nav-link submenu-link"><i class="bi bi-gem me-2"></i> Descuentos Corporativos</a></li>
-                    <li><a href="{% url 'comunicados' %}" class="nav-link submenu-link"><i class="bi bi-newspaper me-2"></i> Tablón de Anuncios</a></li>
                 </ul>
             </div>
         </li>
         <li class="nav-item">
             <a href="{% url 'centro_ayuda' %}" class="nav-link">
                 <i class="bi bi-headset menu-icon me-3 text-info"></i> 
-                <span>Centro de Ayuda</span>
-            </a>
-        </li>
-
-        <!-- ==============================
-             2. ACADEMIA & DESARROLLO
-             ============================== -->
-        <li class="mt-3 mb-2 sidebar-separator"></li>
-        <li class="nav-item mt-1 mb-1 menu-header-tag">
-            <span class="text-uppercase fw-bold px-3 text-secondary">Academia</span>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'mi_induccion' %}" class="nav-link">
-                <i class="bi bi-rocket-takeoff-fill menu-icon me-3 text-primary"></i> 
-                <span>Mi Inducción</span>
+                <span>Mis Solicitudes</span>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% url 'academia' %}" class="nav-link">
-                <i class="bi bi-mortarboard-fill menu-icon me-3 text-warning"></i> 
-                <span>Cursos LMS</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'encuestas_personal' %}" class="nav-link">
-                <i class="bi bi-ui-radios-grid menu-icon me-3 text-success"></i> 
-                <span>Mis Evaluaciones</span>
-            </a>
-        </li>
-        {% if user.is_superuser or user.perfil.puede_ver_gestion %}
-        <li class="nav-item">
-            <a class="nav-link collapsed d-flex justify-content-between align-items-center mt-2" data-bs-toggle="collapse" href="#menuAdminEducacion" role="button" aria-expanded="false">
-                <div><i class="bi bi-book-half menu-icon me-3 text-danger"></i><span>Gestor Académico</span></div>
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuDesarrollo" role="button" aria-expanded="false">
+                <div><i class="bi bi-rocket-takeoff-fill menu-icon me-3 text-primary"></i><span>Mi Desarrollo</span></div>
                 <i class="bi bi-chevron-down arrow-icon"></i>
             </a>
-            <div class="collapse submenu" id="menuAdminEducacion">
+            <div class="collapse submenu" id="menuDesarrollo">
                 <ul class="nav flex-column gap-1 py-1">
-                    <li><a href="{% url 'gestor_lms' %}" class="nav-link submenu-link"><i class="bi bi-sliders me-2"></i> Módulo LMS</a></li>
-                    <li><a href="{% url 'onboarding_admin' %}" class="nav-link submenu-link"><i class="bi bi-journal-bookmark-fill me-2"></i> Módulo Inducción</a></li>
-                    <li><a href="{% url 'encuestas_admin' %}" class="nav-link submenu-link"><i class="bi bi-ui-checks-grid me-2"></i> Módulo Encuestas</a></li>
+                    <li><a href="{% url 'mi_induccion' %}" class="nav-link submenu-link"><i class="bi bi-journal-bookmark me-2"></i> Mi Inducción</a></li>
+                    <li><a href="{% url 'academia' %}" class="nav-link submenu-link"><i class="bi bi-mortarboard me-2"></i> Mis Cursos</a></li>
+                    <li><a href="{% url 'mis_evaluaciones' %}" class="nav-link submenu-link"><i class="bi bi-person-lines-fill me-2"></i> Mi Desempeño</a></li>
+                    <li><a href="{% url 'encuestas_personal' %}" class="nav-link submenu-link"><i class="bi bi-ui-radios-grid me-2"></i> Mis Encuestas</a></li>
                 </ul>
             </div>
         </li>
-        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuCultura" role="button" aria-expanded="false">
+                <div><i class="bi bi-balloon-heart-fill menu-icon me-3 text-danger"></i><span>Cultura & Bienestar</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuCultura">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'comunicados' %}" class="nav-link submenu-link"><i class="bi bi-newspaper me-2"></i> Tablón Anuncios</a></li>
+                    <li><a href="{% url 'muro_celebraciones' %}" class="nav-link submenu-link text-danger fw-bold"><i class="bi bi-gift-fill me-2"></i> Cumpleaños</a></li>
+                    <li><a href="{% url 'muro_kudos' %}" class="nav-link submenu-link text-warning fw-bold"><i class="bi bi-stars me-2"></i> Muro Kudos</a></li>
+                    <li><a href="{% url 'beneficios' %}" class="nav-link submenu-link"><i class="bi bi-gem me-2"></i> Beneficios</a></li>
+                </ul>
+            </div>
+        </li>
 
         <!-- ==============================
-             3. OPERACIONES / SUPERVISIÓN
+             2. MI EQUIPO (SUPERVISORES)
              ============================== -->
         {% if user.is_superuser or user.perfil.es_supervisor or user.perfil.es_directivo %}
         <li class="mt-3 mb-2 sidebar-separator"></li>
         <li class="nav-item mt-1 mb-1 menu-header-tag">
-            <span class="text-uppercase fw-bold px-3 text-warning">Operaciones</span>
+            <span class="text-uppercase fw-bold px-3 text-warning">Mi Equipo</span>
         </li>
         <li class="nav-item">
-            <a href="{% url 'dashboard_supervisor' %}" class="nav-link analytics-link">
-                <i class="bi bi-diagram-3-fill menu-icon me-3 text-warning"></i> 
-                <span>Panel de Equipo</span>
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuGestionEquipo" role="button" aria-expanded="false">
+                <div><i class="bi bi-diagram-3-fill menu-icon me-3 text-warning"></i><span>Gestión de Equipo</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
             </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'induccion_admin' %}" class="nav-link">
-                <i class="bi bi-clipboard-check-fill menu-icon me-3 text-info"></i> 
-                <span>Auditoría Inducción</span>
-            </a>
+            <div class="collapse submenu" id="menuGestionEquipo">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'dashboard_supervisor' %}" class="nav-link submenu-link"><i class="bi bi-bar-chart-line me-2"></i> Panel de Métricas</a></li>
+                    <li><a href="{% url 'evaluar_equipo' %}" class="nav-link submenu-link"><i class="bi bi-people me-2"></i> Evaluar Desempeño</a></li>
+                    <li><a href="{% url 'calendario_ausencias' %}" class="nav-link submenu-link"><i class="bi bi-calendar-range-fill me-2 text-danger"></i> Calendario Ausencias</a></li>
+                    <li><a href="{% url 'induccion_admin' %}" class="nav-link submenu-link"><i class="bi bi-clipboard-check me-2 text-info"></i> Auditoría Inducción</a></li>
+                </ul>
+            </div>
         </li>
         {% endif %}
 
         <!-- ==============================
-             4. RECURSOS HUMANOS
+             3. ADMINISTRACIÓN (RRHH / TI)
              ============================== -->
-        {% if user.is_superuser or user.perfil.puede_ver_gestion %}
+        {% if user.is_superuser or user.perfil.puede_ver_gestion or user.perfil.puede_ver_reclutamiento %}
         <li class="mt-3 mb-2 sidebar-separator"></li>
         <li class="nav-item mt-1 mb-1 menu-header-tag">
-            <span class="text-uppercase fw-bold px-3 text-success">Recursos Humanos</span>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAdminRRHH" role="button" aria-expanded="false">
-                <div><i class="bi bi-people-fill menu-icon me-3"></i><span>Administración RRHH</span></div>
-                <i class="bi bi-chevron-down arrow-icon"></i>
-            </a>
-            <div class="collapse submenu" id="menuAdminRRHH">
-                <ul class="nav flex-column gap-1 py-1">
-                    <li><a href="{% url 'dashboard' %}" class="nav-link submenu-link"><i class="bi bi-graph-up-arrow me-2"></i> Métricas Globales</a></li>
-                    <li><a href="{% url 'colaboradores' %}" class="nav-link submenu-link"><i class="bi bi-person-lines-fill me-2"></i> Directorio y Fichas</a></li>
-                    <li><a href="{% url 'asistencia' %}" class="nav-link submenu-link"><i class="bi bi-fingerprint me-2"></i> Control Asistencia</a></li>
-                    <li><a href="{% url 'vacaciones_admin' %}" class="nav-link submenu-link"><i class="bi bi-airplane-engines me-2"></i> Vacaciones Admin</a></li>
-                    <li><a href="{% url 'documentos_admin' %}" class="nav-link submenu-link"><i class="bi bi-folder-fill me-2"></i> Envío Documentos</a></li>
-                    <li><a href="{% url 'gestor_comunicados' %}" class="nav-link submenu-link"><i class="bi bi-megaphone-fill me-2"></i> Gestor de Anuncios</a></li>
-                </ul>
-            </div>
-        </li>
-        {% endif %}
-
-        {% if user.is_superuser or user.perfil.puede_ver_reclutamiento %}
-        <li class="nav-item">
-            <a class="nav-link collapsed d-flex justify-content-between align-items-center mt-2" data-bs-toggle="collapse" href="#menuReclutamiento" role="button" aria-expanded="false">
-                <div><i class="bi bi-briefcase-fill menu-icon me-3 text-primary"></i><span>Reclutamiento</span></div>
-                <i class="bi bi-chevron-down arrow-icon"></i>
-            </a>
-            <div class="collapse submenu" id="menuReclutamiento">
-                <ul class="nav flex-column gap-1 py-1">
-                    <li><a href="{% url 'dashboard_reclutamiento' %}" class="nav-link submenu-link"><i class="bi bi-bar-chart-line me-2"></i> Dashboard Reclutamiento</a></li>
-                    <li><a href="{% url 'lista_candidatos' %}" class="nav-link submenu-link"><i class="bi bi-table me-2"></i> Matriz de Candidatos</a></li>
-                </ul>
-            </div>
+            <span class="text-uppercase fw-bold px-3 text-success">Administración</span>
         </li>
         {% endif %}
 
         {% if user.is_superuser or user.perfil.puede_ver_gestion %}
         <li class="nav-item">
-            <a class="nav-link collapsed d-flex justify-content-between align-items-center mt-2" data-bs-toggle="collapse" href="#menuSistemas" role="button" aria-expanded="false">
-                <div><i class="bi bi-pc-display menu-icon me-3 text-dark"></i><span>Sistemas / TI</span></div>
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuCoreRRHH" role="button" aria-expanded="false">
+                <div><i class="bi bi-buildings-fill menu-icon me-3 text-success"></i><span>Core RRHH</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuCoreRRHH">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'colaboradores' %}" class="nav-link submenu-link"><i class="bi bi-person-lines-fill me-2"></i> Directorio y Fichas</a></li>
+                    <li><a href="{% url 'asistencia' %}" class="nav-link submenu-link"><i class="bi bi-fingerprint me-2"></i> Asistencia</a></li>
+                    <li><a href="{% url 'vacaciones_admin' %}" class="nav-link submenu-link"><i class="bi bi-airplane-engines me-2"></i> Vacaciones</a></li>
+                    <li><a href="{% url 'documentos_admin' %}" class="nav-link submenu-link"><i class="bi bi-folder-fill me-2"></i> Documentos</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center mt-1" data-bs-toggle="collapse" href="#menuTalento" role="button" aria-expanded="false">
+                <div><i class="bi bi-stars menu-icon me-3 text-primary"></i><span>Talento & Cultura</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuTalento">
+                <ul class="nav flex-column gap-1 py-1">
+                    {% if user.is_superuser or user.perfil.puede_ver_reclutamiento %}
+                    <li><a href="{% url 'lista_candidatos' %}" class="nav-link submenu-link"><i class="bi bi-table me-2"></i> Matriz Reclutamiento</a></li>
+                    {% endif %}
+                    <li><a href="{% url 'onboarding_admin' %}" class="nav-link submenu-link"><i class="bi bi-journal-bookmark-fill me-2"></i> Gestor Inducción</a></li>
+                    <li><a href="{% url 'gestor_lms' %}" class="nav-link submenu-link"><i class="bi bi-sliders me-2"></i> Gestor LMS</a></li>
+                    <li><a href="{% url 'encuestas_admin' %}" class="nav-link submenu-link"><i class="bi bi-ui-checks-grid me-2"></i> Gestor Encuestas</a></li>
+                    <li><a href="{% url 'gestor_comunicados' %}" class="nav-link submenu-link"><i class="bi bi-megaphone-fill me-2"></i> Gestor Anuncios</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center mt-1" data-bs-toggle="collapse" href="#menuReportes" role="button" aria-expanded="false">
+                <div><i class="bi bi-graph-up-arrow menu-icon me-3 text-dark"></i><span>Analítica</span></div>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+            </a>
+            <div class="collapse submenu" id="menuReportes">
+                <ul class="nav flex-column gap-1 py-1">
+                    <li><a href="{% url 'dashboard' %}" class="nav-link submenu-link"><i class="bi bi-pie-chart-fill me-2"></i> Métricas Globales</a></li>
+                    <li><a href="{% url 'dashboard_desempeno' %}" class="nav-link submenu-link"><i class="bi bi-bar-chart-steps me-2"></i> Desempeño</a></li>
+                    {% if user.is_superuser or user.perfil.puede_ver_reclutamiento %}
+                    <li><a href="{% url 'dashboard_reclutamiento' %}" class="nav-link submenu-link"><i class="bi bi-bar-chart-line me-2"></i> Reclutamiento</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link collapsed d-flex justify-content-between align-items-center mt-1" data-bs-toggle="collapse" href="#menuSistemas" role="button" aria-expanded="false">
+                <div><i class="bi bi-pc-display menu-icon me-3 text-secondary"></i><span>Sistemas TI</span></div>
                 <i class="bi bi-chevron-down arrow-icon"></i>
             </a>
             <div class="collapse submenu" id="menuSistemas">

@@ -3,3 +3,4 @@ from .solicitudes import *
 from .comunicacion import *
 from .documentos import *
 from .lms import *
+from .desempeno import *

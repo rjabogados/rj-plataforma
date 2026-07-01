@@ -1,5 +1,5 @@
 from .rrhh_core import Negocio, Area, Cargo, Colaborador, Asistencia
-from .solicitudes import Ticket, SolicitudVacaciones
+from .solicitudes import Ticket, SolicitudVacaciones, SaldoVacaciones
 from .comunicacion import Comunicado, MensajeInterno, EventoCalendario, Notificacion
 from .reclutamiento import CandidatoReclutamiento
 
@@ -22,3 +22,6 @@ from .lms import (
     OpcionRespuesta
 )
 
+from .desempeno import (
+    PeriodoEvaluacion, KPI, EvaluacionDesempeno, DetalleEvaluacion
+)

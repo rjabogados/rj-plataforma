@@ -22,7 +22,8 @@ from .busqueda import buscador_global
 
 from .solicitudes import (
     tickets, tickets_admin, revisar_ticket, 
-    vacaciones, vacaciones_admin, eliminar_vacaciones, ver_adjunto_ticket, centro_ayuda
+    vacaciones, vacaciones_admin, eliminar_vacaciones, ver_adjunto_ticket, centro_ayuda,
+    calendario_ausencias
 )
 
 from .documentos import (
@@ -43,3 +44,4 @@ from .lms import (
 )
 
 from .cultura import muro_celebraciones, muro_kudos
+from .desempeno import dashboard_desempeno, mis_evaluaciones, evaluar_equipo, form_evaluacion

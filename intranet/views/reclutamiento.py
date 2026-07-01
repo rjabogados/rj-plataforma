@@ -396,11 +396,11 @@ def exportar_candidatos_csv(request):
     candidatos = CandidatoReclutamiento.objects.all().order_by('-fecha_registro')
     for c in candidatos:
         writer.writerow([
-            c.id_matriz,
-            c.nombre_completo,
+            f"M-{c.id:05d}",
+            c.nombre,
             c.documento,
             c.telefono,
-            c.estado,
+            c.estado_candidato,
             c.sede,
             c.canal,
             c.fecha_registro.strftime('%Y-%m-%d %H:%M') if c.fecha_registro else ''

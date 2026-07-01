@@ -106,6 +106,15 @@ def crear_vacaciones_desde_request(request, perfil):
         fecha_fin = datetime.strptime(f_fin, '%Y-%m-%d').date()
         if fecha_fin < fecha_inicio:
             return False, 'La fecha de fin no puede ser anterior a la fecha de inicio.'
+            
+        dias_solicitados = (fecha_fin - fecha_inicio).days + 1
+        
+        # Validacion de saldo
+        if hasattr(perfil, 'saldo_vacaciones'):
+            saldo = perfil.saldo_vacaciones
+            if dias_solicitados > saldo.dias_disponibles:
+                return False, f'No tienes suficientes días disponibles. Estás solicitando {dias_solicitados} días, pero solo tienes {saldo.dias_disponibles} disponibles.'
+                
         SolicitudVacaciones.objects.create(
             colaborador=perfil, 
             fecha_inicio=fecha_inicio, 
@@ -207,7 +216,12 @@ def vacaciones(request):
         return redirect('vacaciones')
         
     lista_solicitudes = SolicitudVacaciones.objects.filter(colaborador=perfil).order_by('-fecha_solicitud') if perfil else []
-    return render(request, 'intranet/solicitudes/vacaciones_personal.html', {'solicitudes': lista_solicitudes})
+    saldo = getattr(perfil, 'saldo_vacaciones', None) if perfil else None
+    
+    return render(request, 'intranet/solicitudes/vacaciones_personal.html', {
+        'solicitudes': lista_solicitudes,
+        'saldo': saldo
+    })
 
 @login_required(login_url='login')
 def vacaciones_admin(request):
@@ -281,4 +295,49 @@ def centro_ayuda(request):
         'tickets': lista_tickets,
         'solicitudes_vacaciones': lista_vacaciones,
         'page_title': 'Centro de Solicitudes'
+    })
+
+# ==========================================
+# CALENDARIO DE AUSENCIAS
+# ==========================================
+@login_required(login_url='login')
+def calendario_ausencias(request):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil or not (perfil.es_supervisor or perfil.es_directivo):
+        messages.error(request, 'No tienes permisos para ver el calendario de ausencias.')
+        return redirect('dashboard')
+        
+    # Filtrar solo vacaciones aprobadas
+    qs_vacaciones = SolicitudVacaciones.objects.filter(estado='APROBADO')
+    qs_vacaciones = filtrar_bandeja_admin(qs_vacaciones, perfil, request)
+    
+    # Filtrar tickets medicos/ausencias aprobados
+    # Asumimos que TARDANZA, INASISTENCIA, MEDICO son ausencias. Si TARDANZA no lo es, filtramos.
+    qs_tickets = Ticket.objects.filter(estado='APROBADO', tipo__in=['INASISTENCIA', 'MEDICO'])
+    qs_tickets = filtrar_bandeja_admin(qs_tickets, perfil, request)
+    
+    eventos = []
+    
+    for vac in qs_vacaciones:
+        if vac.fecha_inicio and vac.fecha_fin:
+            eventos.append({
+                'title': f"Vacaciones: {vac.colaborador.user.get_full_name()}",
+                'start': vac.fecha_inicio.strftime('%Y-%m-%d'),
+                'end': (vac.fecha_fin).strftime('%Y-%m-%d'), # Para FullCalendar a veces hay q sumar 1 dia al end, lo manejamos en js
+                'color': '#0dcaf0', # info color
+                'tipo': 'vacaciones',
+                'colaborador': vac.colaborador.user.get_full_name()
+            })
+            
+    for t in qs_tickets:
+        eventos.append({
+            'title': f"Ausencia: {t.colaborador.user.get_full_name()} ({t.get_tipo_display()})",
+            'start': t.fecha_registro.strftime('%Y-%m-%d'),
+            'color': '#dc3545', # danger color
+            'tipo': 'ticket',
+            'colaborador': t.colaborador.user.get_full_name()
+        })
+
+    return render(request, 'intranet/solicitudes/calendario_ausencias.html', {
+        'eventos': eventos
     })

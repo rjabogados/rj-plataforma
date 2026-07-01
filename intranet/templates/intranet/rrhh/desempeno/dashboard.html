@@ -1,0 +1,174 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Dashboard de Desempeño</h2>
+            <p class="text-secondary mb-0">Gestión de Evaluaciones y Matriz de Talento 9-Box</p>
+        </div>
+        {% if periodo_activo %}
+        <div>
+            <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2 rounded-pill">
+                <i class="bi bi-circle-fill small me-1"></i> Periodo Activo: {{ periodo_activo.nombre }}
+            </span>
+        </div>
+        {% else %}
+        <div>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-3 py-2 rounded-pill">
+                <i class="bi bi-circle-fill small me-1"></i> Sin Periodo Activo
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if periodo_activo %}
+    <div class="row g-4 mb-4">
+        <!-- Tarjetas de resumen -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-people-fill text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-secondary mb-0">Total Evaluaciones</h6>
+                            <h3 class="fw-bold mb-0">{{ total_evaluaciones }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-secondary mb-0">Completadas</h6>
+                            <h3 class="fw-bold mb-0">{{ evaluadas }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-clock-history text-warning fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-secondary mb-0">Pendientes</h6>
+                            <h3 class="fw-bold mb-0">{{ pendientes }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matriz 9-Box -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+            <h5 class="fw-bold text-dark"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Matriz 9-Box (Talento vs Desempeño)</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 text-center text-white fw-bold mb-2">
+                <div class="col-1 d-flex align-items-center justify-content-center text-dark" style="writing-mode: vertical-rl; transform: rotate(180deg);">
+                    POTENCIAL ALTO
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-warning bg-opacity-75 rounded shadow-sm" style="min-height: 100px;">
+                        Enigma (Alto P, Bajo D)<br>
+                        <span class="fs-4">{{ nb_counts.enigma|default:0 }}</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-success bg-opacity-75 rounded shadow-sm" style="min-height: 100px;">
+                        Alto Potencial (Alto P, Medio D)<br>
+                        <span class="fs-4">{{ nb_counts.alto_potencial|default:0 }}</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-primary bg-opacity-75 rounded shadow-sm" style="min-height: 100px;">
+                        Futuro Líder (Alto P, Alto D)<br>
+                        <span class="fs-4">{{ nb_counts.lider|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 text-center text-white fw-bold mb-2">
+                <div class="col-1 d-flex align-items-center justify-content-center text-dark" style="writing-mode: vertical-rl; transform: rotate(180deg);">
+                    POTENCIAL MEDIO
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-danger bg-opacity-50 rounded shadow-sm" style="min-height: 100px;">
+                        Inconsistente (Medio P, Bajo D)<br>
+                        <span class="fs-4">{{ nb_counts.inconsistente|default:0 }}</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-info bg-opacity-75 rounded shadow-sm" style="min-height: 100px;">
+                        Colaborador Clave (Medio P, Medio D)<br>
+                        <span class="fs-4">{{ nb_counts.clave|default:0 }}</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-success bg-opacity-75 rounded shadow-sm" style="min-height: 100px;">
+                        Estrella Actual (Medio P, Alto D)<br>
+                        <span class="fs-4">{{ nb_counts.estrella|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 text-center text-white fw-bold mb-2">
+                <div class="col-1 d-flex align-items-center justify-content-center text-dark" style="writing-mode: vertical-rl; transform: rotate(180deg);">
+                    POTENCIAL BAJO
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-danger bg-opacity-75 rounded shadow-sm" style="min-height: 100px;">
+                        Riesgo (Bajo P, Bajo D)<br>
+                        <span class="fs-4">{{ nb_counts.riesgo|default:0 }}</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-warning bg-opacity-50 rounded shadow-sm" style="min-height: 100px;">
+                        Efectivo (Bajo P, Medio D)<br>
+                        <span class="fs-4">{{ nb_counts.efectivo|default:0 }}</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="p-3 bg-info bg-opacity-75 rounded shadow-sm" style="min-height: 100px;">
+                        Experto (Bajo P, Alto D)<br>
+                        <span class="fs-4">{{ nb_counts.experto|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-2 mt-2">
+                <div class="col-1"></div>
+                <div class="col text-center fw-bold text-dark">BAJO DESEMPEÑO</div>
+                <div class="col text-center fw-bold text-dark">MEDIO DESEMPEÑO</div>
+                <div class="col text-center fw-bold text-dark">ALTO DESEMPEÑO</div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info border-0 shadow-sm rounded-4">
+        <i class="bi bi-info-circle-fill me-2"></i> No hay periodos de evaluación activos actualmente. Por favor, crea un periodo de evaluación desde la administración.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Filtro custom para diccionario -->
+{% block extra_js %}
+<script>
+    // Just simple scripts if needed
+</script>
+{% endblock %}
+{% endblock %}

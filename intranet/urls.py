@@ -123,6 +123,7 @@ urlpatterns = [
     path('vacaciones/', views.vacaciones, name='vacaciones'),
     path('vacaciones-admin/', views.vacaciones_admin, name='vacaciones_admin'),
     path('vacaciones/eliminar/<int:pk>/', views.eliminar_vacaciones, name='eliminar_vacaciones'),
+    path('calendario-ausencias/', views.calendario_ausencias, name='calendario_ausencias'),
 
     # ==========================================
     # ASISTENCIAS BIOMÉTRICAS
@@ -184,6 +185,14 @@ urlpatterns = [
     # MÓDULO DE INTELIGENCIA ARTIFICIAL (IA)
     # ==========================================
     path('curso/<int:curso_id>/generar-examen/', ia_views.generar_examen_ia, name='generar_examen_ia'),
+
+    # ==========================================
+    # EVALUACIONES DE DESEMPEÑO
+    # ==========================================
+    path('desempeno/', views.dashboard_desempeno, name='dashboard_desempeno'),
+    path('mis-evaluaciones/', views.mis_evaluaciones, name='mis_evaluaciones'),
+    path('evaluar-equipo/', views.evaluar_equipo, name='evaluar_equipo'),
+    path('evaluacion/<int:eval_id>/', views.form_evaluacion, name='form_evaluacion'),
 ]
 
 if settings.DEBUG:

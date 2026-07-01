@@ -261,11 +261,18 @@
 </div>
 {% endblock %}
 
-{% block content %}
+{% block scripts %}
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<!-- DataTables Buttons -->
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 
 <script>
     // =========================================================
@@ -293,7 +300,13 @@
     $(document).ready(function() {
         $('#tablaCandidatosPro').DataTable({
             language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
-            order: [[0, 'desc']]
+            order: [[0, 'desc']],
+            dom: 'Bfrtip',
+            buttons: [
+                { extend: 'excelHtml5', className: 'btn btn-sm btn-success', text: '<i class="bi bi-file-earmark-excel"></i> Excel' },
+                { extend: 'pdfHtml5', className: 'btn btn-sm btn-danger', text: '<i class="bi bi-file-earmark-pdf"></i> PDF' },
+                { extend: 'copyHtml5', className: 'btn btn-sm btn-secondary', text: '<i class="bi bi-clipboard"></i> Copiar' }
+            ]
         });
 
         // Evento para abrir WhatsApp Web dinámico

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from intranet.models import Ticket, SolicitudVacaciones
+from intranet.models import Ticket, SolicitudVacaciones, SaldoVacaciones
 
 @admin.register(Ticket)
 class TicketsAdmin(admin.ModelAdmin):
@@ -61,3 +61,8 @@ class SolicitudVacacionesAdmin(admin.ModelAdmin):
         else:
             self.exclude = ()
         return super().get_form(request, obj, **kwargs)
+
+@admin.register(SaldoVacaciones)
+class SaldoVacacionesAdmin(admin.ModelAdmin):
+    list_display = ('colaborador', 'dias_asignados', 'dias_extra', 'dias_tomados', 'dias_disponibles')
+    search_fields = ('colaborador__dni', 'colaborador__user__first_name', 'colaborador__user__last_name')

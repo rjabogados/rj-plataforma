@@ -98,3 +98,21 @@ class SolicitudVacaciones(SolicitudBase):
         if self.fecha_inicio and self.fecha_fin:
             return (self.fecha_fin - self.fecha_inicio).days + 1
         return 0
+
+class SaldoVacaciones(models.Model):
+    colaborador = models.OneToOneField(Colaborador, on_delete=models.CASCADE, related_name='saldo_vacaciones')
+    dias_asignados = models.DecimalField(max_digits=5, decimal_places=2, default=15.00, help_text="Base de días anuales (ej. 15 o 30)")
+    dias_extra = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="Días adicionales por compensación u otros")
+
+    def __str__(self):
+        return f"Saldo Vacaciones - {self.colaborador.user.get_full_name()}"
+
+    @property
+    def dias_tomados(self):
+        solicitudes = self.colaborador.vacaciones.filter(estado='APROBADO')
+        total = sum(s.dias_solicitados for s in solicitudes)
+        return total
+
+    @property
+    def dias_disponibles(self):
+        return float(self.dias_asignados + self.dias_extra) - self.dias_tomados
