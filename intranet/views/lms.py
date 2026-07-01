@@ -44,7 +44,7 @@ ADJUNTOS_COMUNICACION_PERMITIDOS = {
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt',
     '.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.avi', '.webm'
 }
-MAX_PORTADA_CURSO_SIZE = 2 * 1024 * 1024
+MAX_PORTADA_CURSO_SIZE = 5 * 1024 * 1024
 PORTADA_CURSO_EXT_PERMITIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
 ROLE_AREA_MAP = {
     'ASESOR': 'Operaciones',
@@ -155,7 +155,7 @@ def portada_curso_valida(portada):
     if extension not in PORTADA_CURSO_EXT_PERMITIDAS:
         return False, 'La miniatura debe ser JPG, PNG o WEBP.'
     if portada.size > MAX_PORTADA_CURSO_SIZE:
-        return False, 'La miniatura supera el mÃ¡ximo permitido (2 MB).'
+        return False, 'La miniatura supera el mÃ¡ximo permitido (5 MB).'
     return True, ''
 
 
@@ -1770,7 +1770,7 @@ def gestor_lms(request):
             orden = request.POST.get('orden', 1)
             archivo_pdf = request.FILES.get('archivo_pdf') # Capacidad de recibir PDFs
 
-            curso = get_object_or_404(CursoInduccion, id=curso_id)
+            curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='ACADEMIA')
             LeccionCurso.objects.create(
                 curso=curso,
                 titulo=titulo,
@@ -1801,7 +1801,7 @@ def gestor_lms(request):
             permitir_revision_respuestas = request.POST.get('permitir_revision_respuestas') == 'on'
             retroalimentacion_final = request.POST.get('retroalimentacion_final', '').strip()
 
-            curso = get_object_or_404(CursoInduccion, id=curso_id)
+            curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='ACADEMIA')
 
             if hasattr(curso, 'evaluacion'):
                 messages.error(request, f"El curso '{curso.titulo}' ya tiene una evaluaciÃ³n configurada.")
@@ -1855,7 +1855,7 @@ def gestor_lms(request):
 @login_required(login_url='login')
 @solo_directivos
 def editar_curso_lms(request, curso_id):
-    curso = get_object_or_404(CursoInduccion, id=curso_id)
+    curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='ACADEMIA')
     
     if request.method == 'POST':
         curso.titulo = request.POST.get('titulo')
@@ -1928,7 +1928,7 @@ def duplicar_version_curso(request, curso_id):
 @login_required(login_url='login')
 @solo_directivos
 def eliminar_curso_lms(request, curso_id):
-    curso = get_object_or_404(CursoInduccion, id=curso_id)
+    curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='ACADEMIA')
     titulo = curso.titulo
     # Al eliminar el curso, Django borrarÃ¡ automÃ¡ticamente sus clases, exÃ¡menes y progreso (Cascade)
     curso.delete()
@@ -2493,11 +2493,11 @@ def completar_leccion(request, leccion_id):
 @solo_directivos
 def dashboard_resultados(request):
     # 1. MÃ©tricas generales de la plataforma
-    total_cursos = CursoInduccion.objects.count()
-    total_examenes = EvaluacionCurso.objects.count()
+    total_cursos = CursoInduccion.objects.filter(tipo='ACADEMIA').count()
+    total_examenes = EvaluacionCurso.objects.filter(curso__tipo='ACADEMIA').count()
     
     # 2. MÃ©tricas de los usuarios (MatriculaCurso guarda las notas y estados)
-    evaluaciones_rendidas = MatriculaCurso.objects.filter(estado__in=['COMPLETADO', 'REPROBADO'])
+    evaluaciones_rendidas = MatriculaCurso.objects.filter(estado__in=['COMPLETADO', 'REPROBADO'], curso__tipo='ACADEMIA')
     total_rendidas = evaluaciones_rendidas.count()
     
     aprobados = evaluaciones_rendidas.filter(estado='COMPLETADO').count()
@@ -2519,6 +2519,7 @@ def dashboard_resultados(request):
     )
     modulos_retrasados = MatriculaCurso.objects.filter(
         estado__in=['PENDIENTE', 'EN_CURSO', 'REPROBADO'],
+        curso__tipo='ACADEMIA',
         fecha_limite__isnull=False,
         fecha_limite__lt=date.today(),
     ).select_related('colaborador__user', 'curso').order_by('fecha_limite')[:10]
@@ -2545,7 +2546,7 @@ def crear_curso_avanzado(request, curso_id=None):
     
     curso = None
     if curso_id:
-        curso = get_object_or_404(CursoInduccion, id=curso_id)
+        curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='ACADEMIA')
 
     if request.method == 'POST':
         paso = request.POST.get('paso')
@@ -2679,7 +2680,7 @@ def api_gestionar_lecciones(request, curso_id):
     from django.http import JsonResponse
     from intranet.models.lms import CursoInduccion, LeccionCurso
     
-    curso = get_object_or_404(CursoInduccion, id=curso_id)
+    curso = get_object_or_404(CursoInduccion, id=curso_id, tipo='ACADEMIA')
 
     if request.method == 'GET':
         lecciones = curso.lecciones.all().order_by('orden')
@@ -2796,6 +2797,14 @@ def crear_curso_induccion(request, curso_id=None):
             titulo = request.POST.get('titulo')
             descripcion = request.POST.get('descripcion')
             portada = request.FILES.get('portada')
+
+            if portada:
+                portada_ok, portada_error = portada_curso_valida(portada)
+                if not portada_ok:
+                    messages.error(request, portada_error)
+                    if curso:
+                        return redirect('editar_curso_induccion_stepper', curso_id=curso.id)
+                    return redirect('crear_curso_induccion')
             
             duracion_estimada_horas = request.POST.get('duracion_estimada_horas') or 1
             
@@ -2997,7 +3006,7 @@ def eliminar_categoria_lms(request, pk):
 @login_required(login_url='login')
 @solo_directivos
 def curso_curriculum(request, pk):
-    curso = get_object_or_404(CursoInduccion, id=pk)
+    curso = get_object_or_404(CursoInduccion, id=pk, tipo='ACADEMIA')
     
     if request.method == 'POST':
         if 'crear_leccion' in request.POST:
@@ -3058,6 +3067,8 @@ def curso_curriculum(request, pk):
 @solo_directivos
 def editar_leccion_lms(request, pk):
     leccion = get_object_or_404(LeccionCurso, id=pk)
+    if leccion.curso.tipo != 'ACADEMIA':
+        raise Http404("Leccion no disponible")
     curso_id = leccion.curso.id
     if request.method == 'POST':
         leccion.titulo = request.POST.get('titulo')
@@ -3083,6 +3094,8 @@ def editar_leccion_lms(request, pk):
 @solo_directivos
 def eliminar_leccion_lms(request, pk):
     leccion = get_object_or_404(LeccionCurso, id=pk)
+    if leccion.curso.tipo != 'ACADEMIA':
+        raise Http404("Leccion no disponible")
     curso_id = leccion.curso.id
     titulo = leccion.titulo
     leccion.delete()
@@ -3092,7 +3105,7 @@ def eliminar_leccion_lms(request, pk):
 @login_required(login_url='login')
 @solo_directivos
 def eliminar_evaluacion_lms(request, pk):
-    evaluacion = get_object_or_404(EvaluacionCurso, id=pk)
+    evaluacion = get_object_or_404(EvaluacionCurso, id=pk, curso__tipo='ACADEMIA')
     curso_id = evaluacion.curso.id
     evaluacion.delete()
     messages.success(request, "EvaluaciÃ³n eliminada correctamente.")
