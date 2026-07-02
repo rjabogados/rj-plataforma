@@ -88,10 +88,13 @@ def generar_examen_ia(request, curso_id):
             headers = {'Content-Type': 'application/json'}
             data = {
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.2}
+                "generationConfig": {
+                    "temperature": 0.2,
+                    "responseMimeType": "application/json"
+                }
             }
             
-            respuesta_cruda = requests.post(url_limpia, headers=headers, json=data, timeout=20)
+            respuesta_cruda = requests.post(url_limpia, headers=headers, json=data, timeout=60)
             respuesta_cruda.raise_for_status()
             
             respuesta_json = respuesta_cruda.json()
