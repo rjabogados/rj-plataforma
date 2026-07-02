@@ -98,11 +98,9 @@ def muro_kudos(request):
         perfil = None
         tiene_perfil = False
         
-    MEDALLAS_SUPERVISOR_KEYS = ['ESTRELLA', 'LIDERAZGO', 'SOLUCIONADOR']
-    
-    es_supervisor = False
+    es_jefatura = False
     if tiene_perfil:
-        es_supervisor = perfil.es_supervisor or perfil.es_directivo
+        es_jefatura = perfil.rol in ['GERENCIA', 'RRHH', 'ADMINISTRATIVO']
 
     q_cartera = None
     if tiene_perfil and not perfil.es_directivo:
@@ -116,24 +114,43 @@ def muro_kudos(request):
             for car_sec in perfil.carteras_secundarias.all():
                 q_cartera |= Q(negocio_id=car_sec.id)
 
-    # Ranking de los que más reconocimientos han recibido
-    qs_ranking = Colaborador.objects.all()
-    if q_cartera:
-        qs_ranking = qs_ranking.filter(q_cartera)
-        
-    top_reconocidos = qs_ranking.annotate(
-        total_kudos=Count('reconocimientos_recibidos')
-    ).filter(total_kudos__gt=0).order_by('-total_kudos')[:10]
+    # Votaciones
+    hoy = date.today()
+    votacion_abierta = hoy.day >= 20
+    mes_actual = hoy.month
+    anio_actual = hoy.year
 
+    # Si es mes 1, el anterior es 12 del anio anterior
+    mes_anterior = mes_actual - 1 if mes_actual > 1 else 12
+    anio_anterior = anio_actual if mes_actual > 1 else anio_actual - 1
+
+    # Obtener categorías activas
+    categorias_votacion = CategoriaVotacion.objects.filter(activa=True)
+
+    # Ranking Votaciones Mes Anterior (de la cartera del usuario)
+    qs_ganadores = Colaborador.objects.all()
+    if q_cartera:
+        qs_ganadores = qs_ganadores.filter(q_cartera)
+        
+    ganadores_mes_anterior = []
+    for cat in categorias_votacion:
+        votos = VotoMensual.objects.filter(categoria=cat, mes=mes_anterior, anio=anio_anterior, candidato__in=qs_ganadores)
+        if votos.exists():
+            ganador = votos.values('candidato').annotate(total=Count('candidato')).order_by('-total').first()
+            if ganador:
+                colab = Colaborador.objects.get(id=ganador['candidato'])
+                ganadores_mes_anterior.append({'categoria': cat, 'colaborador': colab, 'votos': ganador['total']})
+
+    # Feed de Desempeño
     qs_feed = Reconocimiento.objects.all()
     if q_cartera:
-        qs_feed = qs_feed.filter(Q(receptor__in=qs_ranking) | Q(emisor__in=qs_ranking))
+        qs_feed = qs_feed.filter(Q(receptor__in=qs_ganadores) | Q(emisor__in=qs_ganadores))
     feed_kudos = qs_feed.order_by('-fecha')[:50]
     
+    # Lista de colaboradores (para votar o para desempeño)
     colaboradores = Colaborador.objects.filter(user__is_active=True)
-    if q_cartera:
+    if not es_jefatura and q_cartera:
         colaboradores = colaboradores.filter(q_cartera)
-        
     if tiene_perfil:
         colaboradores = colaboradores.exclude(id=perfil.id)
 
@@ -142,54 +159,62 @@ def muro_kudos(request):
             messages.error(request, "Tu usuario no tiene un perfil asignado para realizar esta acción.")
             return redirect('muro_kudos')
 
-        receptor_id = request.POST.get('receptor_id')
-        tipo = request.POST.get('tipo')
-        mensaje = request.POST.get('mensaje')
-        
-        receptor = get_object_or_404(Colaborador, id=receptor_id)
-        
-        if tipo in MEDALLAS_SUPERVISOR_KEYS and not es_supervisor:
-            messages.error(request, "Esta medalla solo puede ser otorgada por un supervisor a discreción.")
-            return redirect('muro_kudos')
-            
-        # ✅ Verificar que no haya enviado un Kudo al mismo receptor hoy
-        if Reconocimiento.objects.filter(emisor=perfil, receptor=receptor, fecha__date=date.today()).exists():
-            messages.warning(request, f"Ya le enviaste un Kudo a {receptor.user.first_name} el día de hoy.")
-            return redirect('muro_kudos')
-            
-        # Determinar puntos basados en el tipo
-        puntos_map = {
-            'ESTRELLA': 50,
-            'COMPAÑERO': 20,
-            'INNOVADOR': 40,
-            'LIDERAZGO': 30,
-            'SOLUCIONADOR': 25,
-            'MIGAJERO': 10,
-        }
-        puntos = puntos_map.get(tipo, 10)
-        
-        Reconocimiento.objects.create(
-            emisor=perfil,
-            receptor=receptor,
-            tipo=tipo,
-            mensaje=mensaje,
-            puntos_otorgados=puntos
-        )
-        
-        # Sumar puntos al receptor
-        receptor.puntos_acumulados += puntos
-        receptor.puntos_disponibles += puntos
-        receptor.save()
-        
-        messages.success(request, f"¡Le has dado un Kudo a {receptor.user.first_name} y sumó {puntos} pts!")
+        action = request.POST.get('action')
+
+        if action == 'votar':
+            if not votacion_abierta:
+                messages.error(request, "Las votaciones están cerradas. Se abren a partir del día 20.")
+                return redirect('muro_kudos')
+                
+            candidato_id = request.POST.get('candidato_id')
+            categoria_id = request.POST.get('categoria_id')
+            candidato = get_object_or_404(Colaborador, id=candidato_id)
+            categoria = get_object_or_404(CategoriaVotacion, id=categoria_id)
+
+            # Verificar si ya votó en esta categoría
+            if VotoMensual.objects.filter(votante=perfil, categoria=categoria, mes=mes_actual, anio=anio_actual).exists():
+                messages.warning(request, f"Ya has votado en la categoría {categoria.nombre} este mes.")
+            else:
+                VotoMensual.objects.create(votante=perfil, candidato=candidato, categoria=categoria, mes=mes_actual, anio=anio_actual)
+                messages.success(request, f"¡Tu voto por {candidato.user.first_name} en {categoria.nombre} ha sido registrado!")
+
+        elif action == 'estrella_desempeno':
+            if not es_jefatura:
+                messages.error(request, "Solo las Jefaturas pueden otorgar Estrellas de Desempeño.")
+                return redirect('muro_kudos')
+
+            receptor_id = request.POST.get('receptor_id')
+            mensaje = request.POST.get('mensaje')
+            receptor = get_object_or_404(Colaborador, id=receptor_id)
+
+            if receptor.rol != 'SUPERVISOR':
+                messages.error(request, "Las Estrellas de Desempeño solo pueden ser otorgadas a Supervisores.")
+                return redirect('muro_kudos')
+
+            if Reconocimiento.objects.filter(emisor=perfil, receptor=receptor, fecha__date=hoy).exists():
+                messages.warning(request, f"Ya le otorgaste una Estrella de Desempeño a {receptor.user.first_name} el día de hoy.")
+            else:
+                Reconocimiento.objects.create(
+                    emisor=perfil,
+                    receptor=receptor,
+                    tipo='ESTRELLA',
+                    mensaje=mensaje,
+                    puntos_otorgados=100
+                )
+                receptor.puntos_acumulados += 100
+                receptor.puntos_disponibles += 100
+                receptor.save()
+                messages.success(request, f"¡Estrella de Desempeño otorgada a {receptor.user.first_name}! (+100 pts)")
+
         return redirect('muro_kudos')
 
     context = {
-        'top_reconocidos': top_reconocidos,
+        'ganadores_mes_anterior': ganadores_mes_anterior,
         'feed_kudos': feed_kudos,
         'colaboradores': colaboradores,
-        'tipos_medalla': Reconocimiento.TIPOS_MEDALLA,
-        'es_supervisor': es_supervisor,
+        'categorias_votacion': categorias_votacion,
+        'votacion_abierta': votacion_abierta,
+        'es_jefatura': es_jefatura,
         'mis_puntos': perfil.puntos_disponibles if tiene_perfil else 0
     }
     return render(request, 'intranet/cultura/muro_kudos.html', context)

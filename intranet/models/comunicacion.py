@@ -99,6 +99,31 @@ class Reconocimiento(models.Model):
     def __str__(self):
         return f"{self.get_tipo_display()} para {self.receptor.user.first_name} (+{self.puntos_otorgados} pts)"
 
+# --- VOTACIONES MENSUALES (PREMIOS DE CARTERA) ---
+
+class CategoriaVotacion(models.Model):
+    nombre = models.CharField(max_length=150)
+    descripcion = models.TextField(blank=True, null=True)
+    icono = models.CharField(max_length=10, default="🏆", help_text="Emoji representativo")
+    activa = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.icono} {self.nombre}"
+
+class VotoMensual(models.Model):
+    votante = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='votos_emitidos')
+    candidato = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='votos_recibidos')
+    categoria = models.ForeignKey(CategoriaVotacion, on_delete=models.CASCADE, related_name='votos')
+    mes = models.PositiveIntegerField()
+    anio = models.PositiveIntegerField()
+    fecha_voto = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('votante', 'categoria', 'mes', 'anio')
+        
+    def __str__(self):
+        return f"{self.votante.user.first_name} votó por {self.candidato.user.first_name} en {self.categoria.nombre} ({self.mes}/{self.anio})"
+
 # --- CATÁLOGO Y CANJES DE PREMIOS (GAMIFICACIÓN) ---
 
 class CatalogoPremio(models.Model):

@@ -21,9 +21,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                <i class="bi bi-stars me-2"></i> Muro de la Fama (Kudos)
+                <i class="bi bi-stars me-2"></i> Reconocimientos RJ
             </h2>
-            <p class="text-secondary mb-0">Reconoce el esfuerzo y dedicación de tus compañeros de equipo.</p>
+            <p class="text-secondary mb-0">Celebra el esfuerzo de tus compañeros y destaca a los mejores del mes.</p>
         </div>
         <div class="d-flex gap-3 align-items-center">
             <div class="bg-white border rounded-pill px-4 py-2 shadow-sm d-flex align-items-center">
@@ -36,9 +36,21 @@
             <a href="{% url 'catalogo_premios' %}" class="btn btn-outline-dark fw-bold shadow-sm rounded-pill px-4">
                 <i class="bi bi-shop me-2"></i> Catálogo
             </a>
-            <button class="btn btn-warning fw-bold shadow-sm rounded-pill px-4 text-dark" data-bs-toggle="modal" data-bs-target="#modalKudo">
-                <i class="bi bi-award-fill me-2"></i> Otorgar Kudo
+            {% if votacion_abierta %}
+            <button class="btn btn-warning fw-bold shadow-sm rounded-pill px-4 text-dark" data-bs-toggle="modal" data-bs-target="#modalVotar">
+                <i class="bi bi-box2-heart-fill me-2"></i> Votar
             </button>
+            {% else %}
+            <button class="btn btn-secondary fw-bold shadow-sm rounded-pill px-4 text-white" disabled title="Abre el día 20">
+                <i class="bi bi-box2-heart-fill me-2"></i> Votar Cerrado
+            </button>
+            {% endif %}
+
+            {% if es_jefatura %}
+            <button class="btn btn-dark fw-bold shadow-sm rounded-pill px-4 text-white" data-bs-toggle="modal" data-bs-target="#modalEstrella">
+                <i class="bi bi-star-fill text-warning me-2"></i> Dar Estrella
+            </button>
+            {% endif %}
         </div>
     </div>
 
@@ -52,39 +64,48 @@
     {% endif %}
 
     <div class="row">
-        <!-- Lado Izquierdo: Top Ranking -->
+        <!-- Lado Izquierdo: Salón de la Fama -->
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm border-0 rounded-4 bg-white mb-4">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0">
-                    <h5 class="fw-bold text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i> Top Reconocidos</h5>
+                    <h5 class="fw-bold text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i> Salón de la Fama</h5>
+                    <p class="small text-muted mb-0">Ganadores del mes pasado en tu cartera.</p>
                 </div>
                 <div class="card-body">
-                    {% if top_reconocidos %}
+                    {% if ganadores_mes_anterior %}
                         <div class="list-group list-group-flush">
-                            {% for colab in top_reconocidos %}
-                            <div class="list-group-item bg-transparent border-0 d-flex align-items-center px-0 py-3">
-                                <h4 class="fw-bold mb-0 me-3 {% if forloop.counter == 1 %}text-warning{% elif forloop.counter == 2 %}text-secondary{% elif forloop.counter == 3 %}text-danger{% else %}text-muted{% endif %}" style="width: 25px; text-align: center;">
-                                    #{{ forloop.counter }}
-                                </h4>
-                                <div class="avatar-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold me-3" style="width: 45px; height: 45px; font-size: 1rem;">
-                                    {% if colab.foto_perfil %}
-                                        <img src="{{ colab.foto_perfil.url }}" alt="Foto" class="rounded-circle w-100 h-100 object-fit-cover">
-                                    {% else %}
-                                        {{ colab.user.first_name|first|upper }}
-                                    {% endif %}
+                            {% for ganador in ganadores_mes_anterior %}
+                            <div class="list-group-item bg-transparent border-0 d-flex flex-column px-0 py-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h3 class="mb-0 me-2">{{ ganador.categoria.icono }}</h3>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark">{{ ganador.categoria.nombre }}</h6>
+                                        <small class="text-secondary">{{ ganador.votos }} votos</small>
+                                    </div>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0 fw-bold text-dark">{{ colab.user.first_name }} {{ colab.user.last_name }}</h6>
-                                    <small class="text-secondary">{{ colab.get_rol_display }}</small>
+                                <div class="d-flex align-items-center bg-light rounded-3 p-2 border">
+                                    <div class="avatar-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold me-2" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                                        {% if ganador.colaborador.foto_perfil %}
+                                            <img src="{{ ganador.colaborador.foto_perfil.url }}" alt="Foto" class="rounded-circle w-100 h-100 object-fit-cover">
+                                        {% else %}
+                                            {{ ganador.colaborador.user.first_name|first|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 fw-bold text-dark fs-6">{{ ganador.colaborador.user.first_name }} {{ ganador.colaborador.user.last_name }}</h6>
+                                    </div>
+                                    <span class="badge rounded-pill bg-warning text-dark fw-bold px-2 py-1 shadow-sm">
+                                        +50 <i class="bi bi-star-fill"></i>
+                                    </span>
                                 </div>
-                                <span class="badge rounded-pill bg-warning text-dark fw-bold px-3 py-2 shadow-sm">
-                                    {{ colab.total_kudos }} <i class="bi bi-star-fill"></i>
-                                </span>
                             </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-secondary text-center py-4">Aún no hay reconocimientos otorgados. ¡Sé el primero!</p>
+                        <div class="text-center py-4">
+                            <i class="bi bi-hourglass-split opacity-25 text-secondary" style="font-size: 2.5rem;"></i>
+                            <p class="text-secondary small mt-2">Aún no hay ganadores registrados del mes anterior.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -95,7 +116,7 @@
                     <p class="small text-muted mb-0">Sistema centralizado de recompensas.</p>
                 </div>
                 <div class="card-body">
-                    <p class="text-secondary small">Puedes acumular estrellas para canjear premios en la plataforma de RRHH.</p>
+                    <p class="text-secondary small">Acumula estrellas ganando las votaciones mensuales o destacando en tu desempeño (solo supervisores). ¡Canjéalas por premios reales!</p>
                 </div>
             </div>
         </div>
@@ -114,7 +135,7 @@
                                     </div>
                                     <div>
                                         <h6 class="mb-0 fw-bold text-dark">{{ kudo.receptor.user.first_name }} {{ kudo.receptor.user.last_name }}</h6>
-                                        <small class="text-muted">ha recibido: <span class="fw-bold text-dark">{{ kudo.get_tipo_display }}</span></small>
+                                        <small class="text-muted">ha recibido: <span class="fw-bold text-warning"><i class="bi bi-star-fill"></i> Estrella de Desempeño</span></small>
                                     </div>
                                 </div>
                                 <div>
@@ -122,11 +143,11 @@
                                     <span class="text-secondary small">{{ kudo.fecha|timesince }}</span>
                                 </div>
                             </div>
-                            <div class="p-3 rounded-3" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+                            <div class="p-3 rounded-3" style="background-color: #fcfcfc; border-left: 4px solid #ffc107;">
                                 <p class="mb-0 fst-italic text-dark">"{{ kudo.mensaje }}"</p>
                             </div>
                             <div class="mt-3 text-end">
-                                <small class="text-muted fw-medium">— Otorgado por {{ kudo.emisor.user.first_name }} {{ kudo.emisor.user.last_name }}</small>
+                                <small class="text-muted fw-medium">— Otorgado por Jefatura: {{ kudo.emisor.user.first_name }} {{ kudo.emisor.user.last_name }}</small>
                             </div>
                         </div>
                     </div>
@@ -143,85 +164,87 @@
 {% endblock %}
 
 {% block modals %}
-<!-- Modal para Otorgar Kudo -->
-<div class="modal fade" id="modalKudo" tabindex="-1">
+<!-- Modal para Votaciones -->
+<div class="modal fade" id="modalVotar" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow-lg">
             <div class="modal-header border-0 pb-0 bg-warning rounded-top-4 p-4">
-                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-award-fill me-2"></i> Otorgar un Kudo</h5>
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-box2-heart-fill me-2"></i> Votación del Mes</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="votar">
                 <div class="modal-body p-4">
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-dark">¿A quién deseas reconocer?</label>
-                        <select name="receptor_id" class="form-select rounded-3 shadow-sm border-0 bg-light" required>
-                            <option value="">Selecciona a un compañero...</option>
+                        <label class="form-label fw-bold text-dark">Categoría a votar</label>
+                        <select name="categoria_id" class="form-select rounded-3 shadow-sm border-0 bg-light" required>
+                            <option value="">Selecciona una categoría...</option>
+                            {% for cat in categorias_votacion %}
+                            <option value="{{ cat.id }}">{{ cat.icono }} {{ cat.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="small text-muted mt-2">Solo puedes votar una vez por categoría cada mes.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">¿Por quién votas?</label>
+                        <select name="candidato_id" class="form-select rounded-3 shadow-sm border-0 bg-light" required>
+                            <option value="">Selecciona a un compañero de tu cartera...</option>
                             {% for colab in colaboradores %}
                             <option value="{{ colab.id }}">{{ colab.user.first_name }} {{ colab.user.last_name }} ({{ colab.get_rol_display }})</option>
                             {% endfor %}
                         </select>
                     </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-dark">Medallas por Votación (Entre Pares)</label>
-                        <p class="small text-muted mb-2">Reconoce el esfuerzo de tus compañeros de equipo.</p>
-                        <div class="row g-2 mb-3">
-                            {% for key, nombre in tipos_medalla %}
-                            {% if key in 'COMPAÑERO,INNOVADOR,MIGAJERO' %}
-                            <div class="col-6">
-                                <input type="radio" class="btn-check" name="tipo" id="tipo_{{ key }}" value="{{ key }}" required>
-                                <label class="btn btn-outline-warning w-100 fw-semibold text-dark shadow-sm border-0 d-flex flex-column align-items-center py-2" for="tipo_{{ key }}">
-                                    <span>{{ nombre }}</span>
-                                    <span class="small opacity-75 mt-1"><i class="bi bi-star-fill"></i> 
-                                        {% if key == 'COMPAÑERO' %}20 pts
-                                        {% elif key == 'INNOVADOR' %}40 pts
-                                        {% elif key == 'LIDERAZGO' %}50 pts
-                                        {% elif key == 'SOLUCIONADOR' %}30 pts
-                                        {% else %}10 pts{% endif %}
-                                    </span>
-                                </label>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-
-                        {% if es_supervisor %}
-                        <label class="form-label fw-bold text-dark border-top pt-3 mt-1">Medallas de Supervisor</label>
-                        <p class="small text-muted mb-2">Medallas exclusivas otorgadas por el liderazgo.</p>
-                        <div class="row g-2">
-                            {% for key, nombre in tipos_medalla %}
-                            {% if key in 'ESTRELLA,LIDERAZGO,SOLUCIONADOR' %}
-                            <div class="col-6">
-                                <input type="radio" class="btn-check" name="tipo" id="tipo_{{ key }}" value="{{ key }}" required>
-                                <label class="btn btn-outline-warning w-100 fw-semibold text-dark shadow-sm border-0 d-flex flex-column align-items-center py-2" for="tipo_{{ key }}">
-                                    <span>{{ nombre }}</span>
-                                    <span class="small opacity-75 mt-1"><i class="bi bi-star-fill text-danger"></i> 
-                                        {% if key == 'ESTRELLA' %}50 pts
-                                        {% elif key == 'LIDERAZGO' %}30 pts
-                                        {% elif key == 'SOLUCIONADOR' %}25 pts
-                                        {% endif %}
-                                    </span>
-                                </label>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark">Mensaje de reconocimiento</label>
-                        <textarea name="mensaje" class="form-control rounded-3 shadow-sm border-0 bg-light" rows="3" placeholder="Ej: Gracias por tu apoyo en el último reporte..." required></textarea>
-                    </div>
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold hover-lift"><i class="bi bi-send-fill me-2"></i> Enviar Kudos</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold hover-lift"><i class="bi bi-check-circle-fill me-2"></i> Enviar Voto</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Modal para Estrella de Desempeño (Solo Jefes) -->
+{% if es_jefatura %}
+<div class="modal fade" id="modalEstrella" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0 bg-dark text-white rounded-top-4 p-4">
+                <h5 class="modal-title fw-bold text-warning"><i class="bi bi-star-fill me-2"></i> Estrella de Desempeño</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="estrella_desempeno">
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-4">Otorgas 100 puntos RJ al supervisor seleccionado por su destacado desempeño.</p>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark">Supervisor Destacado</label>
+                        <select name="receptor_id" class="form-select rounded-3 shadow-sm border-0 bg-light" required>
+                            <option value="">Selecciona un supervisor...</option>
+                            {% for colab in colaboradores %}
+                                {% if colab.rol == 'SUPERVISOR' %}
+                                <option value="{{ colab.id }}">{{ colab.user.first_name }} {{ colab.user.last_name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Mensaje de Felicitación</label>
+                        <textarea name="mensaje" class="form-control rounded-3 shadow-sm border-0 bg-light" rows="3" placeholder="Ej: Excelente trabajo liderando al equipo para cumplir la meta..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold text-dark hover-lift"><i class="bi bi-star-fill me-2"></i> Otorgar Estrella</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

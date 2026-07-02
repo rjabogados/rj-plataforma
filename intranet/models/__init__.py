@@ -1,6 +1,6 @@
 from .rrhh_core import Negocio, Area, Cargo, Colaborador, Asistencia
 from .solicitudes import Ticket, SolicitudVacaciones, SaldoVacaciones
-from .comunicacion import Comunicado, MensajeInterno, EventoCalendario, Notificacion
+from .comunicacion import Comunicado, MensajeInterno, EventoCalendario, Notificacion, CategoriaVotacion, VotoMensual
 from .reclutamiento import CandidatoReclutamiento
 
 from .reclutamiento import CandidatoReclutamiento
