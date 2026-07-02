@@ -77,7 +77,27 @@
                                 <label class="form-label fw-semibold">Cumpleaños</label>
                                 <input type="text" class="form-control bg-light" value="{% if perfil and perfil.fecha_nacimiento %}{{ perfil.fecha_nacimiento|date:'d/m/Y' }}{% else %}Pendiente de registro por supervisor{% endif %}" readonly>
                             </div>
+                            
+                            <!-- Información Financiera -->
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold text-success"><i class="bi bi-wallet2 me-1"></i>Sueldo Base</label>
+                                <input type="text" class="form-control bg-light text-success fw-bold" value="S/ {{ perfil.sueldo_base|floatformat:2|default:'0.00' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Régimen Laboral</label>
+                                <input type="text" class="form-control bg-light" value="{{ perfil.regimen_laboral|default:'Sin asignar' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Banco de Pago</label>
+                                <input type="text" class="form-control bg-light" value="{{ perfil.banco_pago|default:'Sin asignar' }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Cuenta Bancaria</label>
+                                <input type="text" class="form-control bg-light font-monospace" value="{{ perfil.cuenta_bancaria|default:'Sin cuenta' }}" readonly>
+                            </div>
+                            <!-- Fin Información Financiera -->
+
+                            <div class="col-md-12 mt-3 border-top pt-3">
                                 <label class="form-label fw-semibold">Foto de perfil</label>
                                 <input type="file" class="form-control" name="foto_perfil" accept="image/*">
                                 <div class="form-text">Sube una imagen JPG o PNG. Se mostrará en tu ficha.</div>

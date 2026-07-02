@@ -170,6 +170,39 @@
                     </div>
                 </div>
 
+                {% if puede_ver_planilla %}
+                <h6 class="fw-bold text-success mb-3 border-bottom pb-2 mt-4" id="planilla"><i class="bi bi-wallet2"></i> Planilla y Remuneraciones</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-dark">Régimen Laboral</label>
+                        <select class="form-select border-success" name="regimen_laboral">
+                            <option value="Regimen General Mype" {% if colab.regimen_laboral == 'Regimen General Mype' %}selected{% endif %}>Régimen General Mype</option>
+                            <option value="Regimen Especial" {% if colab.regimen_laboral == 'Regimen Especial' %}selected{% endif %}>Régimen Especial</option>
+                            <option value="Practicante" {% if colab.regimen_laboral == 'Practicante' %}selected{% endif %}>Practicante</option>
+                            <option value="Recibo por Honorarios" {% if colab.regimen_laboral == 'Recibo por Honorarios' %}selected{% endif %}>Recibo por Honorarios</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-dark">Sueldo Base (S/)</label>
+                        <input type="number" step="0.01" min="0" class="form-control border-success text-success fw-bold" name="sueldo_base" value="{{ colab.sueldo_base|floatformat:2|default:'0.00' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-dark">Banco de Pago</label>
+                        <select class="form-select border-success" name="banco_pago">
+                            <option value="BCP" {% if colab.banco_pago == 'BCP' %}selected{% endif %}>BCP</option>
+                            <option value="INTERBANK" {% if colab.banco_pago == 'INTERBANK' %}selected{% endif %}>Interbank</option>
+                            <option value="BBVA" {% if colab.banco_pago == 'BBVA' %}selected{% endif %}>BBVA</option>
+                            <option value="SCOTIABANK" {% if colab.banco_pago == 'SCOTIABANK' %}selected{% endif %}>Scotiabank</option>
+                            <option value="EFECTIVO" {% if colab.banco_pago == 'EFECTIVO' %}selected{% endif %}>Pago en Efectivo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-dark">Cuenta Bancaria / CCI</label>
+                        <input type="text" class="form-control border-success font-monospace" name="cuenta_bancaria" value="{{ colab.cuenta_bancaria|default:'' }}">
+                    </div>
+                </div>
+                {% endif %}
+
                 <h6 class="fw-bold text-primary mb-3 border-bottom pb-2 mt-4">Control de Inducción</h6>
                 <div class="row g-3 mb-2">
                     <div class="col-12">

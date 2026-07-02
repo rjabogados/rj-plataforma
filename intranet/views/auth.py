@@ -83,6 +83,20 @@ def perfil(request):
         'password_form': password_form,
     })
 
+@login_required(login_url='login')
+def perfil_publico(request, pk):
+    from django.shortcuts import get_object_or_404
+    from intranet.models import Colaborador
+    colab = get_object_or_404(Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio'), pk=pk)
+    
+    # Redirigir al perfil propio si el usuario intenta ver el suyo mediante esta URL
+    if request.user == colab.user:
+        return redirect('perfil')
+        
+    return render(request, 'intranet/rrhh/perfil_publico.html', {
+        'colab': colab,
+    })
+
 def salir(request):
     logout(request)
     return redirect('login')
@@ -202,6 +216,7 @@ def menu_inicial(request):
     puede_gestion = bool(es_superuser or (perfil and perfil.puede_ver_gestion))
     puede_supervisar = bool(es_superuser or (perfil and (perfil.es_supervisor or perfil.es_directivo)))
     puede_rrhh = bool(es_superuser or (perfil and perfil.es_directivo))
+    puede_ver_mapa = bool(es_superuser or (perfil and (perfil.es_calidad or perfil.es_supervisor or perfil.es_directivo)))
 
     columnas_menu = [
         {
@@ -303,8 +318,8 @@ def menu_inicial(request):
                     'titulo': 'Capacitaciones',
                     'links': [
                         {'titulo': 'Academia', 'url': 'academia'},
-                        {'titulo': 'Gestor LMS', 'url': 'gestor_lms'},
-                    ] if puede_gestion else [{'titulo': 'Academia', 'url': 'academia'}],
+                    ] + ([{'titulo': 'Gestor LMS', 'url': 'gestor_lms'}] if puede_gestion else []) +
+                    ([{'titulo': 'Mapa de Calor (Calidad)', 'url': 'mapa_calor'}] if puede_ver_mapa else []),
                     'locked_text': ''
                 },
             ],
@@ -420,14 +435,21 @@ def exportar_directorio_rrhh(request):
     sede = request.GET.get('sede')
     
     writer = csv.writer(response)
-    writer.writerow(['Usuario', 'Nombres', 'Apellidos', 'DNI', 'Rol', 'Area', 'Cargo', 'Cartera', 'Subcartera', 'Sede', 'Horario', 'Fecha Ingreso'])
+    perfil_actual = getattr(request.user, 'perfil', None)
+    puede_ver_planilla = perfil_actual and perfil_actual.rol in ['RRHH', 'GERENCIA']
+
+    headers = ['Usuario', 'Nombres', 'Apellidos', 'DNI', 'Rol', 'Area', 'Cargo', 'Cartera', 'Subcartera', 'Sede', 'Horario', 'Fecha Ingreso']
+    if puede_ver_planilla:
+        headers.extend(['Regimen Laboral', 'Sueldo Base', 'Banco Pago', 'Cuenta Bancaria'])
+
+    writer.writerow(headers)
 
     qs = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').order_by('user__last_name', 'user__first_name')
     if sede:
         qs = qs.filter(sede=sede)
 
     for perfil in qs:
-        writer.writerow([
+        row = [
             perfil.user.username,
             perfil.user.first_name,
             perfil.user.last_name,
@@ -440,7 +462,15 @@ def exportar_directorio_rrhh(request):
             perfil.get_sede_display(),
             perfil.get_tipo_horario_display(),
             perfil.fecha_ingreso.strftime('%Y-%m-%d') if perfil.fecha_ingreso else '',
-        ])
+        ]
+        if puede_ver_planilla:
+            row.extend([
+                perfil.regimen_laboral,
+                str(perfil.sueldo_base),
+                perfil.banco_pago,
+                perfil.cuenta_bancaria
+            ])
+        writer.writerow(row)
 
     return response
 
@@ -614,6 +644,9 @@ def perfil_admin(request):
         onboarding = None
         eventos_proximos = EventoCalendario.objects.none()
 
+    perfil_actual = getattr(request.user, 'perfil', None)
+    puede_ver_planilla = perfil_actual and perfil_actual.rol in ['RRHH', 'GERENCIA']
+
     return render(request, 'intranet/rrhh/perfil_admin.html', {
         'colaboradores': colaboradores[:30],
         'seleccionado': seleccionado,
@@ -628,6 +661,7 @@ def perfil_admin(request):
         'onboarding': onboarding,
         'eventos_proximos': eventos_proximos[:6],
         'busqueda': busqueda,
+        'puede_ver_planilla': puede_ver_planilla,
     })
 
 

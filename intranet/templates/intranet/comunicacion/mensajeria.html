@@ -209,6 +209,14 @@
         pollingInterval = setInterval(cargarMensajes, 5000); // Poll cada 5s
     });
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatParam = urlParams.get('chat');
+    if(chatParam) {
+        setTimeout(() => {
+            $(`.contacto-item[data-id="${chatParam}"]`).click();
+        }, 100);
+    }
+
     function cargarMensajes() {
         if(!activeChatId) return;
         $.ajax({

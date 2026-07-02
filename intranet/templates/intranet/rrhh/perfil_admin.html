@@ -91,9 +91,13 @@
                                 <div class="col-md-6"><div class="small text-muted">Teléfono</div><div class="fw-semibold">{{ seleccionado.celular|default:"Sin celular" }}</div></div>
                                 <div class="col-md-6"><div class="small text-muted">Horario</div><div class="fw-semibold">{{ seleccionado.get_tipo_horario_display }}</div></div>
                                 <div class="col-md-6"><div class="small text-muted">Ingreso</div><div class="fw-semibold">{{ seleccionado.fecha_ingreso|date:"d M Y"|default:"Sin fecha" }}</div></div>
-                                <div class="col-md-6"><div class="small text-muted">Sueldo Base</div><div class="fw-semibold">S/ {{ seleccionado.sueldo_base }}</div></div>
+                                {% if puede_ver_planilla %}
+                                <div class="col-md-6"><div class="small text-muted">Sueldo Base</div><div class="fw-semibold text-success">S/ {{ seleccionado.sueldo_base }}</div></div>
                                 <div class="col-md-6"><div class="small text-muted">Régimen</div><div class="fw-semibold">{{ seleccionado.regimen_laboral|default:"Sin régimen" }}</div></div>
                                 <div class="col-12"><div class="small text-muted">Banco / Cuenta</div><div class="fw-semibold">{{ seleccionado.banco_pago }} · {{ seleccionado.cuenta_bancaria|default:"Sin cuenta" }}</div></div>
+                                {% else %}
+                                <div class="col-12"><div class="small text-muted">Información Financiera</div><div class="fw-semibold text-muted fst-italic">Solo visible para RRHH y Gerencia</div></div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

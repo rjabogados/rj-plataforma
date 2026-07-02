@@ -402,6 +402,10 @@ def colaboradores(request):
                 tipo_horario=tipo_horario, hora_ingreso=request.POST.get('hora_ingreso') or None, 
                 hora_salida=request.POST.get('hora_salida') or None, fecha_ingreso=fecha_formal,
                 fecha_nacimiento=fecha_nacimiento,
+                sueldo_base=request.POST.get('sueldo_base', 1025.00),
+                banco_pago=request.POST.get('banco_pago', 'BCP'),
+                cuenta_bancaria=request.POST.get('cuenta_bancaria', ''),
+                regimen_laboral=request.POST.get('regimen_laboral', 'Regimen General Mype')
             )
             if carteras_secundarias_ids:
                 colab_creado.carteras_secundarias.set(Negocio.objects.filter(id__in=carteras_secundarias_ids))
@@ -414,6 +418,18 @@ def colaboradores(request):
         perfil_actual,
     ).order_by('area__nombre', 'cargo__nombre', 'user__last_name', 'user__first_name')
 
+    from django.db.models import Sum, Count
+    from datetime import date
+    import decimal
+
+    hoy = date.today()
+    ingresos_mes = lista_colaboradores.filter(fecha_ingreso__year=hoy.year, fecha_ingreso__month=hoy.month).count()
+    presupuesto = lista_colaboradores.aggregate(total=Sum('sueldo_base'))['total'] or decimal.Decimal('0.00')
+    dist_regimen = lista_colaboradores.values('regimen_laboral').annotate(count=Count('id')).order_by('-count')
+
+    # Validación estricta de seguridad: Solo RRHH y Gerencia pueden ver planillas
+    puede_ver_planilla = perfil_actual and perfil_actual.rol in ['RRHH', 'GERENCIA']
+
     return render(request, 'intranet/rrhh/colaboradores.html', {
         'colaboradores': lista_colaboradores,
         'negocios': Negocio.objects.all().order_by('nombre'),
@@ -425,6 +441,11 @@ def colaboradores(request):
         'subcarteras': subcarteras_catalogo(),
         'filtros_disponibles': filtros_personal_disponibles(perfil_actual),
         'puede_editar_cumpleanos': puede_editar_cumpleanos,
+        'puede_ver_planilla': puede_ver_planilla,
+        'kpi_total': lista_colaboradores.count(),
+        'kpi_ingresos_mes': ingresos_mes,
+        'kpi_presupuesto': presupuesto,
+        'kpi_regimenes': dist_regimen,
     })
 
 def generar_contrasena_segura():
@@ -492,6 +513,17 @@ def editar_colaborador(request, pk):
             subcarteras_list = [request.POST.get('subcartera').strip()]
         colab.subcartera = ", ".join(subcarteras_list) if subcarteras_list else None
         
+        # Datos financieros
+        if (hasattr(request.user, 'perfil') and request.user.perfil.rol in ['RRHH', 'GERENCIA']) or request.user.is_superuser:
+            if 'sueldo_base' in request.POST:
+                colab.sueldo_base = request.POST.get('sueldo_base')
+            if 'banco_pago' in request.POST:
+                colab.banco_pago = request.POST.get('banco_pago')
+            if 'cuenta_bancaria' in request.POST:
+                colab.cuenta_bancaria = request.POST.get('cuenta_bancaria')
+            if 'regimen_laboral' in request.POST:
+                colab.regimen_laboral = request.POST.get('regimen_laboral')
+        
         colab.save()
         
         if carteras_secundarias_ids:
@@ -520,6 +552,9 @@ def editar_colaborador(request, pk):
         return redirect('colaboradores')
         
     tiene_onboarding = CandidatoOnboarding.objects.filter(colaborador=colab).exists()
+    perfil_actual = getattr(request.user, 'perfil', None)
+    puede_ver_planilla = perfil_actual and perfil_actual.rol in ['RRHH', 'GERENCIA']
+    
     return render(request, 'intranet/rrhh/editar_colaborador.html', {
         'colab': colab,
         'negocios': Negocio.objects.all().order_by('nombre'),
@@ -531,6 +566,7 @@ def editar_colaborador(request, pk):
         'subcarteras': subcarteras_catalogo(),
         'tiene_onboarding': tiene_onboarding,
         'puede_editar_cumpleanos': puede_editar_cumpleanos,
+        'puede_ver_planilla': puede_ver_planilla,
     })
 
 @login_required(login_url='login')
@@ -3406,7 +3442,6 @@ def eliminar_leccion_lms(request, pk):
     return redirect('curso_curriculum', pk=curso_id)
 
 @login_required(login_url='login')
-@solo_directivos
 def eliminar_evaluacion_lms(request, pk):
     evaluacion = get_object_or_404(EvaluacionCurso, id=pk, curso__tipo='ACADEMIA')
     curso_id = evaluacion.curso.id
@@ -3414,3 +3449,137 @@ def eliminar_evaluacion_lms(request, pk):
     messages.success(request, "EvaluaciÃ³n eliminada correctamente.")
     return redirect('curso_curriculum', pk=curso_id)
 
+
+@login_required(login_url='login')
+def mapa_calor_academico(request):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil or not (perfil.es_calidad or perfil.es_supervisor or perfil.es_directivo):
+        raise Http404("No tienes acceso a este módulo.")
+
+    from intranet.models.rrhh_core import Negocio, Colaborador
+    from intranet.models.lms import RespuestaColaborador, PreguntaEvaluacion
+    from django.db.models import Sum, F, FloatField, Case, When, Q
+    
+    # Filtros
+    cartera_id = request.GET.get('cartera')
+    subcartera_query = request.GET.get('subcartera', '').strip()
+    busqueda = request.GET.get('q', '').strip()
+
+    equipo_qs = Colaborador.objects.select_related('user', 'negocio', 'cargo', 'area').exclude(user__is_active=False)
+
+    if perfil.es_supervisor and not perfil.es_directivo and not perfil.rol == 'CALIDAD':
+        # Filtrar solo el equipo del supervisor
+        if perfil.subcartera:
+            subcarteras = [s.strip() for s in perfil.subcartera.split(',') if s.strip()]
+            q_objs = Q()
+            for sc in subcarteras:
+                q_objs |= Q(subcartera__icontains=sc)
+            equipo_qs = equipo_qs.filter(q_objs)
+        elif perfil.negocio_id or perfil.carteras_secundarias.exists():
+            q_negocios = Q(negocio_id=perfil.negocio_id) if perfil.negocio_id else Q()
+            for car_sec in perfil.carteras_secundarias.all():
+                q_negocios |= Q(negocio_id=car_sec.id)
+            equipo_qs = equipo_qs.filter(q_negocios)
+        elif perfil.area_id:
+            equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
+        elif perfil.cargo_id:
+            equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+        else:
+            equipo_qs = equipo_qs.none()
+    else:
+        # Calidad / Gerencia pueden filtrar
+        if cartera_id:
+            equipo_qs = equipo_qs.filter(negocio_id=cartera_id)
+            
+    if subcartera_query:
+        equipo_qs = equipo_qs.filter(subcartera__icontains=subcartera_query)
+        
+    if busqueda:
+        equipo_qs = equipo_qs.filter(
+            Q(user__first_name__icontains=busqueda) | 
+            Q(user__last_name__icontains=busqueda)
+        )
+
+    equipo_qs = equipo_qs.order_by('user__last_name', 'user__first_name')
+    
+    # Obtener todas las respuestas de este equipo
+    respuestas_qs = RespuestaColaborador.objects.filter(
+        matricula__colaborador__in=equipo_qs
+    ).values(
+        'matricula__colaborador_id', 
+        'pregunta__tema'
+    ).annotate(
+        total_obtenido=Sum('puntos_obtenidos'),
+        total_posible=Sum('pregunta__puntos')
+    )
+
+    # Identificar las categorías únicas (temas)
+    categorias_set = set()
+    rendimiento_dict = {}
+
+    for r in respuestas_qs:
+        tema = r['pregunta__tema'] or 'General'
+        colab_id = r['matricula__colaborador_id']
+        obtenido = float(r['total_obtenido'] or 0)
+        posible = float(r['total_posible'] or 0)
+        
+        categorias_set.add(tema)
+        
+        if colab_id not in rendimiento_dict:
+            rendimiento_dict[colab_id] = {}
+        
+        if tema not in rendimiento_dict[colab_id]:
+            rendimiento_dict[colab_id][tema] = {'obtenido': 0, 'posible': 0}
+            
+        rendimiento_dict[colab_id][tema]['obtenido'] += obtenido
+        rendimiento_dict[colab_id][tema]['posible'] += posible
+
+    categorias = sorted(list(categorias_set))
+
+    # Construir la matriz final para la plantilla
+    matriz_calor = []
+    for colab in equipo_qs:
+        stats_colab = rendimiento_dict.get(colab.id, {})
+        celdas = []
+        for cat in categorias:
+            datos_cat = stats_colab.get(cat)
+            if datos_cat and datos_cat['posible'] > 0:
+                porcentaje = (datos_cat['obtenido'] / datos_cat['posible']) * 100
+                porcentaje = round(porcentaje, 1)
+                
+                # HSL color calculation
+                # 0% = Red (Hue 0), 50% = Yellow (Hue 60), 100% = Green (Hue 120)
+                hue = int((porcentaje / 100.0) * 120)
+                # Keep saturation 80% and lightness 45% for strong visibility
+                color_hsl = f"hsl({hue}, 80%, 45%)"
+                
+                celdas.append({
+                    'categoria': cat,
+                    'tiene_datos': True,
+                    'porcentaje': porcentaje,
+                    'obtenido': round(datos_cat['obtenido'], 2),
+                    'posible': round(datos_cat['posible'], 2),
+                    'color_hsl': color_hsl
+                })
+            else:
+                celdas.append({
+                    'categoria': cat,
+                    'tiene_datos': False,
+                    'color_hsl': '#f0f2f5' # Color gris claro para celdas vacías
+                })
+                
+        matriz_calor.append({
+            'colaborador': colab,
+            'celdas': celdas
+        })
+
+    negocios = Negocio.objects.filter(activo=True).order_by('nombre') if (perfil.es_calidad or perfil.es_directivo) else None
+
+    return render(request, 'intranet/lms/mapa_calor.html', {
+        'matriz_calor': matriz_calor,
+        'categorias': categorias,
+        'negocios': negocios,
+        'cartera_id': int(cartera_id) if cartera_id else None,
+        'subcartera_query': subcartera_query,
+        'busqueda': busqueda,
+    })

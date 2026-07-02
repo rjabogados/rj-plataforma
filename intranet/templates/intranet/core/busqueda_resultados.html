@@ -26,22 +26,24 @@
                 <div class="row g-3">
                     {% for colab in colaboradores %}
                     <div class="col-md-6 col-lg-4 col-xl-3">
-                        <div class="card card-buk h-100 border-0 shadow-sm hover-elevate">
-                            <div class="card-body d-flex align-items-center">
-                                {% if colab.foto_perfil %}
-                                    <img src="{{ colab.foto_perfil.url }}" alt="{{ colab.user.first_name }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
-                                {% else %}
-                                    <div class="rounded-circle bg-light text-primary d-flex justify-content-center align-items-center me-3 fw-bold shadow-sm" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                                        {{ colab.user.first_name|first }}{{ colab.user.last_name|first }}
+                        <a href="{% url 'perfil_publico' colab.id %}" class="text-decoration-none">
+                            <div class="card card-buk h-100 border-0 shadow-sm hover-elevate">
+                                <div class="card-body d-flex align-items-center">
+                                    {% if colab.foto_perfil %}
+                                        <img src="{{ colab.foto_perfil.url }}" alt="{{ colab.user.first_name }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-light text-primary d-flex justify-content-center align-items-center me-3 fw-bold shadow-sm" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                                            {{ colab.user.first_name|first }}{{ colab.user.last_name|first }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark text-truncate" style="max-width: 150px;" title="{{ colab.user.get_full_name }}">{{ colab.user.get_full_name }}</h6>
+                                        <p class="mb-0 small text-muted text-truncate" style="max-width: 150px;">{{ colab.cargo.nombre|default:"Sin cargo" }}</p>
+                                        <span class="badge bg-light text-secondary mt-1 border" style="font-size: 0.65rem;">{{ colab.area.nombre|default:"Sin Área" }}</span>
                                     </div>
-                                {% endif %}
-                                <div>
-                                    <h6 class="mb-0 fw-bold text-dark text-truncate" style="max-width: 150px;" title="{{ colab.user.get_full_name }}">{{ colab.user.get_full_name }}</h6>
-                                    <p class="mb-0 small text-muted text-truncate" style="max-width: 150px;">{{ colab.cargo.nombre|default:"Sin cargo" }}</p>
-                                    <span class="badge bg-light text-secondary mt-1 border" style="font-size: 0.65rem;">{{ colab.area.nombre|default:"Sin Área" }}</span>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     {% endfor %}
                 </div>

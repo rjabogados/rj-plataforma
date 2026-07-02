@@ -1,0 +1,113 @@
+{% extends 'intranet/base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-end mb-4 mt-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="bi bi-person-badge text-primary me-2"></i>Perfil de {{ colab.user.first_name }}</h3>
+            <p class="text-muted mb-0">Información pública del colaborador en la intranet.</p>
+        </div>
+        <a href="{% url 'buscar' %}" class="btn btn-outline-secondary fw-bold rounded-pill px-4">
+            <i class="bi bi-arrow-left"></i> Volver a Búsqueda
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <div class="row align-items-center mb-4 pb-4 border-bottom">
+                <div class="col-md-3 text-center mb-3 mb-md-0">
+                    <div class="mx-auto rounded-circle overflow-hidden bg-light border d-flex align-items-center justify-content-center shadow-sm" style="width: 140px; height: 140px;">
+                        {% if colab.foto_perfil %}
+                            <img src="{{ colab.foto_perfil.url }}" alt="Foto de perfil" class="w-100 h-100 object-fit-cover">
+                        {% else %}
+                            <i class="bi bi-person-fill display-3 text-muted"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-9 text-center text-md-start">
+                    <h3 class="fw-bold text-dark mb-1">{{ colab.user.get_full_name }}</h3>
+                    <p class="text-muted mb-2"><i class="bi bi-envelope me-1"></i>{{ colab.user.email|default:"Sin correo registrado" }}</p>
+                    <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-2 mb-3">
+                        <span class="badge bg-primary px-3 py-2">{{ colab.get_rol_display }}</span>
+                        <span class="badge bg-info text-dark px-3 py-2">{{ colab.area.nombre|default:"Sin área" }}</span>
+                        <span class="badge bg-light text-secondary border px-3 py-2">{{ colab.cargo.nombre|default:"Sin cargo" }}</span>
+                    </div>
+                    
+                    <a href="{% url 'mensajeria' %}?chat={{ colab.id }}" class="btn btn-primary rounded-pill fw-bold shadow-sm px-4">
+                        <i class="bi bi-chat-dots-fill me-2"></i> Enviar Mensaje Interno
+                    </a>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-info me-2"></i>Sobre mí</h5>
+                    <div class="p-4 bg-light rounded-4 text-muted fst-italic">
+                        "{{ colab.descripcion_perfil|default:'Aún no ha agregado una descripción a su perfil.' }}"
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 me-3">
+                            <i class="bi bi-building fs-4"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block fw-bold">Cartera / Negocio</small>
+                            <span class="fw-semibold text-dark">{{ colab.negocio.nombre|default:"Central Administrativa" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success bg-opacity-10 text-success rounded-circle p-3 me-3">
+                            <i class="bi bi-tags fs-4"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block fw-bold">Subcartera / Especialidad</small>
+                            <span class="fw-semibold text-dark">{{ colab.subcartera|default:"No asignada" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-3 me-3">
+                            <i class="bi bi-calendar-heart fs-4"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block fw-bold">Cumpleaños</small>
+                            <span class="fw-semibold text-dark">
+                                {% if colab.fecha_nacimiento %}
+                                    {{ colab.fecha_nacimiento|date:"d de F" }}
+                                {% else %}
+                                    Aún no registrado
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-danger bg-opacity-10 text-danger rounded-circle p-3 me-3">
+                            <i class="bi bi-clock-history fs-4"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block fw-bold">Fecha de Ingreso</small>
+                            <span class="fw-semibold text-dark">
+                                {% if colab.fecha_ingreso %}
+                                    {{ colab.fecha_ingreso|date:"Y" }} ({{ colab.fecha_ingreso|timesince }} en RJ)
+                                {% else %}
+                                    Dato privado
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
