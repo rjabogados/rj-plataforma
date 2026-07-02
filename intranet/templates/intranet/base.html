@@ -228,7 +228,7 @@
                 `;
                 botHistory.scrollTop = botHistory.scrollHeight;
                 
-                fetch('/intranet/api/rj-bot/', {
+                fetch('{% url "api_rj_bot" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
