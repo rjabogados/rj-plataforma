@@ -32,12 +32,12 @@ DEBUG = env_bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env_list(
     'ALLOWED_HOSTS',
-    default=['127.0.0.1', 'localhost', 'rj-plataforma.onrender.com', 'www.rj-plataforma.onrender.com'],
+    default=['127.0.0.1', 'localhost', 'rj-plataforma.onrender.com', 'www.rj-plataforma.onrender.com', 'rjplataforma.up.railway.app'],
 )
 
 CSRF_TRUSTED_ORIGINS = env_list(
     'CSRF_TRUSTED_ORIGINS',
-    default=['https://rj-plataforma.onrender.com', 'https://www.rj-plataforma.onrender.com'],
+    default=['https://rj-plataforma.onrender.com', 'https://www.rj-plataforma.onrender.com', 'https://rjplataforma.up.railway.app'],
 )
 
 # Application definition
@@ -157,6 +157,7 @@ DEFAULT_FROM_EMAIL = f"RJ Talent <{os.environ.get('EMAIL_HOST_USER')}>"
 CORS_ALLOWED_ORIGINS = [
     "https://rj-plataforma.onrender.com",
     "https://www.rj-plataforma.onrender.com",
+    "https://rjplataforma.up.railway.app",
 ]
 
 # NUNCA usar CORS_ALLOW_ALL_ORIGINS = True
