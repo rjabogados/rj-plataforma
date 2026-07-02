@@ -1,171 +1,130 @@
 {% extends 'intranet/base.html' %}
+{% load static %}
 {% block content %}
-<div class="container-fluid py-4" style="max-width: 1400px;">
-    
-    <!-- HEADER PREMIUM -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+<div class="container-fluid py-0 px-0 h-100" style="height: calc(100vh - 70px) !important; display: flex; flex-direction: column;">
+    <!-- HEADER -->
+    <div class="px-4 py-3 bg-white border-bottom d-flex justify-content-between align-items-center shadow-sm z-index-1">
         <div>
-            <h2 class="fw-bold mb-1" style="background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                <i class="bi bi-envelope-paper-fill text-primary me-2"></i>Bandeja de Entrada
-            </h2>
-            <p class="text-secondary mb-0 fw-medium">Gestiona tu comunicación interna de forma rápida y segura.</p>
+            <h4 class="fw-bold mb-0" style="background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-chat-dots-fill text-primary me-2"></i> Chat Corporativo
+            </h4>
+            <small class="text-muted">Mensajería en tiempo real</small>
         </div>
-        <button class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm px-4 btn-hover-grow" data-bs-toggle="modal" data-bs-target="#modalRedactar" style="background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;">
-            <i class="bi bi-pencil-square me-2"></i>Redactar Mensaje
+        <button class="btn btn-primary rounded-pill fw-bold shadow-sm px-4 btn-hover-grow" data-bs-toggle="modal" data-bs-target="#modalRedactar" style="background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;">
+            <i class="bi bi-pencil-square me-2"></i>Nuevo Chat
         </button>
     </div>
 
     <!-- MAIN APP CONTAINER -->
-    <div class="card border-0 rounded-4 overflow-hidden shadow-sm" style="background: #fdfbfb;">
-        <div class="row g-0">
-            
-            <!-- SIDEBAR MENSAJERIA (Filtros) -->
-            <div class="col-md-3 border-end bg-white p-4" style="min-height: 600px;">
-                <form method="GET" class="mb-4">
-                    <div class="input-group bg-light rounded-pill p-1 border">
-                        <span class="input-group-text bg-transparent border-0 text-muted ps-3"><i class="bi bi-search"></i></span>
-                        <input type="text" name="q" class="form-control bg-transparent border-0 shadow-none fw-medium" placeholder="Buscar correo..." value="{{ query }}">
-                    </div>
-                </form>
-
-                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-                    <button class="nav-link active text-start fw-bold px-4 py-3 mb-2 rounded-pill d-flex justify-content-between align-items-center" id="recibidos-tab" data-bs-toggle="pill" data-bs-target="#recibidos" type="button" role="tab">
-                        <span><i class="bi bi-inbox-fill me-2 fs-5 text-primary"></i> Recibidos</span>
-                    </button>
-                    <button class="nav-link text-start fw-bold px-4 py-3 rounded-pill d-flex justify-content-between align-items-center text-muted" id="enviados-tab" data-bs-toggle="pill" data-bs-target="#enviados" type="button" role="tab">
-                        <span><i class="bi bi-send-fill me-2 fs-5"></i> Enviados</span>
-                    </button>
+    <div class="row g-0 flex-grow-1 overflow-hidden" style="background: #f0f2f5;">
+        
+        <!-- SIDEBAR CONTACTOS -->
+        <div class="col-md-3 border-end bg-white d-flex flex-column" style="height: 100%;">
+            <div class="p-3 border-bottom">
+                <div class="input-group bg-light rounded-pill p-1 border">
+                    <span class="input-group-text bg-transparent border-0 text-muted ps-3"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscarContacto" class="form-control bg-transparent border-0 shadow-none fw-medium" placeholder="Buscar compañero...">
                 </div>
             </div>
 
-            <!-- LISTA DE MENSAJES -->
-            <div class="col-md-9 p-0 bg-transparent">
-                <div class="tab-content h-100" id="v-pills-tabContent">
+            <div class="flex-grow-1 overflow-auto contact-list" id="listaContactos">
+                {% for c in compañeros %}
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action p-3 border-bottom contacto-item" data-id="{{ c.id }}" data-nombre="{{ c.user.first_name }} {{ c.user.last_name }}">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle shadow-sm me-3" style="background: linear-gradient(135deg, #00c6ff, #0072ff); color: white; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold;">
+                            {{ c.user.first_name|first|default:"U" }}{{ c.user.last_name|first|default:"" }}
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <h6 class="mb-0 text-dark fw-bold text-truncate">{{ c.user.first_name }} {{ c.user.last_name }}</h6>
+                            <small class="text-muted text-truncate d-block">{{ c.cargo.nombre|default:"Compañero" }}</small>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- CHAT AREA -->
+        <div class="col-md-9 d-flex flex-column position-relative" style="height: 100%; background: #e5ddd5;">
+            <!-- Wallpaper pattern -->
+            <div style="position: absolute; top:0; left:0; right:0; bottom:0; opacity: 0.06; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); z-index: 0; pointer-events: none;"></div>
+
+            <!-- CHAT HEADER -->
+            <div class="p-3 bg-white border-bottom shadow-sm d-flex align-items-center z-index-1" id="chatHeader" style="display: none !important;">
+                <div class="avatar-circle shadow-sm me-3" style="background: #4e4376; color: white; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold;" id="chatAvatar">
+                    U
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold text-dark" id="chatNombre">Selecciona un chat</h5>
+                    <small class="text-success"><i class="bi bi-circle-fill" style="font-size: 8px;"></i> En línea</small>
+                </div>
+            </div>
+
+            <!-- MSG HISTORY -->
+            <div class="flex-grow-1 overflow-auto p-4 z-index-1" id="chatHistory" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="d-flex justify-content-center h-100 align-items-center flex-column opacity-50" id="emptyChatPlaceholder">
+                    <i class="bi bi-chat-quote" style="font-size: 5rem;"></i>
+                    <h4 class="mt-3">Comienza a chatear</h4>
+                    <p>Selecciona un compañero de la lista izquierda</p>
+                </div>
+            </div>
+
+            <!-- CHAT INPUT -->
+            <div class="p-3 bg-white border-top z-index-1" id="chatInputArea" style="display: none !important;">
+                <form id="formEnviarMsg" class="d-flex align-items-end gap-2">
+                    <input type="hidden" id="chatDestinatarioId" name="destinatario_id">
                     
-                    <!-- TAB RECIBIDOS -->
-                    <div class="tab-pane fade show active h-100" id="recibidos" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center p-4 border-bottom bg-white">
-                            <h5 class="fw-bold text-dark mb-0">Buzón Principal</h5>
-                            <span class="badge bg-primary rounded-pill">{{ recibidos|length }} correos</span>
+                    <label class="btn btn-light rounded-circle shadow-sm mb-1 d-flex align-items-center justify-content-center text-primary" style="width: 45px; height: 45px; cursor: pointer;">
+                        <i class="bi bi-paperclip fs-5"></i>
+                        <input type="file" id="chatAdjunto" name="adjunto" class="d-none">
+                    </label>
+
+                    <div class="flex-grow-1 position-relative">
+                        <div id="adjuntoPreview" class="d-none position-absolute bottom-100 mb-2 bg-white border p-2 rounded shadow-sm d-flex align-items-center gap-2" style="font-size: 0.85rem;">
+                            <i class="bi bi-file-earmark text-primary"></i> <span id="adjuntoNombre" class="text-truncate" style="max-width: 150px;">archivo.pdf</span>
+                            <i class="bi bi-x-circle-fill text-danger ms-2" style="cursor: pointer;" onclick="limpiarAdjunto()"></i>
                         </div>
-                        <div class="list-group list-group-flush msg-list">
-                            {% for m in recibidos %}
-                            <a href="{% url 'leer_mensaje' m.id %}" class="list-group-item list-group-item-action p-4 border-bottom msg-item {% if not m.leido %}unread bg-primary bg-opacity-10{% endif %}">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="avatar-circle shadow-sm" style="background: {% if not m.leido %}linear-gradient(135deg, #00c6ff, #0072ff){% else %}#e9ecef{% endif %}; color: {% if not m.leido %}white{% else %}#6c757d{% endif %};">
-                                            {{ m.remitente.user.first_name|first|default:"U" }}{{ m.remitente.user.last_name|first|default:"" }}
-                                        </div>
-                                    </div>
-                                    <div class="col overflow-hidden">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <strong class="text-dark fs-6">{{ m.remitente.user.get_full_name }}</strong>
-                                            <small class="text-muted fw-semibold">{{ m.fecha_envio|date:"d M Y, h:i a" }}</small>
-                                        </div>
-                                        <div class="text-truncate text-dark {% if not m.leido %}fw-bold{% else %}fw-medium{% endif %} mb-1">{{ m.asunto }}</div>
-                                        <p class="text-muted small mb-0 text-truncate opacity-75">{{ m.cuerpo|striptags }}</p>
-                                    </div>
-                                    {% if m.adjunto %}
-                                    <div class="col-auto text-end ps-3">
-                                        <i class="bi bi-paperclip fs-5 text-secondary"></i>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </a>
-                            {% empty %}
-                            <div class="text-center py-5">
-                                <i class="bi bi-mailbox2 text-muted opacity-25" style="font-size: 5rem;"></i>
-                                <h5 class="fw-bold text-muted mt-3">Bandeja Vacía</h5>
-                                <p class="text-secondary small">No tienes correos nuevos.</p>
-                            </div>
-                            {% endfor %}
-                        </div>
+                        <textarea id="chatCuerpo" name="cuerpo" class="form-control rounded-4 bg-light border-0 px-4 py-3 shadow-none" placeholder="Escribe un mensaje..." rows="1" style="resize: none;"></textarea>
                     </div>
 
-                    <!-- TAB ENVIADOS -->
-                    <div class="tab-pane fade h-100" id="enviados" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center p-4 border-bottom bg-white">
-                            <h5 class="fw-bold text-dark mb-0">Mensajes Enviados</h5>
-                            <span class="badge bg-secondary rounded-pill">{{ enviados|length }} correos</span>
-                        </div>
-                        <div class="list-group list-group-flush msg-list">
-                            {% for m in enviados %}
-                            <a href="{% url 'leer_mensaje' m.id %}" class="list-group-item list-group-item-action p-4 border-bottom msg-item">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="avatar-circle shadow-sm" style="background: #f8f9fa; color: #adb5bd; border: 1px solid #dee2e6;">
-                                            <i class="bi bi-send-fill"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col overflow-hidden">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="text-muted small fw-semibold">Para: <strong class="text-dark">{{ m.destinatario.user.get_full_name }}</strong></span>
-                                            <small class="text-muted">{{ m.fecha_envio|date:"d M Y, h:i a" }}</small>
-                                        </div>
-                                        <div class="text-truncate text-dark fw-medium mb-1">{{ m.asunto }}</div>
-                                        <p class="text-muted small mb-0 text-truncate opacity-75">{{ m.cuerpo|striptags }}</p>
-                                    </div>
-                                    {% if m.adjunto %}
-                                    <div class="col-auto text-end ps-3">
-                                        <i class="bi bi-paperclip fs-5 text-secondary"></i>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </a>
-                            {% empty %}
-                            <div class="text-center py-5">
-                                <i class="bi bi-send-x text-muted opacity-25" style="font-size: 5rem;"></i>
-                                <h5 class="fw-bold text-muted mt-3">Buzón Vacío</h5>
-                                <p class="text-secondary small">No has enviado ningún mensaje.</p>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                </div>
+                    <button type="submit" class="btn btn-primary rounded-circle shadow mb-1 d-flex align-items-center justify-content-center btn-hover-grow" style="width: 45px; height: 45px; background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;" id="btnEnviar">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </form>
             </div>
+
         </div>
     </div>
 </div>
 
-<!-- Modal Redactar Mensaje -->
-<div class="modal fade" id="modalRedactar" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-            <div class="modal-header bg-primary text-white border-0 p-4" style="background: linear-gradient(135deg, #00c6ff, #0072ff);">
-                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Nuevo Mensaje</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Modal Redactar (Mantenemos como backup o para mensajes masivos) -->
+<div class="modal fade" id="modalRedactar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square me-2 text-primary"></i>Nuevo Chat</h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" action="{% url 'mensajeria' %}" enctype="multipart/form-data">
                 {% csrf_token %}
-                <div class="modal-body p-4 p-md-5">
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-secondary">Para (Destinatario)</label>
-                        <select class="form-select form-select-lg bg-light border-0 fw-semibold text-dark" name="destinatario_id" required>
-                            <option value="">-- Selecciona un colaborador --</option>
-                            {% for c in colaboradores %}
-                                <option value="{{ c.id }}">{{ c.user.get_full_name }} ({{ c.get_rol_display }})</option>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Para:</label>
+                        <select name="destinatarios" class="form-select form-select-sm border-0 bg-light" required>
+                            <option value="">-- Seleccionar --</option>
+                            {% for c in compañeros %}
+                            <option value="{{ c.id }}">{{ c.user.first_name }} {{ c.user.last_name }} ({{ c.cargo.nombre }})</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-secondary">Asunto</label>
-                        <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold" name="asunto" placeholder="Motivo de tu mensaje..." required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-secondary">Mensaje</label>
-                        <textarea class="form-control bg-light border-0" name="cuerpo" rows="6" placeholder="Escribe tu mensaje aquí..." required></textarea>
-                    </div>
-                    <div>
-                        <label class="form-label small fw-bold text-secondary"><i class="bi bi-paperclip me-1"></i>Adjuntar Archivo (Opcional)</label>
-                        <input type="file" class="form-control" name="adjunto">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Mensaje Inicial:</label>
+                        <textarea name="cuerpo" class="form-control border-0 bg-light shadow-none" rows="3" required></textarea>
                     </div>
                 </div>
-                <div class="modal-footer border-0 p-4 bg-light">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" name="enviar_mensaje" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm" style="background: linear-gradient(135deg, #00c6ff, #0072ff); border: none;">
-                        <i class="bi bi-send-fill me-2"></i>Enviar
-                    </button>
+                <div class="modal-footer border-0 bg-light p-3">
+                    <input type="hidden" name="asunto" value="Chat Iniciado">
+                    <button type="submit" name="enviar_mensaje" value="1" class="btn btn-primary rounded-pill px-4 fw-bold">Enviar e Iniciar Chat</button>
                 </div>
             </form>
         </div>
@@ -173,34 +132,190 @@
 </div>
 
 <style>
-.avatar-circle {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-.msg-item {
-    transition: background-color 0.2s, padding-left 0.2s;
-    border-left: 4px solid transparent;
-}
-.msg-item:hover {
-    background-color: #f8f9fa !important;
-    border-left: 4px solid var(--bs-primary);
-    padding-left: 1.8rem !important;
-}
-.msg-item.unread {
-    border-left: 4px solid #00c6ff;
-}
-.btn-hover-grow {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.btn-hover-grow:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 198, 255, 0.4) !important;
-}
+    .contacto-item { transition: background 0.2s; cursor: pointer; border-left: 4px solid transparent; }
+    .contacto-item:hover { background: #f8f9fa; }
+    .contacto-item.active { background: #eaf3ff; border-left-color: #0072ff; }
+    
+    .chat-bubble {
+        max-width: 75%;
+        padding: 10px 15px;
+        border-radius: 18px;
+        position: relative;
+        font-size: 0.95rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        margin-bottom: 5px;
+        word-break: break-word;
+    }
+    
+    .bubble-mine {
+        background: #dcf8c6; /* WhatsApp style */
+        align-self: flex-end;
+        border-top-right-radius: 4px;
+    }
+    
+    .bubble-theirs {
+        background: #ffffff;
+        align-self: flex-start;
+        border-top-left-radius: 4px;
+    }
+    
+    .chat-time {
+        font-size: 0.7rem;
+        color: rgba(0,0,0,0.45);
+        display: block;
+        text-align: right;
+        margin-top: 4px;
+    }
+    
+    .z-index-1 { z-index: 1; }
 </style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    let activeChatId = null;
+    let pollingInterval = null;
+
+    // Filtro de contactos
+    $('#buscarContacto').on('keyup', function() {
+        let v = $(this).val().toLowerCase();
+        $('.contacto-item').each(function() {
+            let n = $(this).data('nombre').toLowerCase();
+            if(n.includes(v)) $(this).removeClass('d-none');
+            else $(this).addClass('d-none');
+        });
+    });
+
+    // Seleccionar contacto
+    $('.contacto-item').click(function() {
+        $('.contacto-item').removeClass('active');
+        $(this).addClass('active');
+        
+        let id = $(this).data('id');
+        let nombre = $(this).data('nombre');
+        
+        activeChatId = id;
+        $('#chatDestinatarioId').val(id);
+        
+        $('#chatNombre').text(nombre);
+        $('#chatAvatar').text(nombre.charAt(0).toUpperCase());
+        
+        $('#chatHeader').show();
+        $('#chatInputArea').show();
+        $('#emptyChatPlaceholder').hide();
+        
+        cargarMensajes();
+        
+        if(pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(cargarMensajes, 5000); // Poll cada 5s
+    });
+
+    function cargarMensajes() {
+        if(!activeChatId) return;
+        $.ajax({
+            url: `/intranet/mensajeria/api/chat/${activeChatId}/`,
+            method: 'GET',
+            success: function(res) {
+                renderizarMensajes(res.mensajes);
+            }
+        });
+    }
+
+    function renderizarMensajes(mensajes) {
+        let html = '';
+        mensajes.forEach(m => {
+            let cls = m.is_mine ? 'bubble-mine' : 'bubble-theirs';
+            let statusIcon = m.is_mine ? (m.leido ? '<i class="bi bi-check2-all text-primary ms-1"></i>' : '<i class="bi bi-check2 ms-1"></i>') : '';
+            
+            let adjuntoHtml = '';
+            if(m.adjunto) {
+                adjuntoHtml = `<div class="mb-2 p-2 rounded bg-light border"><i class="bi bi-file-earmark-arrow-down text-primary"></i> <a href="${m.adjunto}" target="_blank" class="text-decoration-none">${m.adjunto_nombre}</a></div>`;
+            }
+
+            html += `
+                <div class="chat-bubble ${cls}">
+                    ${adjuntoHtml}
+                    <div>${m.cuerpo.replace(/\n/g, '<br>')}</div>
+                    <span class="chat-time">${m.fecha} ${statusIcon}</span>
+                </div>
+            `;
+        });
+        
+        let historyDiv = $('#chatHistory');
+        // Solo autoscroll si hay mensajes nuevos o es la primera carga
+        let isScrolledToBottom = historyDiv[0].scrollHeight - historyDiv[0].clientHeight <= historyDiv[0].scrollTop + 50;
+        
+        historyDiv.html(html);
+        
+        if (isScrolledToBottom || html.length > 0) {
+            historyDiv.scrollTop(historyDiv[0].scrollHeight);
+        }
+    }
+
+    // Auto-resize textarea
+    $('#chatCuerpo').on('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if(this.value === '') this.style.height = 'auto';
+    });
+    
+    // Enter para enviar
+    $('#chatCuerpo').keypress(function(e) {
+        if(e.which == 13 && !e.shiftKey) {
+            e.preventDefault();
+            $('#formEnviarMsg').submit();
+        }
+    });
+
+    // Manejo de adjunto
+    $('#chatAdjunto').change(function() {
+        if(this.files.length > 0) {
+            $('#adjuntoNombre').text(this.files[0].name);
+            $('#adjuntoPreview').removeClass('d-none');
+        } else {
+            limpiarAdjunto();
+        }
+    });
+
+    function limpiarAdjunto() {
+        $('#chatAdjunto').val('');
+        $('#adjuntoPreview').addClass('d-none');
+    }
+
+    // Enviar mensaje
+    $('#formEnviarMsg').submit(function(e) {
+        e.preventDefault();
+        if(!$('#chatCuerpo').val().trim() && !$('#chatAdjunto').val()) return;
+        
+        let formData = new FormData(this);
+        
+        // Optimistic UI update
+        let tempCuerpo = $('#chatCuerpo').val();
+        $('#chatCuerpo').val('').css('height', 'auto');
+        limpiarAdjunto();
+        
+        let historyDiv = $('#chatHistory');
+        historyDiv.append(`
+            <div class="chat-bubble bubble-mine opacity-50 temp-msg">
+                <div>${tempCuerpo.replace(/\n/g, '<br>')}</div>
+                <span class="chat-time"><i class="bi bi-clock"></i></span>
+            </div>
+        `);
+        historyDiv.scrollTop(historyDiv[0].scrollHeight);
+
+        $.ajax({
+            url: "{% url 'api_enviar_mensaje_chat' %}",
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                $('.temp-msg').remove();
+                cargarMensajes();
+            },
+            error: function() {
+                $('.temp-msg').removeClass('opacity-50').addClass('bg-danger text-white').html('Error al enviar');
+            }
+        });
+    });
+</script>
 {% endblock %}

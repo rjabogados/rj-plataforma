@@ -1,0 +1,159 @@
+{% extends 'intranet/base.html' %}
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-diagram-3-fill me-2 text-primary"></i> Editar Organigrama</h2>
+            <p class="text-secondary mb-0">Arrastra y suelta los nodos para reorganizar la estructura administrativa.</p>
+        </div>
+        <div>
+            <a href="{% url 'organigrama' %}" class="btn btn-outline-secondary me-2"><i class="bi bi-eye"></i> Ver Organigrama</a>
+            <button class="btn btn-primary" onclick="guardarCambios()"><i class="bi bi-save"></i> Guardar Cambios</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0 fw-bold">Agregar Nodo</h5>
+                </div>
+                <div class="card-body">
+                    <form id="formAddNode">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Nombre del Nodo</label>
+                            <input type="text" id="nodeName" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Tipo</label>
+                            <select id="nodeType" class="form-select">
+                                <option value="DIVISION">División</option>
+                                <option value="AREA">Área</option>
+                                <option value="CARGO">Cargo</option>
+                                <option value="PERSONA">Colaborador</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="divColaborador" style="display:none;">
+                            <label class="form-label small fw-bold">Vincular Colaborador</label>
+                            <select id="nodeColab" class="form-select">
+                                <option value="">-- Sin Vincular --</option>
+                                {% for colab in colaboradores %}
+                                <option value="{{ colab.id }}">{{ colab.user.first_name }} {{ colab.user.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100"><i class="bi bi-plus-circle"></i> Agregar Nodo a la Raíz</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body" style="min-height: 60vh;">
+                    <div id="jstree_demo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+
+<script>
+    let treeData = {{ json_data|safe }};
+    
+    $(document).ready(function(){
+        $('#jstree_demo').jstree({
+            'core' : {
+                'data' : treeData,
+                'check_callback' : true
+            },
+            'plugins' : [ 'dnd', 'types', 'contextmenu' ],
+            'types' : {
+                'default' : { 'icon' : 'bi bi-folder-fill text-warning' },
+                'EMPRESA' : { 'icon' : 'bi bi-building text-dark' },
+                'DIVISION' : { 'icon' : 'bi bi-diagram-3 text-primary' },
+                'AREA' : { 'icon' : 'bi bi-folder-fill text-info' },
+                'CARGO' : { 'icon' : 'bi bi-award-fill text-secondary' },
+                'PERSONA' : { 'icon' : 'bi bi-person-circle text-success' }
+            },
+            'contextmenu': {
+                'items': function(node) {
+                    return {
+                        "Delete": {
+                            "label": "Eliminar Nodo",
+                            "action": function (data) {
+                                var inst = $.jstree.reference(data.reference),
+                                    obj = inst.get_node(data.reference);
+                                if(confirm('¿Seguro que deseas eliminar este nodo y todos sus hijos?')) {
+                                    inst.delete_node(obj);
+                                }
+                            }
+                        }
+                    };
+                }
+            }
+        });
+
+        $('#nodeType').change(function(){
+            if($(this).val() === 'PERSONA') {
+                $('#divColaborador').show();
+            } else {
+                $('#divColaborador').hide();
+                $('#nodeColab').val('');
+            }
+        });
+
+        $('#formAddNode').submit(function(e){
+            e.preventDefault();
+            const name = $('#nodeName').val();
+            const type = $('#nodeType').val();
+            const colab_id = $('#nodeColab').val();
+            
+            const newNode = {
+                text: name,
+                type: type,
+                data: { tipo: type, colab_id: colab_id, new: true }
+            };
+            
+            // Add to root
+            $('#jstree_demo').jstree('create_node', '#', newNode, 'last');
+            $('#nodeName').val('');
+            $('#formAddNode')[0].reset();
+            $('#divColaborador').hide();
+        });
+    });
+
+    function getTreeData() {
+        const v = $('#jstree_demo').jstree(true).get_json('#', {flat:true});
+        return v.map(node => ({
+            id: node.id,
+            parent: node.parent === '#' ? null : node.parent,
+            text: node.text,
+            type: node.data && node.data.tipo ? node.data.tipo : node.type,
+            colab_id: node.data ? node.data.colab_id : null,
+            is_new: isNaN(parseInt(node.id))
+        }));
+    }
+
+    function guardarCambios() {
+        const data = getTreeData();
+        $.ajax({
+            url: "{% url 'api_guardar_organigrama' %}",
+            method: 'POST',
+            data: JSON.stringify({ nodes: data }),
+            contentType: 'application/json',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            success: function(res) {
+                alert('Organigrama guardado exitosamente.');
+                location.reload();
+            },
+            error: function(err) {
+                alert('Error al guardar el organigrama.');
+            }
+        });
+    }
+</script>
+{% endblock %}

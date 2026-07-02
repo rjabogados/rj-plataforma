@@ -11,6 +11,11 @@
             <p class="text-secondary mb-0">Visualiza la jerarquía completa de la empresa, dividida en Administrativos y Operativos.</p>
         </div>
         <div>
+            {% if request.user.is_superuser %}
+            <a href="{% url 'editar_organigrama' %}" class="btn btn-outline-primary fw-bold shadow-sm rounded-pill px-4 me-2">
+                <i class="bi bi-pencil-square me-2"></i> Editar Nodos
+            </a>
+            {% endif %}
             <a href="{% url 'sincronizar_taxonomia' %}" class="btn btn-outline-danger fw-bold shadow-sm rounded-pill px-4" onclick="return confirm('¿Seguro que deseas sincronizar y sobreescribir la estructura de la base de datos con la jerarquía maestra?');">
                 <i class="bi bi-arrow-repeat me-2"></i> Sincronizar Taxonomía
             </a>
@@ -86,39 +91,64 @@ document.addEventListener("DOMContentLoaded", function() {
         color: "#e94560"
     });
 
-    // --- Procesar Datos Administrativos (Áreas -> Cargos -> Personas) ---
-    adminData.forEach(area => {
-        let areaId = `AREA_${area.nombre.replace(/[^a-zA-Z0-9]/g, '')}`;
-        flatData.push({
-            id: areaId,
-            parentId: "BRANCH_ADMIN",
-            name: area.nombre,
-            type: "Área",
-            color: "#16213e"
-        });
-        
-        area.cargos.forEach(cargo => {
-            let cargoId = `${areaId}_CARGO_${cargo.nombre.replace(/[^a-zA-Z0-9]/g, '')}`;
+    // --- Procesar Datos Administrativos ---
+    if (adminData.length > 0 && adminData[0].hasOwnProperty('parent_id')) {
+        // Nuevo Formato (Nodos Libres)
+        adminData.forEach(n => {
+            // El root de administrativos debe colgar de la raíz o de sí mismo si no tiene parent
+            let parent = n.parent_id ? n.parent_id.toString() : "BRANCH_ADMIN";
+            if (n.tipo === 'EMPRESA' && !n.parent_id) parent = ""; // Si es la empresa raíz de los nodos libres
+
+            let isPerson = (n.tipo === 'PERSONA');
+            let name = n.nombre;
+            if (isPerson && n.colaborador__user__first_name) {
+                name = n.colaborador__user__first_name + " " + n.colaborador__user__last_name;
+            }
+
             flatData.push({
-                id: cargoId,
-                parentId: areaId,
-                name: cargo.nombre,
-                type: "Cargo",
-                color: "#2a3b5c"
+                id: n.id.toString(),
+                parentId: parent,
+                name: name,
+                type: n.tipo,
+                color: n.color || "#16213e",
+                isPerson: isPerson
+            });
+        });
+    } else {
+        // Formato Antiguo (Lógico: Áreas -> Cargos -> Personas)
+        adminData.forEach(area => {
+            let areaId = `AREA_${area.nombre.replace(/[^a-zA-Z0-9]/g, '')}`;
+            flatData.push({
+                id: areaId,
+                parentId: "BRANCH_ADMIN",
+                name: area.nombre,
+                type: "Área",
+                color: "#16213e"
             });
             
-            cargo.personas.forEach((persona, i) => {
+            area.cargos.forEach(cargo => {
+                let cargoId = `${areaId}_CARGO_${cargo.nombre.replace(/[^a-zA-Z0-9]/g, '')}`;
                 flatData.push({
-                    id: `${cargoId}_PERSONA_${i}`,
-                    parentId: cargoId,
-                    name: persona,
-                    type: "Colaborador",
-                    color: "#405b87",
-                    isPerson: true
+                    id: cargoId,
+                    parentId: areaId,
+                    name: cargo.nombre,
+                    type: "Cargo",
+                    color: "#2a3b5c"
+                });
+                
+                cargo.personas.forEach((persona, i) => {
+                    flatData.push({
+                        id: `${cargoId}_PERSONA_${i}`,
+                        parentId: cargoId,
+                        name: persona,
+                        type: "Colaborador",
+                        color: "#405b87",
+                        isPerson: true
+                    });
                 });
             });
         });
-    });
+    }
 
     // --- Procesar Datos Operativos (Carteras -> Asesores) ---
     asesoresData.forEach(negocio => {

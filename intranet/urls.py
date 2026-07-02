@@ -39,6 +39,8 @@ urlpatterns = [
     path('colaboradores/procesar-mapeado-personal/', lms.procesar_mapeo_personal, name='procesar_mapeo_personal'),
     path('colaboradores/procesar-mapeado/', lms.procesar_mapeo_balotario, name='procesar_mapeo_balotario'),
     path('rrhh/organigrama/', lms.organigrama_empresa, name='organigrama_empresa'),
+    path('rrhh/organigrama/editar/', lms.editar_organigrama, name='editar_organigrama'),
+    path('rrhh/organigrama/api-guardar/', lms.api_guardar_organigrama, name='api_guardar_organigrama'),
     path('rrhh/sincronizar-taxonomia/', lms.sincronizar_taxonomia, name='sincronizar_taxonomia'),
 
     # ==========================================
@@ -157,6 +159,8 @@ urlpatterns = [
     # ==========================================
     path('mensajeria/', views.mensajeria, name='mensajeria'),
     path('mensajeria/leer/<int:pk>/', views.leer_mensaje, name='leer_mensaje'),
+    path('mensajeria/api/chat/<int:otro_id>/', lms.api_mensajes_chat, name='api_mensajes_chat'),
+    path('mensajeria/api/enviar/', lms.api_enviar_mensaje_chat, name='api_enviar_mensaje_chat'),
     path('mensajeria/adjunto/<int:pk>/', views.ver_adjunto_mensaje, name='ver_adjunto_mensaje'),
     path('comunicados/', views.comunicados, name='comunicados'),
     path('comunicados/adjunto/<int:pk>/', views.ver_adjunto_comunicado, name='ver_adjunto_comunicado'),

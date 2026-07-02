@@ -1120,8 +1120,15 @@ def pasar_a_planilla(request, candidato_id):
 @login_required(login_url='login')
 @solo_directivos
 def organigrama_empresa(request):
-    from intranet.models.rrhh_core import Area, Cargo, Negocio, Colaborador
+    from intranet.models.rrhh_core import Area, Cargo, Negocio, Colaborador, NodoOrganigrama
     import json
+    
+    # 1. Administrativos (Desde NodoOrganigrama personalizado si existe, si no, fallback)
+    if NodoOrganigrama.objects.exists():
+        admin_data = list(NodoOrganigrama.objects.values('id', 'parent_id', 'nombre', 'tipo', 'colaborador__user__first_name', 'colaborador__user__last_name', 'color'))
+    else:
+        admin_data = []
+        # El D3 org chart usará admin_data de NodoOrganigrama, el template deberá ajustarse.
     
     # 1. Administrativos
     areas = Area.objects.filter(activa=True).prefetch_related('cargos', 'colaboradores').order_by('nombre')
@@ -1159,6 +1166,92 @@ def organigrama_empresa(request):
     }
     
     return render(request, 'intranet/rrhh/organigrama.html', context)
+
+@login_required(login_url='login')
+def editar_organigrama(request):
+    from intranet.models.rrhh_core import Colaborador, NodoOrganigrama
+    import json
+    if not request.user.is_superuser:
+        return redirect('menu_inicial')
+        
+    nodos = NodoOrganigrama.objects.all()
+    tree_data = []
+    for n in nodos:
+        tree_data.append({
+            'id': str(n.id),
+            'parent': str(n.parent_id) if n.parent_id else '#',
+            'text': n.nombre,
+            'type': n.tipo,
+            'data': {'tipo': n.tipo, 'colab_id': n.colaborador_id, 'new': False}
+        })
+        
+    colaboradores = Colaborador.objects.filter(user__is_active=True).select_related('user').order_by('user__first_name')
+    return render(request, 'intranet/rrhh/editar_organigrama.html', {
+        'json_data': json.dumps(tree_data),
+        'colaboradores': colaboradores
+    })
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
+@login_required(login_url='login')
+@csrf_exempt
+def api_guardar_organigrama(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+        
+    import json
+    from intranet.models.rrhh_core import NodoOrganigrama
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            nodes = data.get('nodes', [])
+            
+            id_mapping = {}
+            existing_ids = [int(n['id']) for n in nodes if not n.get('is_new')]
+            NodoOrganigrama.objects.exclude(id__in=existing_ids).delete()
+            
+            pending = list(nodes)
+            while pending:
+                progress = False
+                for n in list(pending):
+                    parent_id = n.get('parent')
+                    if parent_id == '#': parent_id = None
+                    
+                    if parent_id and str(parent_id) in id_mapping:
+                        parent_id = id_mapping[str(parent_id)]
+                        
+                    if parent_id and str(parent_id).startswith('j') and str(parent_id) not in id_mapping:
+                        continue
+                        
+                    colab_id = n.get('colab_id') or None
+                    if n.get('is_new'):
+                        nuevo = NodoOrganigrama.objects.create(
+                            nombre=n['text'],
+                            tipo=n['type'],
+                            colaborador_id=colab_id,
+                            parent_id=parent_id
+                        )
+                        id_mapping[str(n['id'])] = nuevo.id
+                    else:
+                        NodoOrganigrama.objects.filter(id=n['id']).update(
+                            nombre=n['text'],
+                            tipo=n['type'],
+                            colaborador_id=colab_id,
+                            parent_id=parent_id
+                        )
+                    
+                    pending.remove(n)
+                    progress = True
+                    
+                if not progress:
+                    break
+
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
 @login_required(login_url='login')
@@ -1720,6 +1813,76 @@ def leer_mensaje(request, pk):
         mensaje.save(update_fields=['leido'])
 
     return render(request, 'intranet/comunicacion/leer_mensaje.html', {'mensaje': mensaje, 'es_receptor': es_receptor})
+
+from django.http import JsonResponse
+from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
+
+@login_required(login_url='login')
+def api_mensajes_chat(request, otro_id):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil:
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+        
+    otro_usuario = get_object_or_404(Colaborador, id=otro_id)
+    mensajes = MensajeInterno.objects.filter(
+        Q(remitente=perfil, destinatario=otro_usuario) | 
+        Q(remitente=otro_usuario, destinatario=perfil)
+    ).order_by('fecha_envio')
+    
+    # Marcar como leídos los que me enviaron a mí
+    mensajes_no_leidos = mensajes.filter(destinatario=perfil, leido=False)
+    if mensajes_no_leidos.exists():
+        mensajes_no_leidos.update(leido=True)
+        
+    data = []
+    for m in mensajes:
+        data.append({
+            'id': m.id,
+            'is_mine': m.remitente_id == perfil.id,
+            'cuerpo': m.cuerpo,
+            'fecha': timezone.localtime(m.fecha_envio).strftime('%H:%M %d/%m'),
+            'leido': m.leido,
+            'adjunto': m.adjunto.url if m.adjunto else None,
+            'adjunto_nombre': m.adjunto.name.split('/')[-1] if m.adjunto else None,
+        })
+    return JsonResponse({'mensajes': data, 'otro_nombre': f"{otro_usuario.user.first_name} {otro_usuario.user.last_name}"})
+
+@login_required(login_url='login')
+@csrf_exempt
+def api_enviar_mensaje_chat(request):
+    perfil = getattr(request.user, 'perfil', None)
+    if not perfil or request.method != 'POST':
+        return JsonResponse({'error': 'No permitido'}, status=400)
+        
+    otro_id = request.POST.get('destinatario_id')
+    cuerpo = request.POST.get('cuerpo', '').strip()
+    adjunto = request.FILES.get('adjunto')
+    
+    if not otro_id or (not cuerpo and not adjunto):
+        return JsonResponse({'error': 'Faltan datos'}, status=400)
+        
+    destinatario = get_object_or_404(Colaborador, id=otro_id)
+    
+    mensaje = MensajeInterno.objects.create(
+        remitente=perfil,
+        destinatario=destinatario,
+        asunto="Chat",
+        cuerpo=cuerpo
+    )
+    
+    if adjunto and adjunto_comunicacion_valido(adjunto):
+        mensaje.adjunto.save(adjunto.name, ContentFile(adjunto.read()), save=True)
+        
+    return JsonResponse({
+        'status': 'ok',
+        'id': mensaje.id,
+        'cuerpo': mensaje.cuerpo,
+        'fecha': timezone.localtime(mensaje.fecha_envio).strftime('%H:%M %d/%m'),
+        'adjunto': mensaje.adjunto.url if mensaje.adjunto else None,
+        'adjunto_nombre': mensaje.adjunto.name.split('/')[-1] if mensaje.adjunto else None,
+    })
+
 @login_required(login_url='login')
 def calendario(request):
     eventos = []

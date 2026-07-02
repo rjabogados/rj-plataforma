@@ -161,3 +161,17 @@ class AtajoUsuario(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.nombre}"
+
+class NodoOrganigrama(models.Model):
+    nombre = models.CharField(max_length=200)
+    tipo = models.CharField(max_length=50, choices=[('EMPRESA', 'Empresa'), ('DIVISION', 'División'), ('AREA', 'Área'), ('CARGO', 'Cargo'), ('PERSONA', 'Colaborador')], default='AREA')
+    colaborador = models.ForeignKey(Colaborador, on_delete=models.SET_NULL, null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    orden = models.IntegerField(default=0)
+    color = models.CharField(max_length=20, default='#16213e')
+
+    class Meta:
+        ordering = ['orden', 'id']
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_tipo_display()})"
