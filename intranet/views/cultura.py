@@ -125,11 +125,6 @@ def muro_kudos(request):
         total_kudos=Count('reconocimientos_recibidos')
     ).filter(total_kudos__gt=0).order_by('-total_kudos')[:10]
 
-    # Ranking específico: El más Migajero
-    top_migajeros = qs_ranking.annotate(
-        total_migajas=Count('reconocimientos_recibidos', filter=Q(reconocimientos_recibidos__tipo='MIGAJERO'))
-    ).filter(total_migajas__gt=0).order_by('-total_migajas')[:5]
-
     qs_feed = Reconocimiento.objects.all()
     if q_cartera:
         qs_feed = qs_feed.filter(Q(receptor__in=qs_ranking) | Q(emisor__in=qs_ranking))
@@ -191,7 +186,6 @@ def muro_kudos(request):
 
     context = {
         'top_reconocidos': top_reconocidos,
-        'top_migajeros': top_migajeros,
         'feed_kudos': feed_kudos,
         'colaboradores': colaboradores,
         'tipos_medalla': Reconocimiento.TIPOS_MEDALLA,

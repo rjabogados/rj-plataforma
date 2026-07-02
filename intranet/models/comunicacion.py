@@ -87,7 +87,6 @@ class Reconocimiento(models.Model):
         ('INNOVADOR', 'Idea Innovadora 💡'),
         ('LIDERAZGO', 'Liderazgo Inspirador 👑'),
         ('SOLUCIONADOR', 'Solucionador de Problemas 🛠️'),
-        ('MIGAJERO', 'El Más Migajero (De a poquitos se llena el tarrito) 🪙'),
     ]
 
     emisor = models.ForeignKey(Colaborador, on_delete=models.CASCADE, related_name='reconocimientos_dados')

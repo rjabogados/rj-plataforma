@@ -27,7 +27,7 @@
         </div>
         <div class="d-flex gap-3 align-items-center">
             <div class="bg-white border rounded-pill px-4 py-2 shadow-sm d-flex align-items-center">
-                <i class="bi bi-coin text-warning fs-5 me-2"></i>
+                <i class="bi bi-star-fill text-warning fs-5 me-2"></i>
                 <div class="d-flex flex-column lh-1">
                     <span class="small text-muted fw-bold">Mis Puntos</span>
                     <span class="fw-bold text-dark fs-5">{{ mis_puntos }} pts</span>
@@ -89,28 +89,13 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0 rounded-4 bg-white">
+            <div class="card shadow-sm border-0 rounded-4 bg-white mt-4">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0">
-                    <h5 class="fw-bold text-dark"><i class="bi bi-coin text-warning me-2"></i> El Más Migajero</h5>
-                    <p class="small text-muted mb-0">Para los que abonan de a poquitos.</p>
+                    <h5 class="fw-bold text-dark"><i class="bi bi-star-fill text-warning me-2"></i> Estrellas RJ</h5>
+                    <p class="small text-muted mb-0">Sistema centralizado de recompensas.</p>
                 </div>
                 <div class="card-body">
-                    {% if top_migajeros %}
-                        <div class="list-group list-group-flush">
-                            {% for colab in top_migajeros %}
-                            <div class="list-group-item bg-transparent border-0 d-flex align-items-center px-0 py-2">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0 fw-bold text-dark">{{ colab.user.first_name }} {{ colab.user.last_name }}</h6>
-                                </div>
-                                <span class="badge rounded-pill bg-warning text-dark fw-bold px-3 py-1 shadow-sm">
-                                    {{ colab.total_migajas }} <i class="bi bi-coin"></i>
-                                </span>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-secondary text-center py-3 small">Aún no hay medallas migajeras otorgadas.</p>
-                    {% endif %}
+                    <p class="text-secondary small">Puedes acumular estrellas para canjear premios en la plataforma de RRHH.</p>
                 </div>
             </div>
         </div>
@@ -189,11 +174,12 @@
                                 <input type="radio" class="btn-check" name="tipo" id="tipo_{{ key }}" value="{{ key }}" required>
                                 <label class="btn btn-outline-warning w-100 fw-semibold text-dark shadow-sm border-0 d-flex flex-column align-items-center py-2" for="tipo_{{ key }}">
                                     <span>{{ nombre }}</span>
-                                    <span class="small opacity-75 mt-1"><i class="bi bi-coin"></i> 
+                                    <span class="small opacity-75 mt-1"><i class="bi bi-star-fill"></i> 
                                         {% if key == 'COMPAÑERO' %}20 pts
                                         {% elif key == 'INNOVADOR' %}40 pts
-                                        {% elif key == 'MIGAJERO' %}10 pts
-                                        {% endif %}
+                                        {% elif key == 'LIDERAZGO' %}50 pts
+                                        {% elif key == 'SOLUCIONADOR' %}30 pts
+                                        {% else %}10 pts{% endif %}
                                     </span>
                                 </label>
                             </div>
