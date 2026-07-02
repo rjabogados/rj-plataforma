@@ -4,7 +4,7 @@ from django.contrib import messages
 from intranet.models.rrhh_core import Colaborador
 from intranet.models.comunicacion import FelicitacionCumpleaños, Reconocimiento
 from datetime import date
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.core.exceptions import ObjectDoesNotExist
 
 MESES_ES = {
@@ -126,7 +126,6 @@ def muro_kudos(request):
     ).filter(total_kudos__gt=0).order_by('-total_kudos')[:10]
 
     # Ranking específico: El más Migajero
-    from django.db.models import Q
     top_migajeros = qs_ranking.annotate(
         total_migajas=Count('reconocimientos_recibidos', filter=Q(reconocimientos_recibidos__tipo='MIGAJERO'))
     ).filter(total_migajas__gt=0).order_by('-total_migajas')[:5]
