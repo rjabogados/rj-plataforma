@@ -98,20 +98,48 @@ def muro_kudos(request):
         perfil = None
         tiene_perfil = False
         
-    # Ranking de los que más reconocimientos han recibido (General)
-    top_reconocidos = Colaborador.objects.annotate(
+    MEDALLAS_SUPERVISOR_KEYS = ['ESTRELLA', 'LIDERAZGO', 'SOLUCIONADOR']
+    
+    es_supervisor = False
+    if tiene_perfil:
+        es_supervisor = perfil.es_supervisor or perfil.es_directivo
+
+    q_cartera = None
+    if tiene_perfil and not perfil.es_directivo:
+        if perfil.subcartera:
+            subcarteras = [s.strip() for s in perfil.subcartera.split(',') if s.strip()]
+            q_cartera = Q()
+            for sc in subcarteras:
+                q_cartera |= Q(subcartera__icontains=sc)
+        elif perfil.negocio_id or perfil.carteras_secundarias.exists():
+            q_cartera = Q(negocio_id=perfil.negocio_id) if perfil.negocio_id else Q()
+            for car_sec in perfil.carteras_secundarias.all():
+                q_cartera |= Q(negocio_id=car_sec.id)
+
+    # Ranking de los que más reconocimientos han recibido
+    qs_ranking = Colaborador.objects.all()
+    if q_cartera:
+        qs_ranking = qs_ranking.filter(q_cartera)
+        
+    top_reconocidos = qs_ranking.annotate(
         total_kudos=Count('reconocimientos_recibidos')
     ).filter(total_kudos__gt=0).order_by('-total_kudos')[:10]
 
     # Ranking específico: El más Migajero
     from django.db.models import Q
-    top_migajeros = Colaborador.objects.annotate(
+    top_migajeros = qs_ranking.annotate(
         total_migajas=Count('reconocimientos_recibidos', filter=Q(reconocimientos_recibidos__tipo='MIGAJERO'))
     ).filter(total_migajas__gt=0).order_by('-total_migajas')[:5]
 
-    feed_kudos = Reconocimiento.objects.all().order_by('-fecha')[:50]
+    qs_feed = Reconocimiento.objects.all()
+    if q_cartera:
+        qs_feed = qs_feed.filter(Q(receptor__in=qs_ranking) | Q(emisor__in=qs_ranking))
+    feed_kudos = qs_feed.order_by('-fecha')[:50]
     
     colaboradores = Colaborador.objects.filter(user__is_active=True)
+    if q_cartera:
+        colaboradores = colaboradores.filter(q_cartera)
+        
     if tiene_perfil:
         colaboradores = colaboradores.exclude(id=perfil.id)
 
@@ -126,6 +154,10 @@ def muro_kudos(request):
         
         receptor = get_object_or_404(Colaborador, id=receptor_id)
         
+        if tipo in MEDALLAS_SUPERVISOR_KEYS and not es_supervisor:
+            messages.error(request, "Esta medalla solo puede ser otorgada por un supervisor a discreción.")
+            return redirect('muro_kudos')
+            
         # ✅ Verificar que no haya enviado un Kudo al mismo receptor hoy
         if Reconocimiento.objects.filter(emisor=perfil, receptor=receptor, fecha__date=date.today()).exists():
             messages.warning(request, f"Ya le enviaste un Kudo a {receptor.user.first_name} el día de hoy.")
@@ -164,6 +196,7 @@ def muro_kudos(request):
         'feed_kudos': feed_kudos,
         'colaboradores': colaboradores,
         'tipos_medalla': Reconocimiento.TIPOS_MEDALLA,
+        'es_supervisor': es_supervisor,
         'mis_puntos': perfil.puntos_disponibles if tiene_perfil else 0
     }
     return render(request, 'intranet/cultura/muro_kudos.html', context)

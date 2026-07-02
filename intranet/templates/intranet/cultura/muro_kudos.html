@@ -180,26 +180,49 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-dark">Tipo de Medalla</label>
-                        <div class="row g-2">
+                        <label class="form-label fw-bold text-dark">Medallas por Votación (Entre Pares)</label>
+                        <p class="small text-muted mb-2">Reconoce el esfuerzo de tus compañeros de equipo.</p>
+                        <div class="row g-2 mb-3">
                             {% for key, nombre in tipos_medalla %}
+                            {% if key in 'COMPAÑERO,INNOVADOR,MIGAJERO' %}
                             <div class="col-6">
                                 <input type="radio" class="btn-check" name="tipo" id="tipo_{{ key }}" value="{{ key }}" required>
                                 <label class="btn btn-outline-warning w-100 fw-semibold text-dark shadow-sm border-0 d-flex flex-column align-items-center py-2" for="tipo_{{ key }}">
                                     <span>{{ nombre }}</span>
                                     <span class="small opacity-75 mt-1"><i class="bi bi-coin"></i> 
-                                        {% if key == 'ESTRELLA' %}50 pts
-                                        {% elif key == 'COMPAÑERO' %}20 pts
+                                        {% if key == 'COMPAÑERO' %}20 pts
                                         {% elif key == 'INNOVADOR' %}40 pts
-                                        {% elif key == 'LIDERAZGO' %}30 pts
-                                        {% elif key == 'SOLUCIONADOR' %}25 pts
                                         {% elif key == 'MIGAJERO' %}10 pts
                                         {% endif %}
                                     </span>
                                 </label>
                             </div>
+                            {% endif %}
                             {% endfor %}
                         </div>
+
+                        {% if es_supervisor %}
+                        <label class="form-label fw-bold text-dark border-top pt-3 mt-1">Medallas de Supervisor</label>
+                        <p class="small text-muted mb-2">Medallas exclusivas otorgadas por el liderazgo.</p>
+                        <div class="row g-2">
+                            {% for key, nombre in tipos_medalla %}
+                            {% if key in 'ESTRELLA,LIDERAZGO,SOLUCIONADOR' %}
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="tipo" id="tipo_{{ key }}" value="{{ key }}" required>
+                                <label class="btn btn-outline-warning w-100 fw-semibold text-dark shadow-sm border-0 d-flex flex-column align-items-center py-2" for="tipo_{{ key }}">
+                                    <span>{{ nombre }}</span>
+                                    <span class="small opacity-75 mt-1"><i class="bi bi-star-fill text-danger"></i> 
+                                        {% if key == 'ESTRELLA' %}50 pts
+                                        {% elif key == 'LIDERAZGO' %}30 pts
+                                        {% elif key == 'SOLUCIONADOR' %}25 pts
+                                        {% endif %}
+                                    </span>
+                                </label>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div class="mb-3">

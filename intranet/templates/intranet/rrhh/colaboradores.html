@@ -162,6 +162,43 @@
         </div>
     </div>
 </div>
+
+<template id="selectCarteraTemplateCreate">
+    <div class="d-flex gap-2 mb-2 dynamic-row">
+        <select class="form-select" name="negocio[]">
+            <option value="">-- Seleccionar --</option>
+            {% for n in negocios %}
+            <option value="{{ n.id }}">{{ n.nombre }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-outline-danger" onclick="removeRowColab(this)" title="Borrar"><i class="bi bi-trash"></i></button>
+    </div>
+</template>
+
+<template id="selectSubcarteraTemplateCreate">
+    <div class="d-flex gap-2 mb-2 dynamic-row">
+        <select class="form-select subcartera-select" name="subcartera[]">
+            <option value="">-- Sin asignar --</option>
+            {% for s in subcarteras %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-outline-danger" onclick="removeRowColab(this)" title="Borrar"><i class="bi bi-trash"></i></button>
+    </div>
+</template>
+
+<script>
+function addSelectRowColab(containerId, templateId) {
+    const container = document.getElementById(containerId);
+    const template = document.getElementById(templateId);
+    const clone = template.content.cloneNode(true);
+    container.appendChild(clone);
+}
+
+function removeRowColab(btn) {
+    btn.closest('.dynamic-row').remove();
+}
+</script>
 {% endblock %}
 
 {% block modals %}
@@ -261,30 +298,36 @@
                         <div class="col-md-6">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label class="form-label small fw-bold text-dark mb-0">Cartera / Negocio</label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" id="toggleCarteraCreate" onchange="document.getElementById('selectCarteraCreate').disabled = !this.checked;">
+                                <button type="button" class="btn btn-sm btn-outline-info py-0" onclick="addSelectRowColab('carteraContainerCreate', 'selectCarteraTemplateCreate')">+ Agregar</button>
+                            </div>
+                            <div id="carteraContainerCreate">
+                                <div class="d-flex gap-2 mb-2 dynamic-row">
+                                    <select class="form-select" name="negocio[]">
+                                        <option value="">-- Seleccionar --</option>
+                                        {% for n in negocios %}
+                                        <option value="{{ n.id }}">{{ n.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeRowColab(this)" title="Borrar"><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
-                            <select class="form-select" name="negocio" id="selectCarteraCreate" disabled>
-                                <option value="">-- Seleccionar --</option>
-                                {% for n in negocios %}
-                                <option value="{{ n.id }}">{{ n.nombre }}</option>
-                                {% endfor %}
-                            </select>
                         </div>
                         <div class="col-md-6">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label class="form-label small fw-bold text-dark mb-0">Subcartera</label>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" id="toggleSubcarteraCreate" onchange="document.getElementById('inputSubcarteraCreate').disabled = !this.checked;">
+                                <button type="button" class="btn btn-sm btn-outline-info py-0" onclick="addSelectRowColab('subcarteraContainerCreate', 'selectSubcarteraTemplateCreate')">+ Agregar</button>
+                            </div>
+                            <div id="subcarteraContainerCreate">
+                                <div class="d-flex gap-2 mb-2 dynamic-row">
+                                    <select class="form-select subcartera-select" name="subcartera[]">
+                                        <option value="">-- Sin asignar --</option>
+                                        {% for s in subcarteras %}
+                                        <option value="{{ s }}">{{ s }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeRowColab(this)" title="Borrar"><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
-                            <select class="form-select" name="subcartera" id="inputSubcarteraCreate" disabled>
-                                <option value="">-- Sin asignar --</option>
-                                {% for s in subcarteras %}
-                                <option value="{{ s }}">{{ s }}</option>
-                                {% endfor %}
-                            </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-dark">Tipo Horario</label>

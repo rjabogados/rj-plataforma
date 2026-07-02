@@ -61,6 +61,7 @@ class Colaborador(models.Model):
     rol = models.CharField(max_length=50, choices=ROLES, default='ASESOR', db_index=True)
     sede = models.CharField(max_length=20, choices=SEDES, default='LIMA1', db_index=True)
     negocio = models.ForeignKey(Negocio, on_delete=models.SET_NULL, null=True, blank=True)
+    carteras_secundarias = models.ManyToManyField(Negocio, blank=True, related_name='colaboradores_secundarios')
     area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name='colaboradores')
     cargo = models.ForeignKey(Cargo, on_delete=models.SET_NULL, null=True, blank=True, related_name='colaboradores')
     subcartera = models.CharField(max_length=100, null=True, blank=True, db_index=True)

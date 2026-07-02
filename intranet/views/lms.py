@@ -1,4 +1,4 @@
-﻿import traceback
+import traceback
 import csv
 import openpyxl
 import uuid
@@ -354,10 +354,22 @@ def colaboradores(request):
         dni_val = (request.POST.get('dni') or '').strip() or None
         correo_val = request.POST.get('correo').strip().lower() or None
         rol_val = request.POST.get('rol')
-        negocio_id = request.POST.get('negocio')
+        # Carteras múltiples
+        negocios_ids = [n for n in request.POST.getlist('negocio[]') if n.strip()]
+        if not negocios_ids:
+            negocios_ids = [request.POST.get('negocio')] if request.POST.get('negocio') else []
+            
+        negocio_id = negocios_ids[0] if negocios_ids else None
+        carteras_secundarias_ids = negocios_ids[1:] if len(negocios_ids) > 1 else []
+
+        # Subcarteras múltiples
+        subcarteras_list = [s.strip() for s in request.POST.getlist('subcartera[]') if s.strip()]
+        if not subcarteras_list and request.POST.get('subcartera'):
+            subcarteras_list = [request.POST.get('subcartera').strip()]
+        subcartera = ", ".join(subcarteras_list) if subcarteras_list else None
+        
         area_id = request.POST.get('area')
         cargo_id = request.POST.get('cargo')
-        subcartera = request.POST.get('subcartera', '').strip() or None
         tipo_horario = request.POST.get('tipo_horario')
         
         sede_val = request.POST.get('sede') or 'LIMA1'
@@ -384,13 +396,16 @@ def colaboradores(request):
                 username=username_final, email=correo_val if correo_val else "",
                 password=password_final, first_name=nombres, last_name=apellidos
             )
-            Colaborador.objects.create(
+            colab_creado = Colaborador.objects.create(
                 user=nuevo_user, dni=dni_val, rol=rol_val, sede=sede_val, negocio=negocio_instancia, 
                 area=area_instancia, cargo=cargo_instancia, subcartera=subcartera,
                 tipo_horario=tipo_horario, hora_ingreso=request.POST.get('hora_ingreso') or None, 
                 hora_salida=request.POST.get('hora_salida') or None, fecha_ingreso=fecha_formal,
                 fecha_nacimiento=fecha_nacimiento,
             )
+            if carteras_secundarias_ids:
+                colab_creado.carteras_secundarias.set(Negocio.objects.filter(id__in=carteras_secundarias_ids))
+
             return redirect('colaboradores')
 
     lista_colaboradores = filtrar_colaboradores(
@@ -454,16 +469,36 @@ def editar_colaborador(request, pk):
             colab.fecha_nacimiento = datetime.strptime(fecha_nacimiento_raw, '%Y-%m-%d').date() if fecha_nacimiento_raw else None
         
         colab.sede = request.POST.get('sede')
-        negocio_id = request.POST.get('negocio')
-        colab.negocio = Negocio.objects.get(id=negocio_id) if negocio_id else None
+        
+        # Carteras múltiples
+        negocios_ids = [n for n in request.POST.getlist('negocio[]') if n.strip()]
+        if not negocios_ids:
+            negocios_ids = [request.POST.get('negocio')] if request.POST.get('negocio') else []
+            
+        negocio_id = negocios_ids[0] if negocios_ids else None
+        carteras_secundarias_ids = negocios_ids[1:] if len(negocios_ids) > 1 else []
+        colab.negocio = Negocio.objects.filter(id=negocio_id).first() if negocio_id else None
+
         area_id = request.POST.get('area')
         cargo_id = request.POST.get('cargo')
         colab.area = Area.objects.filter(id=area_id).first() if area_id else None
         colab.cargo = Cargo.objects.select_related('area').filter(id=cargo_id).first() if cargo_id else None
         if colab.cargo and not colab.area and colab.cargo.area:
             colab.area = colab.cargo.area
-        colab.subcartera = request.POST.get('subcartera', '').strip() or None
+            
+        # Subcarteras múltiples
+        subcarteras_list = [s.strip() for s in request.POST.getlist('subcartera[]') if s.strip()]
+        if not subcarteras_list and request.POST.get('subcartera'):
+            subcarteras_list = [request.POST.get('subcartera').strip()]
+        colab.subcartera = ", ".join(subcarteras_list) if subcarteras_list else None
+        
         colab.save()
+        
+        if carteras_secundarias_ids:
+            colab.carteras_secundarias.set(Negocio.objects.filter(id__in=carteras_secundarias_ids))
+        else:
+            colab.carteras_secundarias.clear()
+
 
         onboarding_activo = request.POST.get('switch_onboarding') == 'on'
         

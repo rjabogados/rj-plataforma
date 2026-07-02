@@ -104,32 +104,49 @@
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <label class="form-label small fw-bold text-muted mb-0">Cartera / Negocio</label>
-                            <div class="form-check form-switch m-0">
-                                <input class="form-check-input" type="checkbox" id="toggleCarteraEdit" onchange="document.getElementById('selectCarteraEdit').disabled = !this.checked;" {% if colab.negocio %}checked{% endif %}>
-                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0" onclick="addSelectRow('carteraContainer', 'negocio[]', 'selectCarteraTemplate')">+ Agregar</button>
                         </div>
-                        <select class="form-select border-secondary" name="negocio" id="selectCarteraEdit" {% if not colab.negocio %}disabled{% endif %}>
-                            <option value="">-- Sin asignar --</option>
-                            {% for n in negocios %}
-                            <option value="{{ n.id }}" {% if colab.negocio and colab.negocio.id == n.id %}selected{% endif %}>
-                                {{ n.nombre }}
-                            </option>
+                        <div id="carteraContainer">
+                            <div class="d-flex gap-2 mb-2 dynamic-row">
+                                <select class="form-select border-secondary" name="negocio[]">
+                                    <option value="">-- Sin asignar --</option>
+                                    {% for n in negocios %}
+                                    <option value="{{ n.id }}" {% if colab.negocio and colab.negocio.id == n.id %}selected{% endif %}>{{ n.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)" title="Borrar"><i class="bi bi-trash"></i></button>
+                            </div>
+                            {% for csec in colab.carteras_secundarias.all %}
+                            <div class="d-flex gap-2 mb-2 dynamic-row">
+                                <select class="form-select border-secondary" name="negocio[]">
+                                    <option value="">-- Sin asignar --</option>
+                                    {% for n in negocios %}
+                                    <option value="{{ n.id }}" {% if csec.id == n.id %}selected{% endif %}>{{ n.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)" title="Borrar"><i class="bi bi-trash"></i></button>
+                            </div>
                             {% endfor %}
-                        </select>
+                        </div>
                     </div>
+                    
                     <div class="col-md-6">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <label class="form-label small fw-bold text-muted mb-0">Subcartera</label>
-                            <div class="form-check form-switch m-0">
-                                <input class="form-check-input" type="checkbox" id="toggleSubcarteraEdit" onchange="document.getElementById('inputSubcarteraEdit').disabled = !this.checked;" {% if colab.subcartera %}checked{% endif %}>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0" onclick="addSelectRow('subcarteraContainer', 'subcartera[]', 'selectSubcarteraTemplate')">+ Agregar</button>
+                        </div>
+                        <div id="subcarteraContainer">
+                            <!-- JS will populate this from colab.subcartera on load -->
+                            <div class="d-flex gap-2 mb-2 dynamic-row default-subcartera">
+                                <select class="form-select border-secondary subcartera-select" name="subcartera[]">
+                                    <option value="">-- Sin asignar --</option>
+                                    {% for s in subcarteras %}
+                                    <option value="{{ s }}">{{ s }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)" title="Borrar"><i class="bi bi-trash"></i></button>
                             </div>
                         </div>
-                        <select class="form-select border-secondary" name="subcartera" id="inputSubcarteraEdit" {% if not colab.subcartera %}disabled{% endif %}>
-                            <option value="">-- Sin asignar --</option>
-                            {% for s in subcarteras %}
-                            <option value="{{ s }}" {% if colab.subcartera == s %}selected{% endif %}>{{ s }}</option>
-                            {% endfor %}
-                        </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label small fw-bold text-muted">Tipo Horario</label>
@@ -174,9 +191,75 @@
     </div>
 </div>
 
-<datalist id="subcarterasSugeridasEditar">
-    {% for s in subcarteras %}
-    <option value="{{ s }}"></option>
-    {% endfor %}
-</datalist>
+<!-- Templates for JS -->
+<template id="selectCarteraTemplate">
+    <div class="d-flex gap-2 mb-2 dynamic-row">
+        <select class="form-select border-secondary" name="negocio[]">
+            <option value="">-- Sin asignar --</option>
+            {% for n in negocios %}
+            <option value="{{ n.id }}">{{ n.nombre }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)" title="Borrar"><i class="bi bi-trash"></i></button>
+    </div>
+</template>
+
+<template id="selectSubcarteraTemplate">
+    <div class="d-flex gap-2 mb-2 dynamic-row">
+        <select class="form-select border-secondary subcartera-select" name="subcartera[]">
+            <option value="">-- Sin asignar --</option>
+            {% for s in subcarteras %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)" title="Borrar"><i class="bi bi-trash"></i></button>
+    </div>
+</template>
+
+<script>
+    function addSelectRow(containerId, inputName, templateId) {
+        const container = document.getElementById(containerId);
+        const template = document.getElementById(templateId);
+        const clone = template.content.cloneNode(true);
+        container.appendChild(clone);
+    }
+
+    function removeRow(btn) {
+        const row = btn.closest('.dynamic-row');
+        // Ensure at least one row remains if you want, but user asked for ability to delete if created by mistake
+        row.remove();
+    }
+
+    // Populate subcarteras on load
+    document.addEventListener("DOMContentLoaded", function() {
+        const subcarterasStr = "{{ colab.subcartera|default_if_none:'' }}";
+        if (subcarterasStr.trim() !== "") {
+            const arr = subcarterasStr.split(',').map(s => s.trim()).filter(s => s);
+            const container = document.getElementById('subcarteraContainer');
+            
+            // clear default row
+            container.innerHTML = "";
+            
+            arr.forEach(sc => {
+                addSelectRow('subcarteraContainer', 'subcartera[]', 'selectSubcarteraTemplate');
+                // set value of the last added select
+                const selects = container.querySelectorAll('select');
+                const lastSelect = selects[selects.length - 1];
+                
+                // check if option exists, if not, add it so it selects properly
+                let optionExists = false;
+                Array.from(lastSelect.options).forEach(opt => {
+                    if(opt.value === sc) optionExists = true;
+                });
+                
+                if(!optionExists) {
+                    const newOpt = new Option(sc, sc);
+                    lastSelect.add(newOpt);
+                }
+                
+                lastSelect.value = sc;
+            });
+        }
+    });
+</script>
 {% endblock %}

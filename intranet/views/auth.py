@@ -462,13 +462,25 @@ def dashboard_supervisor(request):
         if cartera_id:
             equipo_qs = equipo_qs.filter(negocio_id=cartera_id)
     else:
-        # Lógica original para supervisores puros
-        if perfil and perfil.area_id:
-            equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
-        elif perfil and perfil.cargo_id:
-            equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
-        elif perfil and perfil.negocio_id:
-            equipo_qs = equipo_qs.filter(negocio_id=perfil.negocio_id)
+        # Lógica para supervisores: priorizar subcartera, luego negocio, área, cargo
+        if perfil:
+            if perfil.subcartera:
+                subcarteras = [s.strip() for s in perfil.subcartera.split(',') if s.strip()]
+                q_objs = Q()
+                for sc in subcarteras:
+                    q_objs |= Q(subcartera__icontains=sc)
+                equipo_qs = equipo_qs.filter(q_objs)
+            elif perfil.negocio_id or perfil.carteras_secundarias.exists():
+                q_negocios = Q(negocio_id=perfil.negocio_id) if perfil.negocio_id else Q()
+                for car_sec in perfil.carteras_secundarias.all():
+                    q_negocios |= Q(negocio_id=car_sec.id)
+                equipo_qs = equipo_qs.filter(q_negocios)
+            elif perfil.area_id:
+                equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
+            elif perfil.cargo_id:
+                equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+            else:
+                equipo_qs = equipo_qs.none()
         else:
             equipo_qs = equipo_qs.none()
 
@@ -519,10 +531,24 @@ def exportar_equipo_supervisor(request):
     perfil = getattr(request.user, 'perfil', None)
     equipo_qs = Colaborador.objects.select_related('user', 'area', 'cargo', 'negocio').all()
 
-    if perfil and perfil.area_id:
-        equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
-    elif perfil and perfil.cargo_id:
-        equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+    if perfil:
+        if perfil.subcartera:
+            subcarteras = [s.strip() for s in perfil.subcartera.split(',') if s.strip()]
+            q_objs = Q()
+            for sc in subcarteras:
+                q_objs |= Q(subcartera__icontains=sc)
+            equipo_qs = equipo_qs.filter(q_objs)
+        elif perfil.negocio_id or perfil.carteras_secundarias.exists():
+            q_negocios = Q(negocio_id=perfil.negocio_id) if perfil.negocio_id else Q()
+            for car_sec in perfil.carteras_secundarias.all():
+                q_negocios |= Q(negocio_id=car_sec.id)
+            equipo_qs = equipo_qs.filter(q_negocios)
+        elif perfil.area_id:
+            equipo_qs = equipo_qs.filter(area_id=perfil.area_id)
+        elif perfil.cargo_id:
+            equipo_qs = equipo_qs.filter(cargo_id=perfil.cargo_id)
+        else:
+            equipo_qs = equipo_qs.none()
     else:
         equipo_qs = equipo_qs.none()
 
