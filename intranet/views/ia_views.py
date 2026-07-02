@@ -80,7 +80,7 @@ def generar_examen_ia(request, curso_id):
             parte1 = "https://"
             parte2 = "generativelanguage"
             parte3 = ".googleapis.com"
-            parte4 = "/v1beta/models/gemini-1.5-flash:generateContent"
+            parte4 = "/v1beta/models/gemini-2.5-flash:generateContent"
             
             # Ensamblaje seguro
             url_limpia = f"{parte1}{parte2}{parte3}{parte4}?key={api_key}"
@@ -192,7 +192,7 @@ def api_rj_bot(request):
         Responde al colaborador de manera natural, breve (máximo 2 párrafos cortos) y profesional. Utiliza la base de conocimiento si aplica a su pregunta.
         """
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         headers = {'Content-Type': 'application/json'}
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
