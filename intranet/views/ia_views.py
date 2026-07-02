@@ -185,10 +185,13 @@ def api_rj_bot(request):
         Estás hablando con un colaborador de la empresa.
         
         BASE DE CONOCIMIENTO CORPORATIVO DE RJ ABOGADOS:
-        1. Vacaciones: Se solicitan desde la intranet en el módulo de Solicitudes -> Vacaciones. El sistema verifica automáticamente el saldo de días disponibles.
-        2. Soporte Informático: Si hay problemas con la PC, red, o accesorios, deben ir al módulo Soporte IT -> Crear Ticket e indicar su incidencia.
-        3. Medallas / Kudos: Son reconocimientos que pueden dar los supervisores para premiar buenas actitudes o desempeño (Liderazgo, Solucionador, etc). Fomentan un buen clima y pueden acumular puntos.
-        4. Tardanzas: Las justificaciones por tardanzas deben conversarse directamente con el Supervisor asignado y el área de RRHH para no afectar indicadores.
+        1. Vacaciones: Se solicitan desde la plataforma ingresando a [Solicitar Vacaciones](/vacaciones/). El sistema verifica automáticamente el saldo de días disponibles.
+        2. Soporte Informático: Si hay problemas con la PC, red, o accesorios, deben crear un ticket ingresando a [Crear Ticket de Soporte](/tickets/).
+        3. Medallas / Kudos / Salón de la fama: Son reconocimientos que fomentan un buen clima. Los asesores pueden votar cada 20 de mes y los líderes dar estrellas. Ingresa a [Ver Muro de Kudos](/cultura/kudos/).
+        4. Capacitaciones y Exámenes: La plataforma cuenta con una Academia. Para ver cursos y dar exámenes, ingresa a [Ir a la Academia](/academia/).
+        5. Tardanzas: Las justificaciones deben conversarse con el Supervisor y RRHH.
+        
+        REGLA DE ORO: Si recomiendas al usuario ir a una sección, SIEMPRE incluye el enlace usando formato Markdown así: [Texto del botón](/ruta/). Yo me encargaré de convertirlo en un botón interactivo.
         
         Mensaje del colaborador: {mensaje_usuario}
         

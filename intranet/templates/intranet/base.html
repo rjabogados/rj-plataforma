@@ -246,8 +246,10 @@
                             </div>
                         `;
                     } else {
-                        // Formatear markdown básico (negritas)
+                        // Formatear markdown básico (negritas y enlaces)
                         let respHtml = data.respuesta.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        respHtml = respHtml.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<br><a href="$2" class="btn btn-sm btn-primary rounded-pill mt-2 px-3 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="bi bi-box-arrow-up-right me-1"></i> $1</a>');
+                        
                         botHistory.innerHTML += `
                             <div class="align-self-start bg-white p-2 rounded-3 shadow-sm text-dark" style="max-width: 85%; border-top-left-radius: 0; font-size: 0.9rem;">
                                 ${respHtml.replace(/\n/g, '<br>')}
