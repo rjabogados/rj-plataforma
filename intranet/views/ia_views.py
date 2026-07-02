@@ -73,14 +73,14 @@ def generar_examen_ia(request, curso_id):
             {texto_extraido[:25000]}
             """
 
-            # 3. CONEXIÓN NATIVA AL MODELO UNIVERSAL (gemini-1.0-pro)
+            # 3. CONEXIÓN NATIVA AL MODELO UNIVERSAL (gemini-1.5-flash)
             api_key = str(settings.GEMINI_API_KEY).strip()
             
             # Fragmentamos la URL para evitar formato de hipervínculos
             parte1 = "https://"
             parte2 = "generativelanguage"
             parte3 = ".googleapis.com"
-            parte4 = "/v1beta/models/gemini-1.0-pro:generateContent"
+            parte4 = "/v1beta/models/gemini-1.5-flash:generateContent"
             
             # Ensamblaje seguro
             url_limpia = f"{parte1}{parte2}{parte3}{parte4}?key={api_key}"
@@ -155,3 +155,52 @@ def generar_examen_ia(request, curso_id):
             return redirect('gestor_lms')
 
     return render(request, 'intranet/lms/generador_ia.html', {'curso': curso})
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+@login_required
+@csrf_exempt
+def api_rj_bot(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        mensaje_usuario = data.get('mensaje', '').strip()
+        
+        if not mensaje_usuario:
+            return JsonResponse({'error': 'Mensaje vacío'}, status=400)
+            
+        api_key = str(settings.GEMINI_API_KEY).strip()
+        if not api_key or api_key == 'None':
+            return JsonResponse({'error': 'La clave de API no está configurada.'}, status=500)
+            
+        prompt = f"""
+        Eres RJ Bot, el asistente oficial de IA de la plataforma RJ Abogados. Eres amable, profesional, 
+        conciso y experto en Recursos Humanos, clima laboral y políticas de empresa.
+        Estás hablando con un colaborador de la empresa.
+        
+        Mensaje del colaborador: {mensaje_usuario}
+        
+        Responde al colaborador de manera natural, breve y profesional. Si te preguntan algo que no sabes sobre 
+        la empresa, diles cortésmente que consulten directamente con RRHH.
+        """
+        
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        headers = {'Content-Type': 'application/json'}
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.5}
+        }
+        
+        respuesta_cruda = requests.post(url, headers=headers, json=payload, timeout=15)
+        respuesta_cruda.raise_for_status()
+        
+        respuesta_json = respuesta_cruda.json()
+        texto_limpio = respuesta_json['candidates'][0]['content']['parts'][0]['text']
+        
+        return JsonResponse({'respuesta': texto_limpio})
+        
+    except Exception as e:
+        return JsonResponse({'error': f'Ocurrió un error en la conexión con RJ Bot: {str(e)}'}, status=500)

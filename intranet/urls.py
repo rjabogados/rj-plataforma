@@ -199,6 +199,7 @@ urlpatterns = [
     # MÓDULO DE INTELIGENCIA ARTIFICIAL (IA)
     # ==========================================
     path('curso/<int:curso_id>/generar-examen/', ia_views.generar_examen_ia, name='generar_examen_ia'),
+    path('api/rj-bot/', ia_views.api_rj_bot, name='api_rj_bot'),
 
     # ==========================================
     # EVALUACIONES DE DESEMPEÑO
